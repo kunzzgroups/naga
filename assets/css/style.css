@@ -7,7 +7,7 @@
 body{
     color:#fff;
     font-family:Arial,sans-serif;
-    background-image:url('assets/images/background.jpg');
+    background-image:url('../images/background.jpg');
     background-repeat:no-repeat;
     background-position:center top;
     background-size:cover;
@@ -710,7 +710,7 @@ html, body{
 }
 body{
     padding-bottom:57px;
-    background:url('assets/images/background.jpg') center top / cover fixed no-repeat #000 !important;
+    background:url('../images/background.jpg') center top / cover fixed no-repeat #000 !important;
 }
 .main-layout{
     width:100%;
@@ -860,7 +860,7 @@ body{
 @media (max-width:900px){
     body{
         padding-bottom:57px;
-        background:url('assets/images/background.jpg') center top / cover fixed no-repeat #000 !important;
+        background:url('../images/background.jpg') center top / cover fixed no-repeat #000 !important;
     }
     .main-layout{
         display:block;
