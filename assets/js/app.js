@@ -8,24 +8,24 @@ const categories=[
 
 const games={
   hot:{
-    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[]]
+    slots:[['FC26','⚽','#22d3ee','#2563eb',true],['The White Muse II','🧙‍♀️','#facc15','#06b6d4'],['Prosperity Bloom','💎','#22c55e','#f97316'],['Empress Glory','👸','#f97316','#dc2626'],['Bankin Banker','🧓','#facc15','#84cc16'],['Aztec Riches','🏺','#eab308','#16a34a'],['Mythical Creatures','🐯','#14b8a6','#1e3a8a'],['Money Bang Bang','🧧','#ef4444','#eab308'],['Fortune Splash','🐟','#38bdf8','#fb923c'],['Candy Fantasy','🍭','#ec4899','#8b5cf6'],['Neko Blessing','🐱','#f59e0b','#ec4899'],['Great Prosperity','💰','#facc15','#f97316']],
+    mini:[['JDB','🤖','#334155','#0f172a'],['CQ9','🐉','#0f766e','#1e1b4b'],['CROWD PLAY','🧙','#854d0e','#292524'],['DRAGONSOFT','💀','#581c87','#1f2937'],['SPADE GAMING','🧔','#92400e','#1f2937'],['WF GAMING','🦁','#b45309','#292524'],['FUNKY GAME','🔥','#ea580c','#18181b'],['MONEY KING','👾','#6d28d9','#111827'],['FAST SPIN','🧌','#16a34a','#1f2937'],['AI GAMING','🧊','#0284c7','#0f172a']]
   },
   slot:{
-    slots:[[],[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[],[]]
+    slots:[['JDB','🤖','#334155','#0f172a'],['CQ9','🐉','#0f766e','#1e1b4b'],['CROWD PLAY','🧙','#854d0e','#292524'],['DRAGONSOFT','💀','#581c87','#1f2937'],['SPADE GAMING','🧔','#92400e','#1f2937'],['WF GAMING','🦁','#b45309','#292524'],['FUNKY GAME','🔥','#ea580c','#18181b'],['MONEY KING','👾','#6d28d9','#111827'],['FAST SPIN','🧌','#16a34a','#1f2937'],['AI GAMING','🧊','#0284c7','#0f172a'],['ACEWIN','👹','#dc2626','#292524'],['RICH GAMING','🦏','#78716c','#1c1917']],
+    mini:[['BIG POT','🧝','#f97316','#422006'],['FA CHAI','💧','#06b6d4','#083344'],['IMPERIUM','👺','#166534','#111827'],['EVO888','🐷','#c084fc','#292524'],['CLOTCPLAY','🛡️','#38bdf8','#1e3a8a'],['LUCKY365','🪙','#facc15','#78350f']]
   },
   live:{
-    slots:[[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[],[],[],[]]
+    slots:[['Sexy Baccarat','💃','#dc2626','#4c0519'],['Dream Gaming','🎲','#7c3aed','#111827'],['Evolution','♠️','#2563eb','#020617'],['Asia Gaming','🀄','#16a34a','#052e16'],['Pragmatic Live','🎥','#f97316','#451a03'],['Big Gaming','👑','#eab308','#7f1d1d']],
+    mini:[['Roulette','🎡','#dc2626','#111827'],['Sic Bo','🎲','#16a34a','#111827'],['Dragon Tiger','🐲','#ea580c','#0f172a'],['Win Three Cards','🃏','#9333ea','#111827']]
   },
   sport:{
-    slots:[[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[]]
+    slots:[['CMD368','⚽','#22c55e','#052e16'],['SBO Sport','🏆','#f59e0b','#111827'],['IBC Sport','🏀','#fb923c','#1e293b'],['Horse Racing','🐎','#a16207','#1c1917'],['ESport','🎮','#2563eb','#111827'],['Virtual Sport','🏁','#64748b','#020617']],
+    mini:[['Football','⚽','#22c55e','#052e16'],['Basketball','🏀','#f97316','#111827'],['Tennis','🎾','#84cc16','#1f2937'],['Fighting','🥊','#dc2626','#111827']]
   },
   other:{
-    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[]]
+    slots:[['Fishing','🐟','#06b6d4','#083344'],['Lottery','🎟️','#f97316','#111827'],['Keno','🔢','#a855f7','#111827'],['Promotion','🎁','#ef4444','#1f2937'],['VIP Club','👑','#eab308','#451a03'],['Event','🔥','#f97316','#7f1d1d']],
+    mini:[['Lucky Wheel','🎡','#f59e0b','#111827'],['Bonus Hunt','💰','#22c55e','#052e16'],['Daily Mission','🛡️','#38bdf8','#1e3a8a'],['Referrer','🤝','#14b8a6','#052e16']]
   }
 };
 
@@ -186,3 +186,38 @@ if(langBtn && langOverlay){
     });
   });
 }
+
+// Share + copy modal
+(function(){
+  const shareOverlay=document.getElementById('shareOverlay');
+  const copyOverlay=document.getElementById('copyOverlay');
+  const copyText=document.getElementById('copyText');
+
+  function show(el){ if(el){ el.classList.add('show'); el.setAttribute('aria-hidden','false'); } }
+  function hide(el){ if(el){ el.classList.remove('show'); el.setAttribute('aria-hidden','true'); } }
+
+  document.querySelectorAll('.share-trigger').forEach(btn=>{
+    btn.addEventListener('click',()=>show(shareOverlay));
+  });
+
+  document.querySelectorAll('.copy-trigger').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const text=(copyText && copyText.textContent.trim()) || 'https://d2aud.com/RF1A850A95';
+      if(navigator.clipboard){ navigator.clipboard.writeText(text).catch(()=>{}); }
+      show(copyOverlay);
+    });
+  });
+
+  document.querySelectorAll('.modal-x,.copy-ok').forEach(btn=>{
+    btn.addEventListener('click',()=>{ hide(shareOverlay); hide(copyOverlay); });
+  });
+
+  [shareOverlay,copyOverlay].forEach(overlay=>{
+    if(!overlay) return;
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) hide(overlay); });
+  });
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){ hide(shareOverlay); hide(copyOverlay); }
+  });
+})();
