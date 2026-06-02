@@ -6,10 +6,36 @@ const categories=[
   {key:'other',icon:'assets/images/nav5.png',label:'OTHER'}
 ];
 
+const games={
+  hot:{
+    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[]]
+  },
+  slot:{
+    slots:[[],[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[],[]]
+  },
+  live:{
+    slots:[[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[],[],[],[]]
+  },
+  sport:{
+    slots:[[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[]]
+  },
+  other:{
+    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[]]
+  }
+};
+
 let activeCategory='hot';
 let activeTab='slots';
 
+
 const categoryRow=document.getElementById('categoryRow');
+const gameGrid=document.getElementById('gameGrid');
+const subTabRow=document.getElementById('subTabRow');
 
 const catPrev=document.querySelector('.cat-prev');
 const catNext=document.querySelector('.cat-next');
@@ -24,6 +50,7 @@ if(catPrev && catNext){
   catNext.addEventListener('click',()=>scrollCategoryPage(1));
 }
 
+
 function renderCategories(){
   categoryRow.innerHTML='';
   categories.forEach(cat=>{
@@ -36,6 +63,25 @@ function renderCategories(){
   });
 }
 
+function renderGames(){
+  gameGrid.innerHTML='';
+  const list=games[activeCategory][activeTab] || [];
+  const isProvider = activeTab === 'mini' || activeCategory === 'slot';
+  gameGrid.classList.toggle('provider-grid', isProvider);
+
+  list.forEach(item=>{
+    const [title,emoji,c1,c2,isNew]=item;
+    const card=document.createElement('div');
+    card.className='game-card';
+    card.innerHTML=`
+      <div class="game-card-img-wrap">
+        ${isNew?'<div class="new-badge">NEW!</div>':''}
+        <img src="assets/images/game.png" alt="${title}">
+      </div>
+      <button class="play-btn">PLAY</button>`;
+    gameGrid.appendChild(card);
+  });
+}
 categoryRow.addEventListener('click',e=>{
   const btn=e.target.closest('.cat');
   if(!btn)return;
@@ -43,9 +89,19 @@ categoryRow.addEventListener('click',e=>{
   activeTab='slots';
   document.querySelectorAll('.sub-tab-row button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='slots'));
   renderCategories();
+  renderGames();
+});
+
+subTabRow.addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-tab]');
+  if(!btn)return;
+  activeTab=btn.dataset.tab;
+  document.querySelectorAll('.sub-tab-row button').forEach(b=>b.classList.toggle('active',b===btn));
+  renderGames();
 });
 
 renderCategories();
+renderGames();
 
 function initSlider(slider){
   let slideIndex=0;
