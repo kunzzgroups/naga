@@ -1698,7 +1698,7 @@ body{
     }
 }
 
-.auth-gif{display:block;width:100%;max-width:140px;height:auto;cursor:pointer;}
+.auth-gif{display:block;width:100%;max-width:150px;height:auto;cursor:pointer;}
 .login-row{display:flex;gap:10px;align-items:center;justify-content:center;}
 
 
