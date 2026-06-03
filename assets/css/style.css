@@ -179,6 +179,20 @@ body{
     min-width: 0
 }
 
+.action-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:6px;
+}
+
+.action-btn{
+    display:block;
+}
+
+.action-btn.full-width{
+    grid-column:1 / -1;
+}
+
 .copy-btn {
     margin-left: 10px;
     display: block;
@@ -644,6 +658,10 @@ body{
 
     .bottom-nav span {
         font-size: 24px
+    }
+
+    .action-grid {
+        padding: 0 10px;
     }
 }
 
