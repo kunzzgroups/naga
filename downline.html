@@ -4,27 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>D2AUD - Downline</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.0" />
 </head>
 <body class="downline-page">
   <header class="top-header">
     <div class="logo-box"><div class="logo-icon">D</div><div>D2AUD</div></div>
-    <button class="lang-btn" id="langBtn" type="button" aria-label="Change language">G文</button>
+    <button class="lang-btn" id="langBtn" type="button" data-i18n-aria-label="lang_button">EN / 中文</button>
   </header>
 
   <main class="downline-main">
     <section class="downline-card">
       <div class="downline-head">
         <div>
-          <span class="mini-label">REFERRAL NETWORK</span>
-          <h1>Downline</h1>
+          <span class="mini-label" data-i18n="downline_referral_network">REFERRAL NETWORK</span>
+          <h1 data-i18n="downline_title">Downline</h1>
         </div>
         <div class="downline-code">RF1A850A95</div>
       </div>
 
       <div class="downline-toolbar">
         <label>
-          <span>View Level</span>
+          <span data-i18n="view_level">View Level</span>
           <select id="downlineLevel">
             <option value="1">Level 1</option>
             <option value="2">Level 2</option>
@@ -33,15 +33,49 @@
             <option value="5">Level 5</option>
           </select>
         </label>
-        <button type="button" class="gold-btn">Refresh</button>
+        <button type="button" class="gold-btn" data-i18n="refresh">Refresh</button>
       </div>
 
-      
+      <div class="downline-summary">
+        <div><b id="downlineTotalMembers">0</b><span data-i18n="total_members">Total Members</span></div>
+        <div><b id="downlineTotalCommission">AUD 0.00</b><span data-i18n="total_commission">Total Commission</span></div>
+        <div><b id="downlineCurrentLevel">Level 1</b><span data-i18n="current_view">Current View</span></div>
+      </div>
+
+      <div class="downline-table-wrap">
+        <table class="downline-table">
+            <thead>
+                <tr>
+                    <th data-i18n="downline_no">No.</th>
+                    <th data-i18n="downline_name">Downline</th>
+                    <th data-i18n="downline_commission">Commission</th>
+                    <th data-i18n="downline_register_datetime">Register Datetime</th>
+                </tr>
+            </thead>
+            <tbody id="downlineTableBody">
+                <tr>
+                    <td>1</td>
+                    <td>John Doe</td>
+                    <td>AUD 10.00</td>
+                    <td>2023-10-01 10:30:00</td>
+                </tr>
+                <tr class="empty-row">
+                    <td colspan="4">
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <h3 data-i18n="no_downline_error">No downline yet</h3>
+                        <p data-i18n="share_your_referral_link_desc">Share your referral link to invite friends and start earning commission.</p>
+                    </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     </section>
   </main>
 
   <nav class="bottom-nav">
-    <a href="index.html"><img src="assets/images/bottom1.png" alt="HOME"></a>
+    <a class="active" href="index.html"><img src="assets/images/bottom1.png" alt="HOME"></a>
     <a href="history.html"><img src="assets/images/bottom2.png" alt="HISTORY"></a>
     <a href="bonus.html"><img src="assets/images/bottom3.png" alt="BONUS"></a>
     <a href="chat.html"><img src="assets/images/bottom4.png" alt="LIVE CHAT"></a>
@@ -50,11 +84,12 @@
 
   <div class="lang-overlay" id="langOverlay" aria-hidden="true">
     <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Language selection">
-      <button class="lang-option active" type="button" data-lang="en">English <span>✔</span></button>
-      <button class="lang-option" type="button" data-lang="zh">中文</button>
+      <button class="lang-option active" type="button" data-lang="en"><span data-i18n="lang_english">English</span> <span class="checkmark">✔</span></button>
+      <button class="lang-option" type="button" data-lang="zh"><span data-i18n="lang_chinese">中文</span></button>
     </div>
   </div>
 
-  <script src="assets/js/downline.js"></script>
+  <script src="assets/js/lang.js?v=1.0.0"></script>
+  <script src="assets/js/downline.js?v=1.0.0"></script>
 </body>
 </html>

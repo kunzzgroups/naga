@@ -9,7 +9,7 @@
 <body>
   <header class="top-header">
     <div class="logo-box"><div class="logo-icon">D</div><div>D2AUD</div></div>
-    <button class="lang-btn" id="langBtn" type="button" aria-label="Change language">G文</button>
+    <button class="lang-btn" id="langBtn" type="button" data-i18n-aria-label="lang_button">EN / 中文</button>
   </header>
 
   <section class="main-layout">
@@ -48,8 +48,8 @@
       </div>
 
       <div class="sub-tab-row" id="subTabRow">
-        <button class="active" data-tab="slots">SLOTS</button>
-        <button data-tab="mini">MINI GAME</button>
+        <button class="active" data-tab="slots" data-i18n="tab_slots">SLOTS</button>
+        <button data-tab="mini" data-i18n="tab_mini">MINI GAME</button>
       </div>
 
       <div class="game-grid" id="gameGrid"></div>
@@ -76,10 +76,10 @@
         </div>
         <div class="balance-box">
           <div class="balance-text">
-            <p>Balance:</p>
+            <p data-i18n="balance_label">Balance:</p>
             <h3>AUD 0.00</h3>
-            <p>Minimum Deposit: <b>AUD 10.00</b></p>
-            <p>Minimum Withdrawal: <b>AUD 50.00</b></p>
+            <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>AUD 10.00</b></p>
+            <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b>AUD 50.00</b></p>
           </div>
           <div class="money-btns">
             <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/images/right1.png" alt="DEPOSIT"></button>
@@ -91,7 +91,7 @@
       <br>
       <section class="bonus-container">
         <div class="bonus-section">
-          <img class="bonus-title-img" src="assets/images/bonus/bonus_text.png" alt="Information Center">
+          <img class="bonus-title-img" src="assets/images/bonus/bonus_text.png" data-i18n-img="img.bonus_title" alt="Information Center">
           <!-- Adjust layout by class only:
               d-cols-1/2/3 = desktop columns
               m-cols-1/2/3 = mobile columns
@@ -126,11 +126,11 @@
     <div class="share-modal" role="dialog" aria-modal="true" aria-label="Share method">
       <button class="modal-x" type="button" aria-label="Close">×</button>
       <div class="share-head">
-        <h3>Select Share Method</h3>
+        <h3 data-i18n="share_method_title">Select Share Method</h3>
         <strong>RF1A850A95</strong>
       </div>
       <div class="qr-box" aria-label="QR Code"><img class="qr-img" src="assets/images/qr-dummy.png" alt="QR Code"></div>
-      <p class="share-desc">Share your QR code with your friends, they can scan it with their camera to register as your downline.</p>
+      <p class="share-desc" data-i18n="share_desc">Share your QR code with your friends, they can scan it with their camera to register as your downline.</p>
       <div class="share-list">
         <a href="#"><span class="wa">☘</span>Whatsapp</a>
         <a href="#"><span class="tg">➤</span>Telegram</a>
@@ -144,19 +144,20 @@
   <div class="copy-overlay" id="copyOverlay" aria-hidden="true">
     <div class="copy-modal" role="dialog" aria-modal="true" aria-label="Copied link">
       <div class="copy-check">✓</div>
-      <h3>Copied</h3>
+      <h3 data-i18n="copied">Copied</h3>
       <p id="copyText">https://d2aud.com/RF1A850A95</p>
-      <button type="button" class="copy-ok">OK</button>
+      <button type="button" class="copy-ok" data-i18n="ok">OK</button>
     </div>
   </div>
 
   <div class="lang-overlay" id="langOverlay" aria-hidden="true">
     <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Language selection">
-      <button class="lang-option active" type="button" data-lang="en">English <span>✔</span></button>
-      <button class="lang-option" type="button" data-lang="zh">中文</button>
+      <button class="lang-option active" type="button" data-lang="en"><span data-i18n="lang_english">English</span> <span class="checkmark">✔</span></button>
+      <button class="lang-option" type="button" data-lang="zh"><span data-i18n="lang_chinese">中文</span></button>
     </div>
   </div>
 
+  <script src="assets/js/lang.js?v=1.0.0"></script>
   <script src="assets/js/app.js?v=1.0.3"></script>
 </body>
 </html>

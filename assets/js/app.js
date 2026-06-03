@@ -1,37 +1,40 @@
 const categories=[
-  {key:'hot',icon:'assets/images/nav1.png',label:'HOT GAME'},
-  {key:'slot',icon:'assets/images/nav2.png',label:'SLOT GAME'},
-  {key:'live',icon:'assets/images/nav3.png',label:'LIVE GAME'},
-  {key:'sport',icon:'assets/images/nav4.png',label:'SPORT'},
-  {key:'other',icon:'assets/images/nav5.png',label:'OTHER'}
+  {key:'hot',icon:'assets/images/nav1.png',label:'HOT GAME',i18n:'cat_hot'},
+  {key:'slot',icon:'assets/images/nav2.png',label:'SLOT GAME',i18n:'cat_slot'},
+  {key:'live',icon:'assets/images/nav3.png',label:'LIVE GAME',i18n:'cat_live'},
+  {key:'sport',icon:'assets/images/nav4.png',label:'SPORT',i18n:'cat_sport'},
+  {key:'other',icon:'assets/images/nav5.png',label:'OTHER',i18n:'cat_other'}
 ];
 
 const games={
   hot:{
-    slots:[['FC26','⚽','#22d3ee','#2563eb',true],['The White Muse II','🧙‍♀️','#facc15','#06b6d4'],['Prosperity Bloom','💎','#22c55e','#f97316'],['Empress Glory','👸','#f97316','#dc2626'],['Bankin Banker','🧓','#facc15','#84cc16'],['Aztec Riches','🏺','#eab308','#16a34a'],['Mythical Creatures','🐯','#14b8a6','#1e3a8a'],['Money Bang Bang','🧧','#ef4444','#eab308'],['Fortune Splash','🐟','#38bdf8','#fb923c'],['Candy Fantasy','🍭','#ec4899','#8b5cf6'],['Neko Blessing','🐱','#f59e0b','#ec4899'],['Great Prosperity','💰','#facc15','#f97316']],
-    mini:[['JDB','🤖','#334155','#0f172a'],['CQ9','🐉','#0f766e','#1e1b4b'],['CROWD PLAY','🧙','#854d0e','#292524'],['DRAGONSOFT','💀','#581c87','#1f2937'],['SPADE GAMING','🧔','#92400e','#1f2937'],['WF GAMING','🦁','#b45309','#292524'],['FUNKY GAME','🔥','#ea580c','#18181b'],['MONEY KING','👾','#6d28d9','#111827'],['FAST SPIN','🧌','#16a34a','#1f2937'],['AI GAMING','🧊','#0284c7','#0f172a']]
+    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[]]
   },
   slot:{
-    slots:[['JDB','🤖','#334155','#0f172a'],['CQ9','🐉','#0f766e','#1e1b4b'],['CROWD PLAY','🧙','#854d0e','#292524'],['DRAGONSOFT','💀','#581c87','#1f2937'],['SPADE GAMING','🧔','#92400e','#1f2937'],['WF GAMING','🦁','#b45309','#292524'],['FUNKY GAME','🔥','#ea580c','#18181b'],['MONEY KING','👾','#6d28d9','#111827'],['FAST SPIN','🧌','#16a34a','#1f2937'],['AI GAMING','🧊','#0284c7','#0f172a'],['ACEWIN','👹','#dc2626','#292524'],['RICH GAMING','🦏','#78716c','#1c1917']],
-    mini:[['BIG POT','🧝','#f97316','#422006'],['FA CHAI','💧','#06b6d4','#083344'],['IMPERIUM','👺','#166534','#111827'],['EVO888','🐷','#c084fc','#292524'],['CLOTCPLAY','🛡️','#38bdf8','#1e3a8a'],['LUCKY365','🪙','#facc15','#78350f']]
+    slots:[[],[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[],[]]
   },
   live:{
-    slots:[['Sexy Baccarat','💃','#dc2626','#4c0519'],['Dream Gaming','🎲','#7c3aed','#111827'],['Evolution','♠️','#2563eb','#020617'],['Asia Gaming','🀄','#16a34a','#052e16'],['Pragmatic Live','🎥','#f97316','#451a03'],['Big Gaming','👑','#eab308','#7f1d1d']],
-    mini:[['Roulette','🎡','#dc2626','#111827'],['Sic Bo','🎲','#16a34a','#111827'],['Dragon Tiger','🐲','#ea580c','#0f172a'],['Win Three Cards','🃏','#9333ea','#111827']]
+    slots:[[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[],[],[],[]]
   },
   sport:{
-    slots:[['CMD368','⚽','#22c55e','#052e16'],['SBO Sport','🏆','#f59e0b','#111827'],['IBC Sport','🏀','#fb923c','#1e293b'],['Horse Racing','🐎','#a16207','#1c1917'],['ESport','🎮','#2563eb','#111827'],['Virtual Sport','🏁','#64748b','#020617']],
-    mini:[['Football','⚽','#22c55e','#052e16'],['Basketball','🏀','#f97316','#111827'],['Tennis','🎾','#84cc16','#1f2937'],['Fighting','🥊','#dc2626','#111827']]
+    slots:[[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[]]
   },
   other:{
-    slots:[['Fishing','🐟','#06b6d4','#083344'],['Lottery','🎟️','#f97316','#111827'],['Keno','🔢','#a855f7','#111827'],['Promotion','🎁','#ef4444','#1f2937'],['VIP Club','👑','#eab308','#451a03'],['Event','🔥','#f97316','#7f1d1d']],
-    mini:[['Lucky Wheel','🎡','#f59e0b','#111827'],['Bonus Hunt','💰','#22c55e','#052e16'],['Daily Mission','🛡️','#38bdf8','#1e3a8a'],['Referrer','🤝','#14b8a6','#052e16']]
+    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
+    mini:[[],[],[],[],[],[],[],[],[]]
   }
 };
 
 let activeCategory='hot';
 let activeTab='slots';
 
+function tr(key, fallback){
+  return (window.I18N && window.I18N.t && window.I18N.t(key) !== key) ? window.I18N.t(key) : (fallback || key);
+}
 
 const categoryRow=document.getElementById('categoryRow');
 const gameGrid=document.getElementById('gameGrid');
@@ -58,7 +61,7 @@ function renderCategories(){
     el.className=`cat ${cat.key===activeCategory?'active':''}`;
     el.type='button';
     el.dataset.key=cat.key;
-    el.innerHTML=`<img src="${cat.icon}" class="cat-icon" alt="${cat.label}"><span>${cat.label}</span>`;
+    el.innerHTML=`<img src="${cat.icon}" class="cat-icon" alt="${tr(cat.i18n, cat.label)}"><span>${tr(cat.i18n, cat.label)}</span>`;
     categoryRow.appendChild(el);
   });
 }
@@ -75,10 +78,10 @@ function renderGames(){
     card.className='game-card';
     card.innerHTML=`
       <div class="game-card-img-wrap">
-        ${isNew?'<div class="new-badge">NEW!</div>':''}
+        ${isNew?'<div class="new-badge">'+tr('new','NEW!')+'</div>':''}
         <img src="assets/images/game.png" alt="${title}">
       </div>
-      <button class="play-btn">PLAY</button>`;
+      <button class="play-btn">${tr('play','PLAY')}</button>`;
     gameGrid.appendChild(card);
   });
 }
@@ -102,6 +105,10 @@ subTabRow.addEventListener('click',e=>{
 
 renderCategories();
 renderGames();
+document.addEventListener('i18n:changed', () => {
+  renderCategories();
+  renderGames();
+});
 
 function initSlider(slider){
   let slideIndex=0;
@@ -140,52 +147,6 @@ function initSlider(slider){
 }
 
 document.querySelectorAll('.side-slider').forEach(initSlider);
-
-
-// Language popup
-const langBtn = document.getElementById('langBtn');
-const langOverlay = document.getElementById('langOverlay');
-
-function openLangPopup(){
-  if(!langOverlay) return;
-  langOverlay.classList.add('show');
-  langOverlay.setAttribute('aria-hidden','false');
-}
-
-function closeLangPopup(){
-  if(!langOverlay) return;
-  langOverlay.classList.remove('show');
-  langOverlay.setAttribute('aria-hidden','true');
-}
-
-if(langBtn && langOverlay){
-  langBtn.addEventListener('click', openLangPopup);
-
-  langOverlay.addEventListener('click', e => {
-    if(e.target === langOverlay) closeLangPopup();
-  });
-
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape') closeLangPopup();
-  });
-
-  langOverlay.querySelectorAll('.lang-option').forEach(btn => {
-    btn.addEventListener('click', () => {
-      langOverlay.querySelectorAll('.lang-option').forEach(item => {
-        item.classList.remove('active');
-        const check = item.querySelector('span');
-        if(check) check.remove();
-      });
-
-      btn.classList.add('active');
-      if(!btn.querySelector('span')){
-        btn.insertAdjacentHTML('beforeend', ' <span>✔</span>');
-      }
-
-      closeLangPopup();
-    });
-  });
-}
 
 // Share + copy modal
 (function(){
