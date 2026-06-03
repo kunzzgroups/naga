@@ -242,7 +242,6 @@ body{
 
 .cat {
     min-width: 112px;
-    height: 104px;
     background: linear-gradient(#9a927d, #4d493f);
     border-radius: 8px;
     border: 2px solid #837c69;
@@ -259,11 +258,6 @@ body{
 .cat .gem {
     font-size: 39px;
     filter: drop-shadow(0 0 8px currentColor)
-}
-
-.cat.active {
-    border-bottom: 4px solid #ffe400;
-    box-shadow: 0 2px 0 #ffe400
 }
 
 .sub-tab-row {
@@ -1131,7 +1125,7 @@ body{
 .category-row{
     display:grid !important;
     grid-template-columns:repeat(5, minmax(0, 112px)) !important;
-    gap:12px !important;
+    gap:5px !important;
     justify-content:start !important;
     align-items:center !important;
     overflow:hidden !important;
@@ -1600,11 +1594,6 @@ body{
     object-fit:contain !important;
     object-position:center !important;
     display:block !important;
-}
-
-.cat.active{
-    border-bottom:4px solid #ffe400 !important;
-    box-shadow:0 2px 0 #ffe400 !important;
 }
 
 .cat.active .cat-icon{
