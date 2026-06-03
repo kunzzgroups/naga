@@ -388,7 +388,6 @@ body{
     font-size: 12px
 }
 
-/* provider / mini style: bigger spacing, no play button, same as your previous provider layout */
 .game-grid.provider-grid {
     gap: 32px 36px
 }
@@ -782,7 +781,6 @@ body{
 .provider-grid .play-btn{
     display:none;
 }
-/* disable old emoji card design after image-card render */
 .game-card .game-img{display:none;}
 
 .right-panel{
@@ -1059,7 +1057,7 @@ body{
 }
 
 
-/* ===== Final fix: category animation only after click + complete game image ===== */
+/* ===== Category animation only after click + complete game image ===== */
 .cat{
     animation:none !important;
     transform:translateY(0) scale(1);
@@ -1121,7 +1119,7 @@ body{
 }
 
 
-/* ===== Latest final fix: safe active category animation + no tab overflow ===== */
+/* ===== Safe active category animation + no tab overflow ===== */
 .category-row{
     display:grid !important;
     grid-template-columns:repeat(5, minmax(0, 112px)) !important;
@@ -1177,7 +1175,7 @@ body{
     }
 }
 
-/* Game image complete display fix */
+/* Game image complete display */
 .game-grid,
 .game-grid.provider-grid,
 .game-card,
@@ -1228,7 +1226,7 @@ body{
 }
 
 
-/* ===== Mobile right panel + image category tabs final update ===== */
+/* ===== Mobile right panel + image category tabs ===== */
 
 /* category buttons use image, not emoji */
 .cat-icon{
@@ -1571,8 +1569,8 @@ body{
     }
 }
 
-/* ===== User final requested fixes: mobile login row + share alignment + full image category tabs ===== */
-/* Category buttons: use the PNG as the full button image, remove duplicated text label */
+/* ===== Game row + share alignment + full image category tabs ===== */
+/* Category buttons: use the PNG as the full button image */
 .cat{
     background:transparent !important;
     border:0 !important;
@@ -1691,7 +1689,7 @@ body{
 .login-row{display:flex;gap:10px;align-items:center;justify-content:center;}
 
 
-/* ===== Requested final mobile carousel + image buttons update ===== */
+/* ===== Mobile carousel + image buttons ===== */
 
 /* right balance buttons use image files */
 .money-btns button{
@@ -1940,7 +1938,7 @@ body{
     }
 }
 
-/* ===== Final fix: mobile share / downline / copy image alignment ===== */
+/* ===== Mobile share / downline / copy image alignment ===== */
 .left-sidebar .image-actions,
 .mobile-bottom-area .image-actions{
     display:flex !important;
@@ -1991,7 +1989,7 @@ body{
         margin-left:10px !important;
     }
 }
-/* ===== Final arrow icon alignment fix ===== */
+/* ===== Arrow icon alignment fix ===== */
 @media(max-width:900px){
     .category-slider{
         display:grid !important;
@@ -2449,7 +2447,7 @@ body{
     border-radius:4px;
 }
 
-/* ===== Desktop grid spacing fix ===== */
+/* ===== Desktop grid spacing ===== */
 @media (min-width:901px){
     .main-layout{
         grid-template-columns:400px minmax(0, 1fr) 400px !important;
@@ -2515,6 +2513,422 @@ body{
     background-image: url(../images/background-right.png);
     border-radius: 8px;
     padding: 18px 14px 18px;
-
     box-shadow: 0 0 5px #000;
+}
+
+/* ===== Bonus page ===== */
+body.bonus-page{
+    padding-bottom:57px !important;
+    min-height:100vh;
+    background:url('../images/background.jpg') center top / cover fixed no-repeat #000 !important;
+}
+
+.bonus-main{
+    min-height:calc(100vh - 69px - 57px);
+    padding:24px 16px 86px;
+    display:flex;
+    justify-content:center;
+}
+
+.bonus-container{
+    width:min(820px, 100%);
+}
+
+.bonus-section{
+    margin-bottom:24px;
+}
+
+.bonus-title{
+    font-family:Georgia, serif;
+    font-size:28px;
+    line-height:1;
+    color:#f7eee4;
+    letter-spacing:.5px;
+    text-shadow:0 0 6px rgba(255,150,80,.75), 2px 2px 0 #000;
+    margin:0 0 12px 4px;
+    padding-bottom:8px;
+    border-bottom:3px solid rgba(255,238,224,.9);
+    width:310px;
+    max-width:100%;
+}
+
+.bonus-title-img{
+    display:block;
+    width:330px;
+    max-width:100%;
+    height:auto;
+    margin:0 0 12px 0px;
+}
+
+.bonus-grid{
+    display:grid;
+    gap:12px;
+    align-items:start;
+    width:100%;
+}
+
+/*
+  BONUS LAYOUT CONTROL - edit class in bonus.html only, no CSS change needed.
+
+  On .bonus-grid:
+  d-cols-1 / d-cols-2 / d-cols-3 = desktop item per row
+  m-cols-1 / m-cols-2 / m-cols-3 = mobile item per row
+
+  On .bonus-card:
+  d-span-2 / d-span-3 = desktop card width
+  m-span-2 / m-span-3 = mobile card width
+*/
+
+/* Desktop columns */
+.bonus-grid.d-cols-1{
+    grid-template-columns:repeat(1, minmax(0, 1fr));
+    /* max-width:330px; */
+}
+.bonus-grid.d-cols-2{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+.bonus-grid.d-cols-3{
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+}
+
+.bonus-card{
+    display:block;
+    border-radius:8px;
+    overflow:hidden;
+    border:0;
+    text-decoration:none;
+    transition:transform .2s ease, filter .2s ease;
+}
+
+.bonus-card img{
+    display:block;
+    width:100%;
+    height:auto;
+    object-fit:contain;
+    border-radius:8px;
+}
+
+.bonus-card:hover{
+    transform:translateY(-4px) scale(1.015);
+    filter:brightness(1.12) drop-shadow(0 0 10px rgba(0,165,255,.55));
+}
+
+/* Desktop span */
+@media(min-width:901px){
+    .bonus-card.d-span-2{
+        grid-column:span 2;
+    }
+    .bonus-card.d-span-3{
+        grid-column:span 3;
+    }
+}
+
+@media(max-width:900px){
+    .bonus-main{
+        min-height:auto;
+        padding:24px 8px 78px;
+        display:block;
+    }
+
+    .bonus-container{
+        width:100%;
+    }
+
+    .bonus-section{
+        margin-bottom:26px;
+    }
+
+    .bonus-title{
+        font-size:25px;
+        margin-left:4px;
+        width:100%;
+    }
+
+    .bonus-grid{
+        max-width:none !important;
+        gap:8px;
+    }
+
+    /* Mobile columns */
+    .bonus-grid.m-cols-1{
+        grid-template-columns:repeat(1, minmax(0, 1fr));
+    }
+    .bonus-grid.m-cols-2{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+    }
+    .bonus-grid.m-cols-3{
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+    }
+
+    /* Mobile span */
+    .bonus-card.m-span-2{
+        grid-column:span 2;
+    }
+    .bonus-card.m-span-3{
+        grid-column:span 3;
+    }
+
+    .bonus-card img{
+        width:100%;
+    }
+}
+
+/* ===== Bonus detail popup ===== */
+.bonus-detail-overlay{
+    position:fixed;
+    inset:0;
+    z-index:3000;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:74px 18px 74px;
+    background:rgba(0,0,0,.72);
+}
+
+.bonus-detail-overlay.show{
+    display:flex;
+}
+
+.bonus-detail-modal{
+    width:min(760px, 100%);
+    max-height:calc(100vh - 132px);
+    overflow:auto;
+    background:#000;
+    border:2px solid #ffd400;
+    border-radius:6px;
+    color:#fff;
+    box-shadow:0 0 22px rgba(0,0,0,.95);
+}
+
+.bonus-detail-header{
+    padding:16px 18px 10px;
+}
+
+.bonus-detail-header h3{
+    margin:0;
+    color:#ffe500;
+    font-size:15px;
+    font-weight:800;
+    padding-bottom:12px;
+    border-bottom:2px solid #ffd400;
+}
+
+.bonus-detail-content{
+    padding:0 18px 18px;
+    font-weight:700;
+}
+
+.require-title{
+    margin:8px 0 12px;
+    font-size:15px;
+}
+
+.bonus-detail-content h2{
+    margin:0 0 18px;
+    text-align:center;
+    color:#ffe500;
+    font-size:30px;
+    line-height:1.1;
+}
+
+.require-table{
+    width:88%;
+    margin:0 auto 14px;
+    border-radius:4px;
+    overflow:hidden;
+    font-size:13px;
+}
+
+.require-row{
+    display:grid;
+    grid-template-columns:40px 1fr;
+    background:#666;
+    border-bottom:1px solid #222;
+    min-height:32px;
+}
+
+.require-row > div{
+    display:flex;
+    align-items:center;
+    padding:7px 10px;
+}
+
+.require-icon{
+    justify-content:center;
+    padding:0 !important;
+    background:#777;
+    border-right:1px solid #333;
+    font-size:17px;
+}
+
+.require-icon.check{
+    color:#20ff20;
+}
+
+.require-icon.warn{
+    color:#ffc244;
+    font-size:14px;
+}
+
+.require-row.note{
+    color:#fff200;
+}
+
+.bonus-detail-content hr{
+    border:0;
+    border-top:2px solid #fff;
+    margin:12px 0 14px;
+}
+
+.terms{
+    font-size:10px;
+    line-height:1.35;
+}
+
+.terms strong{
+    display:block;
+    margin-bottom:8px;
+}
+
+.terms p{
+    margin:0 0 8px;
+}
+
+.license-row{
+    display:flex;
+    gap:28px;
+    align-items:center;
+    flex-wrap:wrap;
+    font-size:14px;
+    font-style:italic;
+}
+
+.license-badge{
+    margin-top:8px;
+    width:44px;
+    height:30px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#ff005a,#006bff);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    font-style:normal;
+}
+
+.cert-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:8px;
+    align-items:center;
+    font-style:normal;
+}
+
+.cert-list span{
+    background:#fff;
+    color:#333;
+    padding:4px 7px;
+    border-radius:2px;
+    font-size:11px;
+    white-space:nowrap;
+}
+
+.bonus-close-btn{
+    display:block;
+    min-width:105px;
+    height:36px;
+    margin:18px auto 0;
+    border:0;
+    border-radius:4px;
+    color:#fff;
+    font-size:14px;
+    cursor:pointer;
+    background:linear-gradient(#ff5147,#d91616);
+}
+
+@media(max-width:768px){
+    .bonus-detail-overlay{
+        padding:50px 8px 54px;
+        align-items:flex-start;
+    }
+
+    .bonus-detail-modal{
+        max-height:calc(100vh - 82px);
+        width:100%;
+        border-radius:5px;
+    }
+
+    .bonus-detail-header{
+        padding:14px 14px 8px;
+    }
+
+    .bonus-detail-header h3{
+        font-size:15px;
+    }
+
+    .bonus-detail-content{
+        padding:0 14px 14px;
+    }
+
+    .bonus-detail-content h2{
+        font-size:28px;
+        margin-bottom:16px;
+    }
+
+    .require-table{
+        width:92%;
+        font-size:12px;
+    }
+
+    .require-row{
+        grid-template-columns:34px 1fr;
+        min-height:36px;
+    }
+
+    .require-row > div{
+        padding:7px 8px;
+    }
+
+    .terms{
+        font-size:9px;
+    }
+
+    .license-row{
+        gap:16px;
+        font-size:9px;
+        flex-wrap:nowrap;
+        overflow:hidden;
+    }
+
+    .license-badge{
+        width:34px;
+        height:24px;
+        font-size:10px;
+    }
+
+    .cert-list{
+        gap:4px;
+    }
+
+    .cert-list span{
+        padding:3px 4px;
+        font-size:8px;
+    }
+
+    .bonus-close-btn{
+        height:38px;
+        min-width:110px;
+        margin-top:18px;
+    }
+}
+
+@media(max-width:390px){
+    .bonus-detail-content h2{
+        font-size:27px;
+    }
+
+    .require-table{
+        width:94%;
+    }
 }
