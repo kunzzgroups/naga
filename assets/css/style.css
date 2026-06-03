@@ -2474,8 +2474,8 @@ body{
     .game-grid,
     .game-grid.provider-grid{
         grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
-        column-gap:14px !important;
-        row-gap:14px !important;
+        column-gap:8px !important;
+        row-gap:8px !important;
         justify-items:center !important;
     }
 
