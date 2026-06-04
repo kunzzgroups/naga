@@ -187,5 +187,20 @@
   "game_fan_tan": "番摊",
   "game_teen_patti": "印度三张牌",
   "game_andar_bahar": "Andar Bahar",
-  "game_pai_gow": "牌九"
+  "game_pai_gow": "牌九",
+  "history_page_title": "D2AUD - 记录",
+  "history_tabs": "记录标签",
+  "transactions": "交易记录",
+  "bet_history": "投注记录",
+  "latest_records": "最新记录",
+  "only_show_last_100_records": "仅显示最后 100 条记录",
+  "status": "状态",
+  "txn_losscredit": "亏损返利",
+  "amount": "金额",
+  "completed": "已完成",
+  "pending": "处理中",
+  "date_time": "日期与时间",
+  "game": "游戏",
+  "bet_amount": "投注金额",
+  "win_loss": "赢 / 输"
 }

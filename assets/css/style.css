@@ -3916,19 +3916,25 @@ body.history-page{
 
 .history-main{
     min-height:calc(100vh - 69px - 57px);
-    padding:12px 0 88px;
+    padding:22px 18px 90px;
 }
 
 .history-panel{
-    width:100%;
+    width:min(1100px,100%);
     margin:0 auto;
-    background:rgba(0,0,0,.18);
+    border:1px solid rgba(255,210,0,.35);
+    border-radius:14px;
+    background:linear-gradient(180deg,rgba(18,28,35,.86),rgba(0,0,0,.68));
+    box-shadow:0 12px 35px rgba(0,0,0,.55), inset 0 0 35px rgba(255,210,0,.05);
+    overflow:hidden;
 }
 
 .history-tabs{
     display:flex;
     gap:10px;
-    padding:10px 10px 8px;
+    padding:18px 24px 12px;
+    background:linear-gradient(90deg,rgba(0,0,0,.68),rgba(255,151,0,.12),rgba(0,0,0,.5));
+    border-bottom:1px solid rgba(255,210,0,.22);
 }
 
 .history-tab{
@@ -3936,7 +3942,7 @@ body.history-page{
     background:linear-gradient(#637d8d,#344b58);
     color:#fff;
     font-weight:800;
-    border-radius:4px;
+    border-radius:6px;
     padding:11px 18px;
     cursor:pointer;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 2px 8px rgba(0,0,0,.35);
@@ -3951,27 +3957,21 @@ body.history-page{
     box-shadow:0 0 12px rgba(255,145,0,.42);
 }
 
-.history-content{
-    display:none;
-}
-
-.history-content.active{
-    display:block;
-}
+.history-content{display:none;}
+.history-content.active{display:block;}
 
 .history-title-row{
     display:flex;
     justify-content:space-between;
     align-items:center;
     gap:12px;
-    padding:10px 12px;
-    background:linear-gradient(90deg, rgba(15,28,42,.95), rgba(30,44,58,.74));
-    border-top:1px solid rgba(255,255,255,.38);
-    border-bottom:1px solid rgba(255,255,255,.28);
+    padding:16px 24px 8px;
+    background:transparent;
+    border:0;
 }
 
 .history-title-row h2{
-    font-size:16px;
+    font-size:18px;
     line-height:1;
     margin:0;
     color:#fff;
@@ -3981,40 +3981,56 @@ body.history-page{
 .history-title-row span{
     font-size:12px;
     color:#ffd64a;
-    font-weight:700;
+    font-weight:800;
 }
 
 .history-table-wrap{
-    padding:0;
+    padding:10px 24px 24px;
     overflow-x:auto;
 }
 
 .history-table{
     width:100%;
-    border-collapse:collapse;
+    border-collapse:separate;
+    border-spacing:0 8px;
     color:#fff;
     font-size:14px;
     table-layout:fixed;
 }
 
 .history-table thead th{
-    background:rgba(13,26,39,.92);
+    background:rgba(13,26,39,.95);
     color:#fff;
     text-align:left;
-    padding:9px 10px;
-    border:1px solid rgba(255,255,255,.38);
+    padding:11px 12px;
+    border-top:1px solid rgba(255,255,255,.25);
+    border-bottom:1px solid rgba(255,255,255,.25);
     font-weight:800;
 }
 
+.history-table thead th:first-child{border-radius:8px 0 0 8px;}
+.history-table thead th:last-child{border-radius:0 8px 8px 0;}
+
 .history-table tbody td{
-    padding:13px 10px;
-    border:1px solid rgba(255,255,255,.28);
-    background:rgba(0,0,0,.26);
+    padding:16px 12px;
+    border-top:1px solid rgba(255,255,255,.12);
+    border-bottom:1px solid rgba(255,255,255,.12);
+    background:rgba(0,0,0,.35);
     vertical-align:top;
 }
 
+.history-table tbody td:first-child{
+    border-left:1px solid rgba(255,255,255,.12);
+    border-radius:10px 0 0 10px;
+}
+
+.history-table tbody td:last-child{
+    border-right:1px solid rgba(255,255,255,.12);
+    border-radius:0 10px 10px 0;
+}
+
 .history-table tbody tr:hover td{
-    background:rgba(255,145,0,.1);
+    background:rgba(255,145,0,.09);
 }
 
 .txn-name{
@@ -4056,39 +4072,16 @@ body.history-page{
     display:block;
 }
 
-.status-badge.completed{
-    background:rgba(57,190,57,.14);
-    color:#ecffec;
-}
-
+.status-badge.completed{background:rgba(57,190,57,.14);color:#ecffec;}
 .status-badge.completed i{background:#39c739;}
-
-.status-badge.pending{
-    background:rgba(255,173,45,.14);
-    color:#ffe0a8;
-}
-
+.status-badge.pending{background:rgba(255,173,45,.14);color:#ffe0a8;}
 .status-badge.pending i{background:#ffad2d;}
-
-.result-badge.win{
-    background:rgba(43,202,83,.15);
-    color:#53ff7d;
-}
-
-.result-badge.loss{
-    background:rgba(255,59,59,.15);
-    color:#ff6868;
-}
+.result-badge.win{background:rgba(43,202,83,.15);color:#53ff7d;}
+.result-badge.loss{background:rgba(255,59,59,.15);color:#ff6868;}
 
 @media(min-width:901px){
-    .history-panel{
-        max-width:none;
-    }
-
     .transaction-table th:first-child,
-    .transaction-table td:first-child{
-        width:65%;
-    }
+    .transaction-table td:first-child{width:65%;}
 }
 
 @media(max-width:900px){
@@ -4098,11 +4091,12 @@ body.history-page{
     }
 
     .history-panel{
-        background:transparent;
+        width:100%;
+        border-radius:10px;
     }
 
     .history-tabs{
-        padding:8px 0 10px;
+        padding:14px 14px 10px;
         gap:8px;
     }
 
@@ -4113,20 +4107,17 @@ body.history-page{
     }
 
     .history-title-row{
-        border-radius:6px 6px 0 0;
-        padding:10px;
-        background:linear-gradient(90deg,#ff9700,#ffb000);
+        padding:14px 14px 4px;
     }
 
-    .history-title-row h2{
-        font-size:14px;
-    }
+    .history-title-row h2{font-size:14px;}
 
     .history-title-row span{
-        color:#fff;
         font-size:11px;
         text-align:right;
     }
+
+    .history-table-wrap{padding:8px 14px 16px;}
 
     .history-table,
     .history-table thead,
@@ -4138,9 +4129,8 @@ body.history-page{
         width:100%;
     }
 
-    .history-table thead{
-        display:none;
-    }
+    .history-table{border-spacing:0;}
+    .history-table thead{display:none;}
 
     .history-table tbody tr{
         margin:10px 0 12px;
@@ -4151,16 +4141,17 @@ body.history-page{
         box-shadow:0 4px 14px rgba(0,0,0,.35);
     }
 
-    .history-table tbody td{
+    .history-table tbody td,
+    .history-table tbody td:first-child,
+    .history-table tbody td:last-child{
         border:0;
         border-bottom:1px solid rgba(255,255,255,.1);
+        border-radius:0;
         background:transparent;
         padding:10px 12px;
     }
 
-    .history-table tbody td:last-child{
-        border-bottom:0;
-    }
+    .history-table tbody td:last-child{border-bottom:0;}
 
     .bet-table tbody td{
         display:flex;

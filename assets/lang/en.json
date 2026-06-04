@@ -187,5 +187,20 @@
   "game_fan_tan": "Fan Tan",
   "game_teen_patti": "Teen Patti",
   "game_andar_bahar": "Andar Bahar",
-  "game_pai_gow": "Pai Gow"
+  "game_pai_gow": "Pai Gow",
+  "history_page_title": "D2AUD - History",
+  "history_tabs": "History tabs",
+  "transactions": "Transactions",
+  "bet_history": "Bet History",
+  "latest_records": "Latest Records",
+  "only_show_last_100_records": "Only Show Last 100 Records",
+  "status": "Status",
+  "txn_losscredit": "LOSSCREDIT",
+  "amount": "Amount",
+  "completed": "COMPLETED",
+  "pending": "PENDING",
+  "date_time": "Date & Time",
+  "game": "Game",
+  "bet_amount": "Bet Amount",
+  "win_loss": "Win / Loss"
 }
