@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D2AUD - History</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.0" />
+</head>
+<body class="history-page">
+  <header class="top-header">
+    <div class="logo-box"><div class="logo-icon">D</div><div>D2AUD</div></div>
+    <button class="lang-btn" id="langBtn" type="button" aria-label="Change language">G文</button>
+  </header>
+
+  <main class="history-main">
+    <section class="history-panel">
+      <div class="history-tabs" role="tablist" aria-label="History tabs">
+        <button class="history-tab active" type="button" data-tab="transactions">Transactions</button>
+        <button class="history-tab" type="button" data-tab="bet">Bet History</button>
+      </div>
+
+      <div class="history-content active" id="transactionsPanel">
+        <div class="history-title-row">
+          <h2>Transactions</h2>
+          <span>Latest Records</span>
+        </div>
+
+        <div class="history-table-wrap">
+          <table class="history-table transaction-table">
+            <thead>
+              <tr>
+                <th>Transactions</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Transactions">
+                  <div class="txn-name">LOSSCREDIT</div>
+                  <div class="txn-id">#257847201</div>
+                  <div class="txn-amount">Amount : <strong>AUD 100.00</strong></div>
+                  <div class="txn-date">3 Jun 2026 10:13PM</div>
+                </td>
+                <td data-label="Status">
+                  <span class="status-badge completed"><i></i> COMPLETED</span>
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Transactions">
+                  <div class="txn-name deposit">DEPOSIT</div>
+                  <div class="txn-id">#257847202</div>
+                  <div class="txn-amount">Amount : <strong>AUD 50.00</strong></div>
+                  <div class="txn-date">3 Jun 2026 09:47PM</div>
+                </td>
+                <td data-label="Status">
+                  <span class="status-badge completed"><i></i> COMPLETED</span>
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Transactions">
+                  <div class="txn-name withdraw">WITHDRAW</div>
+                  <div class="txn-id">#257847203</div>
+                  <div class="txn-amount">Amount : <strong>AUD 30.00</strong></div>
+                  <div class="txn-date">7 Nov 2025 08:21PM</div>
+                </td>
+                <td data-label="Status">
+                  <span class="status-badge pending"><i></i> PENDING</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="history-content" id="betPanel">
+        <div class="history-title-row">
+          <h2>Bet History</h2>
+          <span>Only Show Last 100 Records</span>
+        </div>
+
+        <div class="history-table-wrap">
+          <table class="history-table bet-table">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Game</th>
+                <th>Bet Amount</th>
+                <th>Win / Loss</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Date & Time">3 Jun 2026 10:10PM</td>
+                <td data-label="Game">FC 26</td>
+                <td data-label="Bet Amount">AUD 10.00</td>
+                <td data-label="Win / Loss"><span class="result-badge win">+ AUD 18.00</span></td>
+              </tr>
+              <tr>
+                <td data-label="Date & Time">3 Jun 2026 09:52PM</td>
+                <td data-label="Game">Prosperity Bloom</td>
+                <td data-label="Bet Amount">AUD 20.00</td>
+                <td data-label="Win / Loss"><span class="result-badge loss">- AUD 20.00</span></td>
+              </tr>
+              <tr>
+                <td data-label="Date & Time">3 Jun 2026 09:30PM</td>
+                <td data-label="Game">Aztec Riches</td>
+                <td data-label="Bet Amount">AUD 5.00</td>
+                <td data-label="Win / Loss"><span class="result-badge win">+ AUD 7.50</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="active" href="index.html"><img src="assets/images/bottom1.png" alt="HOME"></a>
+    <a href="#"><img src="assets/images/bottom2.png" alt="HISTORY"></a>
+    <a href="bonus.html"><img src="assets/images/bottom3.png" alt="BONUS"></a>
+    <a href="chat.html"><img src="assets/images/bottom4.png" alt="LIVE CHAT"></a>
+    <a href="setting.html"><img src="assets/images/bottom5.png" alt="SETTING"></a>
+  </nav>
+
+  <div class="lang-overlay" id="langOverlay" aria-hidden="true">
+    <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Language selection">
+      <button class="lang-option active" type="button" data-lang="en">English <span>✔</span></button>
+      <button class="lang-option" type="button" data-lang="zh">中文</button>
+    </div>
+  </div>
+
+  <script src="assets/js/lang.js?v=1.0.1"></script>
+  <script src="assets/js/history.js?v=1.0.0"></script>
+</body>
+</html>
