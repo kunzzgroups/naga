@@ -4171,19 +4171,35 @@ body.history-page{
     .transaction-table tbody td[data-label="Status"]{
         display:flex;
         align-items:center;
-        justify-content:space-between;
+        justify-content:flex-start;
+        padding-top:12px;
+        padding-bottom:12px;
     }
 
     .transaction-table tbody td[data-label="Status"]::before{
-        content:'Status';
-        color:#ffd64a;
-        font-weight:900;
+        content:none;
+        display:none;
     }
 
     .status-badge,
     .result-badge{
         font-size:11px;
         padding:5px 9px;
+    }
+
+    .transaction-table .txn-name{
+        font-size:14px;
+        margin-bottom:4px;
+    }
+
+    .transaction-table .txn-id,
+    .transaction-table .txn-amount{
+        font-size:13px;
+        line-height:1.25;
+    }
+
+    .transaction-table .txn-date{
+        font-size:11px;
     }
 }
 
