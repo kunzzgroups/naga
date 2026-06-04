@@ -33,42 +33,9 @@
                 <th data-i18n="status">Status</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td data-label="Transactions" data-i18n-data-label="transactions">
-                  <div class="txn-name" data-i18n="txn_losscredit">LOSSCREDIT</div>
-                  <div class="txn-id">#257847201</div>
-                  <div class="txn-amount"><span data-i18n="amount">Amount</span> : <strong>AUD 100.00</strong></div>
-                  <div class="txn-date">3 Jun 2026 10:13PM</div>
-                </td>
-                <td data-label="Status" data-i18n-data-label="status">
-                  <span class="status-badge completed"><i></i> <span data-i18n="completed">COMPLETED</span></span>
-                </td>
-              </tr>
-              <tr>
-                <td data-label="Transactions" data-i18n-data-label="transactions">
-                  <div class="txn-name deposit" data-i18n="deposit">DEPOSIT</div>
-                  <div class="txn-id">#257847202</div>
-                  <div class="txn-amount"><span data-i18n="amount">Amount</span> : <strong>AUD 50.00</strong></div>
-                  <div class="txn-date">3 Jun 2026 09:47PM</div>
-                </td>
-                <td data-label="Status" data-i18n-data-label="status">
-                  <span class="status-badge completed"><i></i> <span data-i18n="completed">COMPLETED</span></span>
-                </td>
-              </tr>
-              <tr>
-                <td data-label="Transactions" data-i18n-data-label="transactions">
-                  <div class="txn-name withdraw" data-i18n="withdraw">WITHDRAW</div>
-                  <div class="txn-id">#257847203</div>
-                  <div class="txn-amount"><span data-i18n="amount">Amount</span> : <strong>AUD 30.00</strong></div>
-                  <div class="txn-date">7 Nov 2025 08:21PM</div>
-                </td>
-                <td data-label="Status" data-i18n-data-label="status">
-                  <span class="status-badge pending"><i></i> <span data-i18n="pending">PENDING</span></span>
-                </td>
-              </tr>
-            </tbody>
+            <tbody id="transactionsBody"></tbody>
           </table>
+          <div class="history-lazy-status" id="transactionsLazyStatus" data-i18n="loading_more_records">Loading more records...</div>
         </div>
       </div>
 
@@ -88,27 +55,9 @@
                 <th data-i18n="win_loss">Win / Loss</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td data-label="Date & Time" data-i18n-data-label="date_time">3 Jun 2026 10:10PM</td>
-                <td data-label="Game" data-i18n-data-label="game">FC 26</td>
-                <td data-label="Bet Amount" data-i18n-data-label="bet_amount">AUD 10.00</td>
-                <td data-label="Win / Loss" data-i18n-data-label="win_loss"><span class="result-badge win">+ AUD 18.00</span></td>
-              </tr>
-              <tr>
-                <td data-label="Date & Time" data-i18n-data-label="date_time">3 Jun 2026 09:52PM</td>
-                <td data-label="Game" data-i18n-data-label="game">Prosperity Bloom</td>
-                <td data-label="Bet Amount" data-i18n-data-label="bet_amount">AUD 20.00</td>
-                <td data-label="Win / Loss" data-i18n-data-label="win_loss"><span class="result-badge loss">- AUD 20.00</span></td>
-              </tr>
-              <tr>
-                <td data-label="Date & Time" data-i18n-data-label="date_time">3 Jun 2026 09:30PM</td>
-                <td data-label="Game" data-i18n-data-label="game">Aztec Riches</td>
-                <td data-label="Bet Amount" data-i18n-data-label="bet_amount">AUD 5.00</td>
-                <td data-label="Win / Loss" data-i18n-data-label="win_loss"><span class="result-badge win">+ AUD 7.50</span></td>
-              </tr>
-            </tbody>
+            <tbody id="betBody"></tbody>
           </table>
+          <div class="history-lazy-status" id="betLazyStatus" data-i18n="loading_more_records">Loading more records...</div>
         </div>
       </div>
     </section>

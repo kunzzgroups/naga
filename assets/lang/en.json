@@ -202,5 +202,7 @@
   "date_time": "Date & Time",
   "game": "Game",
   "bet_amount": "Bet Amount",
-  "win_loss": "Win / Loss"
+  "win_loss": "Win / Loss",
+  "loading_more_records": "Loading more records...",
+  "all_records_loaded": "All records loaded"
 }
