@@ -2632,11 +2632,11 @@ body.bonus-page{
   BONUS LAYOUT CONTROL - edit class in bonus.html only, no CSS change needed.
 
   On .bonus-grid:
-  d-cols-1 / d-cols-2 / d-cols-3 = desktop item per row
+  d-cols-1 / d-cols-2 / d-cols-3 / d-cols-4 / d-cols-5 / d-cols-6 = desktop item per row
   m-cols-1 / m-cols-2 / m-cols-3 = mobile item per row
 
   On .bonus-card:
-  d-span-2 / d-span-3 = desktop card width
+  d-span-2 / d-span-3 / d-span-4 / d-span-5 / d-span-6 = desktop card width
   m-span-2 / m-span-3 = mobile card width
 */
 
@@ -2657,6 +2657,15 @@ body.bonus-page{
 }
 .bonus-grid.d-cols-3{
     grid-template-columns:repeat(3, minmax(0, 1fr));
+}
+.bonus-grid.d-cols-4{
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+}
+.bonus-grid.d-cols-5{
+    grid-template-columns:repeat(5, minmax(0, 1fr));
+}
+.bonus-grid.d-cols-6{
+    grid-template-columns:repeat(6, minmax(0, 1fr));
 }
 
 .bonus-card{
@@ -2688,6 +2697,15 @@ body.bonus-page{
     }
     .bonus-card.d-span-3{
         grid-column:span 3;
+    }
+    .bonus-card.d-span-4{
+        grid-column:span 4;
+    }
+    .bonus-card.d-span-5{
+        grid-column:span 5;
+    }
+    .bonus-card.d-span-6{
+        grid-column:span 6;
     }
 }
 
