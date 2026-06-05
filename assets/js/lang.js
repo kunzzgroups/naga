@@ -110,7 +110,7 @@
     });
 
     var langBtn = document.getElementById('langBtn');
-    if(langBtn) langBtn.textContent = t('lang_button');
+    // if(langBtn) langBtn.textContent = t('lang_button');
 
     document.dispatchEvent(new CustomEvent('i18n:changed', {detail:{lang:window.I18N.current}}));
   }

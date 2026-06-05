@@ -48,14 +48,15 @@ body{
 
 .lang-btn {
     position: absolute;
-    right: 14px;
-    top: 14px;
-    background: #fff;
+    right: 30px;
+    /* top: 14px; */
+    /* background: #fff; */
     border: 0;
     border-radius: 2px;
     font-weight: 700;
-    color: #333;
-    padding: 3px
+    /* color: #333; */
+    padding: 3px;
+    font-size: 24px;
 }
 
 /* .main-layout{
@@ -147,6 +148,47 @@ body{
     opacity: 1;
     background: #fff
 }
+
+.slider-timer{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:3px;
+    z-index:5;
+    background:rgba(255,255,255,.16);
+    pointer-events:none;
+}
+
+.slider-timer span{
+    display:block;
+    width:0;
+    height:100%;
+    background:#ffd200;
+    box-shadow:0 0 8px rgba(255,210,0,.75);
+}
+
+@keyframes sliderTimer{
+    from{width:0%}
+    to{width:100%}
+}
+
+.side-slider,
+.side-slider .slide{
+    touch-action:pan-y;
+    user-select:none;
+    -webkit-user-select:none;
+}
+
+.side-slider img{
+    -webkit-user-drag:none;
+    user-select:none;
+}
+
+.side-slider.is-dragging{
+    cursor:grabbing;
+}
+
 
 .promo-img {
     width: 100%;
