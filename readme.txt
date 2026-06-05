@@ -1,5 +1,5 @@
 https://demo-backend.flydragon.club/login
-fdinifinity@gmail.com
+fdinfinity@gmail.com
 12345688
 
 https://d2aud.n9686b.com/#login

@@ -204,5 +204,7 @@
   "bet_amount": "Bet Amount",
   "win_loss": "Win / Loss",
   "loading_more_records": "Loading more records...",
-  "all_records_loaded": "All records loaded"
+  "all_records_loaded": "All records loaded",
+  "img.earn_with_us_title": "assets/images/bonus/earn_with_us_bonus_text.png",
+  "img.seven_seven_bonus_title": "assets/images/bonus/77_bonus_text.png"
 }
