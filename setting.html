@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="setting_page_title">D2AUD - Setting</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.1" />
+  <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+</head>
+<body class="setting-page">
+  <header class="top-header">
+    <div class="logo-box"><div class="logo-icon">D</div><div>D2AUD</div></div>
+    <i class="fa-solid fa-earth-americas lang-btn" id="langBtn" data-i18n-title="change_language" data-i18n-aria-label="change_language"></i>
+  </header>
+
+  <main class="setting-main">
+    <section class="setting-shell">
+      <article class="profile-card game-glass-card">
+        <div class="card-heading">
+          <div>
+            <h1 data-i18n="profile">Profile</h1>
+            <p data-i18n="account_information">Account information</p>
+          </div>
+          <span class="profile-badge" data-i18n="vip">VIP</span>
+        </div>
+
+        <div class="profile-list">
+          <div class="profile-row"><span data-i18n="username">Username</span><strong>1A850A95</strong></div>
+          <div class="profile-row"><span data-i18n="name">Name</span><strong>TEST</strong></div>
+          <div class="profile-row"><span data-i18n="phone_number">Phone Number</span><strong>6123456789</strong></div>
+          <div class="profile-row"><span data-i18n="bank_name">Bank Name</span><strong>PayID</strong></div>
+          <div class="profile-row"><span data-i18n="bank_account_name">Bank Account Name</span><strong>Test</strong></div>
+          <div class="profile-row"><span data-i18n="bank_account_number">Bank Account Number</span><strong>8888888</strong></div>
+          <div class="profile-row"><span data-i18n="bank_bsb">Bank BSB</span><strong>01002</strong></div>
+          <div class="profile-row"><span data-i18n="pay_id">Pay ID</span><strong>Gmail.Com</strong></div>
+        </div>
+      </article>
+
+      <article class="setting-card game-glass-card">
+        <button class="setting-toggle" id="settingToggle" type="button" aria-expanded="false">
+          <span data-i18n="setting_title">Setting</span>
+          <i>▲</i>
+        </button>
+
+        <div class="setting-menu" id="settingMenu">
+          <a href="mobile-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-mobile"></i></span><span data-i18n="mobile_number">Mobile Number</span><em>›</em></a>
+          <a href="password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-lock"></i></span><span data-i18n="password">Password</span><em>›</em></a>
+          <button class="setting-item" id="settingLangBtn" type="button"><span class="setting-ico"><i class="fa-solid fa-language"></i></span><span data-i18n="language">Language</span><em>›</em></button>
+          <!-- <a href="#" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-bug"></i></span><span data-i18n="report_a_problem">Report A Problem</span><em>›</em></a> -->
+          <a href="login.html" class="setting-item logout"><span class="setting-ico"><i class="fa-solid fa-gear"></i></span><span data-i18n="logout">Logout</span><em>›</em></a>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="active" href="index.html"><img src="assets/images/bottom1.png" alt="HOME" data-i18n-img="img.bottom_home" data-i18n-alt="home"></a>
+    <a href="history.html"><img src="assets/images/bottom2.png" alt="HISTORY" data-i18n-img="img.bottom_history" data-i18n-alt="history"></a>
+    <a href="bonus.html"><img src="assets/images/bottom3.png" alt="BONUS" data-i18n-img="img.bottom_bonus" data-i18n-alt="bonus"></a>
+    <a href="chat.html"><img src="assets/images/bottom4.png" alt="LIVE CHAT" data-i18n-img="img.bottom_chat" data-i18n-alt="live_chat"></a>
+    <a href="#"><img src="assets/images/bottom5.png" alt="SETTING" data-i18n-img="img.bottom_setting" data-i18n-alt="setting"></a>
+  </nav>
+
+  <div class="lang-overlay" id="langOverlay" aria-hidden="true">
+    <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Language selection" data-i18n-aria-label="language_selection">
+      <button class="lang-option active" type="button" data-lang="en"><span data-i18n="lang_english">English</span> <span class="checkmark">✔</span></button>
+      <button class="lang-option" type="button" data-lang="zh"><span data-i18n="lang_chinese">中文</span></button>
+    </div>
+  </div>
+
+  <script src="assets/js/lang.js"></script>
+  <script src="assets/js/setting.js"></script>
+</body>
+</html>
