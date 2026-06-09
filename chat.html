@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="chat_page_title">D2AUD - Live Chat</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+</head>
+<body class="chat-page">
+  <header class="top-header">
+    <div class="logo-box"><div class="logo-icon">D</div><div>D2AUD</div></div>
+    <i class="fa-solid fa-earth-americas lang-btn" id="langBtn"></i>
+  </header>
+
+  <main class="chat-main">
+    <section class="chat-shell" aria-label="Live chat" data-i18n-aria-label="chat_section_label">
+      <div class="chat-top-card">
+        <div class="chat-title-box">
+          <span class="chat-flame">🔥</span>
+          <div>
+            <h1 data-i18n="live_chat">LIVE CHAT</h1>
+            <p data-i18n="chat_support_center">D2AUD support center</p>
+          </div>
+        </div>
+        <div class="chat-status-pill"><i></i> <span data-i18n="online">Online</span></div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-date">8 Nov 2025</div>
+
+        <article class="chat-bubble system wide">
+          <div class="bubble-name" data-i18n="system">System</div>
+          <p data-i18n="chat_daily_bonus_available">✅ DAILY BONUSES AVAILABLE</p>
+          <p data-i18n="chat_fast_service">SERVICE FAST LIKE JOKER33 🚀</p>
+        </article>
+
+        <article class="chat-bubble system notice">
+          <div class="bubble-name" data-i18n="system">System</div>
+          <p data-i18n-html="chat_deposit_success">✅ Deposit : <b class="green">AUD100</b> successful. <b class="yellow">Good Luck!</b> 😊</p>
+          <p data-i18n-html="chat_deposit_receipt_note">⚠️ Every time deposit receipt <b class="green">Reference/Remark</b> must enter your whatsapp number <b class="red">TQ Dear~</b> 😘💋</p>
+          <p data-i18n-html="chat_confirm_bank_note">⚠️ Always confirm Bank is from the system, <b class="red">DO NOT</b> direct transfer without checking. ⚠️</p>
+          <br>
+          <p data-i18n-html="chat_company_benefit_title">👇 <b class="red">Company Benefit</b> 👇 :</p>
+          <p data-i18n="chat_rebate_everyday">👉🏻 Rebate everyday 12pm 👈🏻</p>
+          <p data-i18n="chat_min_deposit">👉🏻 Min Deposit $10 👈🏻</p>
+          <p data-i18n="chat_min_withdraw">👉🏻 Min Withdraw $50 👈🏻</p>
+          <div class="warning-box" data-i18n-html="chat_warning_box">⚠️ If you exceed the maximum withdrawal amount, the remaining balance will be forfeited ⚠️<br>⚠️ If the system finds you saved free games from previous bonuses, all credits will be forfeited. ⚠️</div>
+        </article>
+
+        <div class="chat-time">10:05am</div>
+
+        <article class="chat-bubble admin">
+          <div class="bubble-name">D2AUD_acc</div>
+          <p>HI</p>
+        </article>
+
+        <article class="chat-bubble admin medium">
+          <div class="bubble-name">D2AUD_acc</div>
+          <p data-i18n="chat_welcome_message">You are welcome Dear 💖 Wish Your Luck, Have A Good Day 🥰</p>
+        </article>
+
+        <article class="chat-bubble user">
+          <div class="bubble-name">TEST</div>
+          <p>hi</p>
+        </article>
+      </div>
+
+      <form class="chat-compose" id="chatForm">
+        <input type="text" id="chatInput" placeholder="Text here..." data-i18n-placeholder="chat_text_placeholder" autocomplete="off" />
+        <button type="button" class="chat-attach" aria-label="Attach" data-i18n-aria-label="attach">📎</button>
+        <button type="submit" class="chat-send" aria-label="Send" data-i18n-aria-label="send">➤</button>
+      </form>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="active" href="index.html"><img src="assets/images/bottom1.png" alt="HOME" data-i18n-alt="home"></a>
+    <a href="history.html"><img src="assets/images/bottom2.png" alt="HISTORY" data-i18n-alt="history"></a>
+    <a href="bonus.html"><img src="assets/images/bottom3.png" alt="BONUS" data-i18n-alt="bonus"></a>
+    <a href="#"><img src="assets/images/bottom4.png" alt="LIVE CHAT" data-i18n-alt="live_chat"></a>
+    <a href="setting.html"><img src="assets/images/bottom5.png" alt="SETTING" data-i18n-alt="setting"></a>
+  </nav>
+
+  <div class="lang-overlay" id="langOverlay" aria-hidden="true">
+    <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Language selection" data-i18n-aria-label="language_selection">
+      <button class="lang-option active" type="button" data-lang="en"><span data-i18n="lang_english">English</span> <span class="checkmark">✔</span></button>
+      <button class="lang-option" type="button" data-lang="zh"><span data-i18n="lang_chinese">中文</span></button>
+    </div>
+  </div>
+
+  <script src="assets/js/lang.js"></script>
+  <script src="assets/js/chat.js"></script>
+</body>
+</html>
