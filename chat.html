@@ -68,8 +68,9 @@
 
       <form class="chat-compose" id="chatForm">
         <input type="text" id="chatInput" placeholder="Text here..." data-i18n-placeholder="chat_text_placeholder" autocomplete="off" />
-        <button type="button" class="chat-attach" aria-label="Attach" data-i18n-aria-label="attach">📎</button>
-        <button type="submit" class="chat-send" aria-label="Send" data-i18n-aria-label="send">➤</button>
+        <button type="button" class="chat-attach" id="chatAttach" aria-label="Attach" data-i18n-aria-label="attach"><i class="fa-solid fa-link"></i></button>
+        <input class="chat-file-input" type="file" id="chatFileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
+        <button type="submit" class="chat-send" aria-label="Send" data-i18n-aria-label="send"><i class="fa-solid fa-paper-plane"></i></button>
       </form>
     </section>
   </main>
