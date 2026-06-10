@@ -25,6 +25,12 @@ body{
     position: relative
 }
 
+.site-logo{
+    height: 55px;
+    width:auto;
+    display:block;
+}
+
 .logo-box {
     display: flex;
     align-items: center;
