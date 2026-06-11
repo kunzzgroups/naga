@@ -1,0 +1,12 @@
+// Global frontend config for Naga site
+// Update API base URL here only. Other JS files can read from window.NAGA_CONFIG and window.NAGA_API.
+window.NAGA_CONFIG = {
+  api: {
+    baseUrl: 'http://localhost:8080',
+    // baseUrl: 'https://bo.corepayx.com'
+  }
+};
+
+window.NAGA_API = {
+  sliderList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/slider/list'
+};

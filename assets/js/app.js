@@ -215,7 +215,76 @@ function initSlider(slider){
 }
 
 
-document.querySelectorAll('.side-slider').forEach(initSlider);
+// app.js
+const SLIDER_API_URL =
+  (window.NAGA_API && window.NAGA_API.sliderList)
+  || 'https://bo.corepayx.com/api/admin/slider/list';
+function normalizeSliderResponse(response){
+  if(Array.isArray(response)) return response;
+  if(response && Array.isArray(response.data)) return response.data;
+  if(response && response.data && Array.isArray(response.data.data)) return response.data.data;
+  return [];
+}
+
+function renderSliderBanners(slider, banners){
+  const timer = slider.querySelector('.slider-timer') || document.createElement('div');
+  const timerSpan = timer.querySelector('span') || document.createElement('span');
+  const dots = slider.querySelector('.dots') || document.createElement('div');
+
+  timer.className = 'slider-timer';
+  dots.className = 'dots';
+  if(!timerSpan.parentElement) timer.appendChild(timerSpan);
+
+  slider.innerHTML = '';
+
+  banners.forEach((item, index) => {
+    const img = document.createElement('img');
+    img.className = 'slide' + (index === 0 ? ' active' : '');
+    img.src = item.imageUrl || item.image_url || item.image || '';
+    img.alt = item.title || 'Slider Banner';
+    if(item.linkUrl || item.link_url){
+      img.dataset.linkUrl = item.linkUrl || item.link_url;
+    }
+    slider.appendChild(img);
+  });
+
+  dots.innerHTML = '';
+  banners.forEach((_, index) => {
+    const dot = document.createElement('span');
+    if(index === 0) dot.className = 'active';
+    dots.appendChild(dot);
+  });
+
+  slider.appendChild(dots);
+  slider.appendChild(timer);
+}
+
+function loadSliderBanners(){
+  return fetch(SLIDER_API_URL, { cache: 'no-store' })
+    .then(res => {
+      if(!res.ok) throw new Error('Slider API error');
+      return res.json();
+    })
+    .then(data => {
+      const banners = normalizeSliderResponse(data)
+        .filter(item => Number(item.status || 1) === 1)
+        .filter(item => item.imageUrl || item.image_url || item.image)
+        .sort((a, b) => (Number(a.sortOrder || a.sort_order || 0) - Number(b.sortOrder || b.sort_order || 0)) || (Number(b.id || 0) - Number(a.id || 0)));
+
+      if(!banners.length) return;
+
+      document.querySelectorAll('.side-slider').forEach(slider => {
+        renderSliderBanners(slider, banners);
+      });
+    })
+    .catch(err => {
+      console.warn('Using default slider banners:', err.message);
+    });
+}
+
+loadSliderBanners().then(() => {
+  document.querySelectorAll('.side-slider').forEach(initSlider);
+});
 
 // Share + copy modal
 (function(){
