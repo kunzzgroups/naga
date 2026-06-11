@@ -67,7 +67,10 @@
       </div>
 
       <form class="chat-compose" id="chatForm">
-        <input type="text" id="chatInput" placeholder="Text here..." data-i18n-placeholder="chat_text_placeholder" autocomplete="off" />
+        <div class="chat-input-wrap" id="chatInputWrap">
+          <div class="chat-paste-preview" id="chatPastePreview" aria-live="polite"></div>
+          <input type="text" id="chatInput" placeholder="Text here..." data-i18n-placeholder="chat_text_placeholder" autocomplete="off" enterkeyhint="send" />
+        </div>
         <button type="button" class="chat-attach" id="chatAttach" aria-label="Attach" data-i18n-aria-label="attach"><i class="fa-solid fa-link"></i></button>
         <input class="chat-file-input" type="file" id="chatFileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
         <button type="submit" class="chat-send" aria-label="Send" data-i18n-aria-label="send"><i class="fa-solid fa-paper-plane"></i></button>
@@ -91,6 +94,6 @@
   </div>
 
   <script src="assets/js/lang.js"></script>
-  <script src="assets/js/chat.js?v=1.0.1"></script>
+  <script src="assets/js/chat.js?v=1.0.2"></script>
 </body>
 </html>
