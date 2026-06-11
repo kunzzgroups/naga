@@ -5211,17 +5211,22 @@ body.login-page #registerForm .verify-row button{
     min-height:46px;
 }
 
-.chat-compose input{
+.chat-compose textarea{
     flex:1;
     min-width:90px;
-    height:40px;
+    min-height:40px;
+    max-height:96px;
     border:0;
     outline:0;
-    border-radius:22px;
-    padding:0 6px;
+    border-radius:18px;
+    padding:10px 6px 8px;
     font-size:14px;
+    line-height:20px;
     background:transparent;
     color:#12303b;
+    resize:none;
+    overflow-y:auto;
+    font-family:inherit;
 }
 
 .chat-paste-preview{
@@ -5325,6 +5330,11 @@ body.login-page #registerForm .verify-row button{
 
 .chat-file-input{
     display:none !important;
+}
+
+.chat-text-message{
+    white-space:pre-wrap;
+    word-break:break-word;
 }
 
 .chat-attachments{
@@ -5498,9 +5508,9 @@ body.login-page #registerForm .verify-row button{
         padding:0 8px;
     }
 
-    .chat-compose input{
-        height:39px;
-        padding:0 5px;
+    .chat-compose textarea{
+        min-height:39px;
+        padding:9px 5px 7px;
     }
 
     .chat-paste-preview{

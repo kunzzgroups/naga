@@ -23,6 +23,7 @@
 
   if(input){
     input.addEventListener('paste', handlePasteFiles);
+    input.addEventListener('input', autoResizeInput);
 
     input.addEventListener('keydown', function(e){
       if(e.key === 'Enter' && !e.shiftKey){
@@ -46,6 +47,7 @@
 
     sendMessage(text, pendingFiles);
     input.value = '';
+    autoResizeInput();
     clearPendingFiles();
   }
 
@@ -152,7 +154,7 @@
 
     let html = `<div class="bubble-name">${escapeHtml(userName)}</div>`;
     if(text){
-      html += `<p>${escapeHtml(text)}</p>`;
+      html += `<p class="chat-text-message">${formatMessageText(text)}</p>`;
     }
 
     if(files && files.length){
@@ -214,6 +216,18 @@
     if(!bytes) return '0 KB';
     if(bytes < 1024 * 1024) return Math.max(1, Math.round(bytes / 1024)) + ' KB';
     return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+
+  function autoResizeInput(){
+    if(!input) return;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 96) + 'px';
+  }
+
+
+  function formatMessageText(str){
+    return escapeHtml(str).replace(/\r\n|\r|\n/g, '<br>');
   }
 
   function escapeHtml(str){
