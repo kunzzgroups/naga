@@ -31,7 +31,7 @@
   }
 
   function refreshCustomBackground(){
-    var bgUrl = addCacheBuster(CUSTOM_IMAGE_PATH + 'background.png');
+    var bgUrl = addCacheBuster(CUSTOM_IMAGE_PATH + 'background.jpg');
     var style = document.createElement('style');
     style.setAttribute('data-custom-asset-cache', CUSTOM_ASSET_VERSION);
     style.textContent = [
