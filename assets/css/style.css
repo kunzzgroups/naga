@@ -5577,3 +5577,109 @@ body.login-page #registerForm .verify-row button{
 }
 
 .auth-message{font-size:12px;text-align:center;margin:8px 0 0;color:#123847}.auth-message.error{color:#b00020}.auth-message.success{color:#087a2f}
+
+
+/* ===== Member login welcome card ===== */
+.member-welcome-card{
+    width:100%;
+    border:1px solid rgba(255, 172, 45, .35);
+    border-radius:14px;
+    padding:12px;
+    background:
+        radial-gradient(circle at 20% 0%, rgba(255,176,39,.18), transparent 38%),
+        linear-gradient(135deg, rgba(34,12,5,.92), rgba(8,8,8,.88));
+    box-shadow:0 0 14px rgba(255,136,0,.12), inset 0 0 0 1px rgba(255,255,255,.05);
+}
+
+.member-welcome-top{
+    display:flex;
+    align-items:center;
+    gap:11px;
+}
+
+.member-welcome-avatar{
+    width:44px;
+    height:44px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    color:#fff3cf;
+    font-size:22px;
+    font-weight:900;
+    font-family:Georgia, serif;
+    background:linear-gradient(145deg, #ff9d00, #8b2608 55%, #240600);
+    border:1px solid rgba(255,205,92,.7);
+    box-shadow:0 0 12px rgba(255,123,0,.35);
+}
+
+.member-welcome-copy{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    line-height:1.18;
+}
+
+.member-welcome-label{
+    color:#ffb33c;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+}
+
+.member-welcome-name{
+    color:#fff;
+    font-size:20px;
+    font-weight:900;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-shadow:0 1px 6px rgba(0,0,0,.7);
+}
+
+.member-welcome-sub{
+    color:#d9d9d9;
+    font-size:12px;
+    margin-top:2px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.member-welcome-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:12px;
+}
+
+.member-welcome-actions a,
+.member-welcome-actions button{
+    height:34px;
+    border-radius:10px;
+    border:1px solid rgba(255,160,44,.45);
+    background:linear-gradient(#631908, #180402);
+    color:#ffb23c;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    font-size:13px;
+    font-family:Arial, sans-serif;
+    cursor:pointer;
+}
+
+.member-welcome-actions a:hover,
+.member-welcome-actions button:hover{
+    filter:brightness(1.15);
+}
+
+@media (max-width: 900px){
+    .member-welcome-card{
+        max-width:360px;
+        margin:0 auto;
+    }
+}
