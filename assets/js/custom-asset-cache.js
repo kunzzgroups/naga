@@ -187,7 +187,7 @@
   }
 
   function applyBackground(data){
-    var fallback = CUSTOM_IMAGE_PATH + 'background.png';
+    var fallback = CUSTOM_IMAGE_PATH + 'background.jpg';
     var translated = resolveImageValue(getTranslatedValue(data, 'pageBackgroundUrl'));
     var bgUrl = addCacheBuster(translated || fallback);
 
