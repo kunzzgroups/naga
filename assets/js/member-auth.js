@@ -94,7 +94,6 @@
     if(!authArea) return;
 
     const token = getToken();
-    console.log(token);
     if(!token){
       renderLoggedOut();
       return;
