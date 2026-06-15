@@ -77,25 +77,24 @@ function renderSubTabs(){
   subTabRow.innerHTML = '';
 
   if(!subCategories.length){
-    const btn = document.createElement('button');
-    btn.className = 'active';
-    btn.type = 'button';
-    btn.dataset.id = '';
-    btn.textContent = 'ALL';
-    subTabRow.appendChild(btn);
+    subTabRow.style.display = 'none';
     activeSubCategoryId = null;
     return;
   }
+
+  subTabRow.style.display = '';
 
   subCategories.forEach((sub, index) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.dataset.id = sub.id;
     btn.textContent = sub.name || 'Sub Category';
+
     if(String(sub.id) === String(activeSubCategoryId) || (!activeSubCategoryId && index === 0)){
       btn.classList.add('active');
       activeSubCategoryId = sub.id;
     }
+
     subTabRow.appendChild(btn);
   });
 }
