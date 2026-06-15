@@ -2,8 +2,10 @@
 // Update API base URL here only. Other JS files can read from window.NAGA_CONFIG and window.NAGA_API.
 window.NAGA_CONFIG = {
   api: {
-    // baseUrl: 'http://localhost:8080',
-    baseUrl: 'https://bo.corepayx.com'
+    baseUrl: 'http://localhost:8080',
+    // baseUrl: 'https://bo.corepayx.com',
+    uploadBaseUrl: 'http://localhost:8080/uploads',
+    // uploadBaseUrl: 'https://static.corepayx.com/uploads'
   }
 };
 
@@ -15,5 +17,7 @@ window.NAGA_API = {
 
   gameCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-category/list',
   gameSubCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-sub-category/list',
-  gameList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list'
+  gameList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list',
+
+  siteCustomizeTranslation: window.NAGA_CONFIG.api.baseUrl + '/api/admin/language/translation'
 };

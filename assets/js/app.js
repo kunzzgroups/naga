@@ -15,6 +15,46 @@ function tr(key, fallback){
   return (window.I18N && window.I18N.t && window.I18N.t(key) !== key) ? window.I18N.t(key) : (fallback || key);
 }
 
+function currentLangCode(){
+  return (window.I18N && window.I18N.current) || localStorage.getItem('site_lang') || localStorage.getItem('lang') || document.documentElement.lang || 'en';
+}
+
+function isZhLang(){
+  const lang = currentLangCode();
+  return String(lang).toLowerCase().startsWith('zh') || String(lang).toLowerCase().startsWith('cn');
+}
+
+function transValue(item, field){
+  const lang = currentLangCode();
+  if(!item || !item.translations) return '';
+  const direct = item.translations[lang] || item.translations[String(lang).toLowerCase()];
+  if(direct && direct[field]) return direct[field];
+  const shortLang = String(lang).toLowerCase().split('-')[0];
+  return item.translations[shortLang] && item.translations[shortLang][field] ? item.translations[shortLang][field] : '';
+}
+
+function langText(item, field, fallback){
+  const dynamicValue = transValue(item, field);
+  if(dynamicValue) return dynamicValue;
+  return item?.[field] || fallback || '';
+}
+
+function uploadBaseUrl(){
+  const cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
+  return ((cfg && cfg.uploadBaseUrl) || 'https://static.corepayx.com/uploads').replace(/\/+$/, '');
+}
+
+function isFullImageUrl(value){
+  return /^(https?:)?\/\//i.test(String(value || '')) || String(value || '').startsWith('data:') || String(value || '').startsWith('assets/');
+}
+
+function resolveUploadImage(value, folder, fallback){
+  const img = String(value || '').trim();
+  if(!img) return fallback || '';
+  if(isFullImageUrl(img) || img.startsWith('/')) return img;
+  return uploadBaseUrl() + '/' + folder + '/' + img.replace(/^\/+/, '');
+}
+
 const categoryRow=document.getElementById('categoryRow');
 const gameGrid=document.getElementById('gameGrid');
 const subTabRow=document.getElementById('subTabRow');
@@ -48,8 +88,17 @@ function sortByOrder(a, b){
       || (Number(a.id || 0) - Number(b.id || 0));
 }
 
-function getImageUrl(item, fallback){
-  return item.imageUrl || item.image_url || item.image || fallback || '';
+function getImageUrl(item, fallback, folder){
+  let value;
+  const dynamicImageUrl = transValue(item, 'imageUrl') || transValue(item, 'imageImageUrl');
+  const dynamicImage = transValue(item, 'image') || transValue(item, 'imageImage');
+  if(dynamicImageUrl || dynamicImage){
+    value = dynamicImageUrl || dynamicImage;
+  }else{
+    value = item.imageUrl || item.image_url || item.image;
+  }
+  if(!folder) return value || fallback || '';
+  return resolveUploadImage(value, folder, fallback);
 }
 
 function renderCategories(){
@@ -66,8 +115,9 @@ function renderCategories(){
     el.className=`cat ${String(cat.id)===String(activeCategoryId)?'active':''}`;
     el.type='button';
     el.dataset.id=cat.id;
-    const icon = getImageUrl(cat, 'assets/images/nav1.png');
-    el.innerHTML=`<img src="${icon}" class="cat-icon" alt="${cat.name || 'Category'}"><span>${cat.name || 'Category'}</span>`;
+    const icon = getImageUrl(cat, 'assets/images/nav1.png', 'game-category');
+    const catName = langText(cat, 'name', 'Category');
+    el.innerHTML=`<img src="${icon}" class="cat-icon" alt="${catName}"><span>${catName}</span>`;
     categoryRow.appendChild(el);
   });
 }
@@ -88,7 +138,7 @@ function renderSubTabs(){
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.dataset.id = sub.id;
-    btn.textContent = sub.name || 'Sub Category';
+    btn.textContent = langText(sub, 'name', 'Sub Category');
 
     if(String(sub.id) === String(activeSubCategoryId) || (!activeSubCategoryId && index === 0)){
       btn.classList.add('active');
@@ -112,8 +162,8 @@ function renderGames(list){
   list.forEach(item=>{
     const card=document.createElement('div');
     card.className='game-card';
-    const imageUrl = getImageUrl(item, 'assets/images/game.png');
-    const gameName = item.name || 'Game';
+    const imageUrl = getImageUrl(item, 'assets/images/game.png', 'game');
+    const gameName = langText(item, 'name', 'Game');
     const targetUrl = item.gameUrl || item.game_url || '';
     card.innerHTML=`
       <div class="game-card-img-wrap">
@@ -150,6 +200,10 @@ function buildUrl(url, params){
   return fullUrl.toString();
 }
 
+function currentLang(){
+  return currentLangCode();
+}
+
 function loadCategories(){
   if(!categoryRow || !subTabRow || !gameGrid) return Promise.resolve();
 
@@ -177,7 +231,10 @@ function loadSubCategories(){
     return loadGames();
   }
 
-  const url = buildUrl(GAME_SUB_CATEGORY_API_URL, { categoryId: activeCategoryId });
+  const url = buildUrl(GAME_SUB_CATEGORY_API_URL, {
+    categoryId: activeCategoryId,
+    lang: currentLang()
+  });
   return fetchJson(url)
     .then(response => {
       subCategories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
@@ -195,7 +252,7 @@ function loadSubCategories(){
 }
 
 function loadGames(){
-  const params = { categoryId: activeCategoryId };
+  const params = { categoryId: activeCategoryId, lang: currentLang() };
   if(activeSubCategoryId) params.subCategoryId = activeSubCategoryId;
 
   const url = buildUrl(GAME_API_URL, params);
@@ -235,6 +292,11 @@ loadCategories();
 document.addEventListener('i18n:changed', () => {
   renderCategories();
   renderSubTabs();
+  loadGames();
+  if(sliderBannerCache.length){
+    document.querySelectorAll('.side-slider').forEach(slider => renderSliderBanners(slider, sliderBannerCache));
+    document.querySelectorAll('.side-slider').forEach(initSlider);
+  }
 });
 
 function initSlider(slider){
@@ -353,6 +415,8 @@ function normalizeSliderResponse(response){
   return [];
 }
 
+let sliderBannerCache = [];
+
 function renderSliderBanners(slider, banners){
   const timer = slider.querySelector('.slider-timer') || document.createElement('div');
   const timerSpan = timer.querySelector('span') || document.createElement('span');
@@ -367,8 +431,8 @@ function renderSliderBanners(slider, banners){
   banners.forEach((item, index) => {
     const img = document.createElement('img');
     img.className = 'slide' + (index === 0 ? ' active' : '');
-    img.src = item.imageUrl || item.image_url || item.image || '';
-    img.alt = item.title || 'Slider Banner';
+    img.src = getImageUrl(item, '', 'slider');
+    img.alt = langText(item, 'title', 'Slider Banner');
     if(item.linkUrl || item.link_url){
       img.dataset.linkUrl = item.linkUrl || item.link_url;
     }
@@ -400,6 +464,7 @@ function loadSliderBanners(){
 
       if(!banners.length) return;
 
+      sliderBannerCache = banners;
       document.querySelectorAll('.side-slider').forEach(slider => {
         renderSliderBanners(slider, banners);
       });

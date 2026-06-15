@@ -5575,3 +5575,5 @@ body.login-page #registerForm .verify-row button{
     color:#fff;
     cursor:pointer;
 }
+
+.auth-message{font-size:12px;text-align:center;margin:8px 0 0;color:#123847}.auth-message.error{color:#b00020}.auth-message.success{color:#087a2f}

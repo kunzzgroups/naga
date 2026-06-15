@@ -22,6 +22,54 @@ function closeBonusDetail(){
   document.body.classList.remove('modal-open');
 }
 
+function currentLangCode(){
+  return (window.I18N && window.I18N.current) || localStorage.getItem('site_lang') || localStorage.getItem('lang') || document.documentElement.lang || 'en';
+}
+
+function isZhLang(){
+  const lang = currentLangCode();
+  return String(lang).toLowerCase().startsWith('zh') || String(lang).toLowerCase().startsWith('cn');
+}
+
+function transValue(item, field){
+  const lang = currentLangCode();
+  if(!item || !item.translations) return '';
+  const direct = item.translations[lang] || item.translations[String(lang).toLowerCase()];
+  if(direct && direct[field]) return direct[field];
+  const shortLang = String(lang).toLowerCase().split('-')[0];
+  return item.translations[shortLang] && item.translations[shortLang][field] ? item.translations[shortLang][field] : '';
+}
+
+function langText(item, field, fallback){
+  const dynamicValue = transValue(item, field);
+  if(dynamicValue) return dynamicValue;
+  return item?.[field] || fallback || '';
+}
+
+function uploadBaseUrl(){
+  const cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
+  return ((cfg && cfg.uploadBaseUrl) || 'https://static.corepayx.com/uploads').replace(/\/+$/, '');
+}
+
+function isFullImageUrl(value){
+  return /^(https?:)?\/\//i.test(String(value || '')) || String(value || '').startsWith('data:') || String(value || '').startsWith('assets/');
+}
+
+function resolveUploadImage(value, folder, fallback){
+  const img = String(value || '').trim();
+  if(!img) return fallback || '';
+  if(isFullImageUrl(img) || img.startsWith('/')) return img;
+  return uploadBaseUrl() + '/' + folder + '/' + img.replace(/^\/+/, '');
+}
+
+function langImage(item, fallback, folder){
+  const dynamicImageUrl = transValue(item, 'imageUrl') || transValue(item, 'imageImageUrl');
+  const dynamicImage = transValue(item, 'image') || transValue(item, 'imageImage');
+  const value = (dynamicImageUrl || dynamicImage) || (item?.imageUrl || item?.image_url || item?.image);
+  if(!folder) return value || fallback || '';
+  return resolveUploadImage(value, folder, fallback);
+}
+
 function escapeHtml(value){
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -115,8 +163,8 @@ function renderBonusSections(titles, items){
     if(!titleItems.length) return '';
 
     const groups = groupItemsByGridClass(titleItems);
-    const titleImage = title.imageUrl || title.image || 'assets/images/bonus/bonus_text.png';
-    const titleName = title.name || 'Bonus';
+    const titleImage = langImage(title, 'assets/images/bonus/bonus_text.png', 'bonus-category');
+    const titleName = langText(title, 'name', 'Bonus');
 
     return `
       <div class="bonus-section" data-title-id="${escapeHtml(title.id)}">
@@ -157,8 +205,8 @@ function renderBonusGrid(group){
 
 function renderBonusCard(item){
   const cardClass = normalizeClass(item.cardClass, 'bonus-card');
-  const imageUrl = item.imageUrl || item.image || 'assets/images/bonus/bonus.png';
-  const title = item.name || item.bonusCategoryTitleName || 'Bonus';
+  const imageUrl = langImage(item, 'assets/images/bonus/bonus.png', 'bonus-category-item');
+  const title = langText(item, 'name', langText(item, 'bonusCategoryTitleName', 'Bonus'));
   const linkUrl = safeUrl(item.linkUrl, '#');
 
   return `
@@ -198,3 +246,4 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('DOMContentLoaded', loadBonusData);
+document.addEventListener('i18n:changed', loadBonusData);
