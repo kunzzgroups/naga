@@ -1,36 +1,15 @@
-const categories=[
-  {key:'hot',icon:'assets/images/nav1.png',label:'HOT GAME',i18n:'cat_hot'},
-  {key:'slot',icon:'assets/images/nav2.png',label:'SLOT GAME',i18n:'cat_slot'},
-  {key:'live',icon:'assets/images/nav3.png',label:'LIVE GAME',i18n:'cat_live'},
-  {key:'sport',icon:'assets/images/nav4.png',label:'SPORT',i18n:'cat_sport'},
-  {key:'other',icon:'assets/images/nav5.png',label:'OTHER',i18n:'cat_other'}
-];
+const API = window.NAGA_API || {};
+const GAME_CATEGORY_API_URL =
+  API.gameCategoryList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-category/list' : 'https://bo.corepayx.com/api/admin/game-category/list');
+const GAME_SUB_CATEGORY_API_URL =
+  API.gameSubCategoryList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-sub-category/list' : 'https://bo.corepayx.com/api/admin/game-sub-category/list');
+const GAME_API_URL =
+  API.gameList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list' : 'https://bo.corepayx.com/api/admin/game/list');
 
-const games={
-  hot:{
-    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[]]
-  },
-  slot:{
-    slots:[[],[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[],[]]
-  },
-  live:{
-    slots:[[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[],[],[],[]]
-  },
-  sport:{
-    slots:[[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[]]
-  },
-  other:{
-    slots:[[],[],[],[],[],[],[],[],[],[],[],[]],
-    mini:[[],[],[],[],[],[],[],[],[]]
-  }
-};
-
-let activeCategory='hot';
-let activeTab='slots';
+let categories = [];
+let subCategories = [];
+let activeCategoryId = null;
+let activeSubCategoryId = null;
 
 function tr(key, fallback){
   return (window.I18N && window.I18N.t && window.I18N.t(key) !== key) ? window.I18N.t(key) : (fallback || key);
@@ -42,7 +21,7 @@ const subTabRow=document.getElementById('subTabRow');
 
 const catPrev=document.querySelector('.cat-prev');
 const catNext=document.querySelector('.cat-next');
-if(catPrev && catNext){
+if(catPrev && catNext && categoryRow){
   function scrollCategoryPage(direction){
     const firstCat = categoryRow.querySelector('.cat');
     const gap = parseFloat(getComputedStyle(categoryRow).gap) || 0;
@@ -53,61 +32,210 @@ if(catPrev && catNext){
   catNext.addEventListener('click',()=>scrollCategoryPage(1));
 }
 
+function normalizeApiList(response){
+  if(Array.isArray(response)) return response;
+  if(response && Array.isArray(response.data)) return response.data;
+  if(response && response.data && Array.isArray(response.data.data)) return response.data.data;
+  return [];
+}
+
+function isActiveItem(item){
+  return Number(item.status == null ? 1 : item.status) === 1;
+}
+
+function sortByOrder(a, b){
+  return (Number(a.sortOrder || a.sort_order || 0) - Number(b.sortOrder || b.sort_order || 0))
+      || (Number(a.id || 0) - Number(b.id || 0));
+}
+
+function getImageUrl(item, fallback){
+  return item.imageUrl || item.image_url || item.image || fallback || '';
+}
 
 function renderCategories(){
+  if(!categoryRow) return;
   categoryRow.innerHTML='';
+
+  if(!categories.length){
+    categoryRow.innerHTML = '<div class="empty-state">No category available</div>';
+    return;
+  }
+
   categories.forEach(cat=>{
     const el=document.createElement('button');
-    el.className=`cat ${cat.key===activeCategory?'active':''}`;
+    el.className=`cat ${String(cat.id)===String(activeCategoryId)?'active':''}`;
     el.type='button';
-    el.dataset.key=cat.key;
-    el.innerHTML=`<img src="${cat.icon}" class="cat-icon" alt="${tr(cat.i18n, cat.label)}"><span>${tr(cat.i18n, cat.label)}</span>`;
+    el.dataset.id=cat.id;
+    const icon = getImageUrl(cat, 'assets/images/nav1.png');
+    el.innerHTML=`<img src="${icon}" class="cat-icon" alt="${cat.name || 'Category'}"><span>${cat.name || 'Category'}</span>`;
     categoryRow.appendChild(el);
   });
 }
 
-function renderGames(){
+function renderSubTabs(){
+  if(!subTabRow) return;
+  subTabRow.innerHTML = '';
+
+  if(!subCategories.length){
+    const btn = document.createElement('button');
+    btn.className = 'active';
+    btn.type = 'button';
+    btn.dataset.id = '';
+    btn.textContent = 'ALL';
+    subTabRow.appendChild(btn);
+    activeSubCategoryId = null;
+    return;
+  }
+
+  subCategories.forEach((sub, index) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.dataset.id = sub.id;
+    btn.textContent = sub.name || 'Sub Category';
+    if(String(sub.id) === String(activeSubCategoryId) || (!activeSubCategoryId && index === 0)){
+      btn.classList.add('active');
+      activeSubCategoryId = sub.id;
+    }
+    subTabRow.appendChild(btn);
+  });
+}
+
+function renderGames(list){
+  if(!gameGrid) return;
   gameGrid.innerHTML='';
-  const list=games[activeCategory][activeTab] || [];
-  const isProvider = activeTab === 'mini' || activeCategory === 'slot';
-  gameGrid.classList.toggle('provider-grid', isProvider);
+  gameGrid.classList.add('provider-grid');
+
+  if(!list.length){
+    gameGrid.innerHTML = '<div class="empty-state">No game available</div>';
+    return;
+  }
 
   list.forEach(item=>{
-    const [title,emoji,c1,c2,isNew]=item;
     const card=document.createElement('div');
     card.className='game-card';
+    const imageUrl = getImageUrl(item, 'assets/images/game.png');
+    const gameName = item.name || 'Game';
+    const targetUrl = item.gameUrl || item.game_url || '';
     card.innerHTML=`
       <div class="game-card-img-wrap">
-        ${isNew?'<div class="new-badge">'+tr('new','NEW!')+'</div>':''}
-        <img src="assets/images/game.png" alt="${title}">
+        <img src="${imageUrl}" alt="${gameName}">
       </div>
       <button class="play-btn">${tr('play','PLAY')}</button>`;
+
+    card.querySelector('.play-btn').addEventListener('click', () => {
+      if(targetUrl){
+        window.location.href = targetUrl;
+      }else{
+        window.location.href = 'game-detail.html?id=' + encodeURIComponent(item.id || '');
+      }
+    });
+
     gameGrid.appendChild(card);
   });
 }
-categoryRow.addEventListener('click',e=>{
-  const btn=e.target.closest('.cat');
-  if(!btn)return;
-  activeCategory=btn.dataset.key;
-  activeTab='slots';
-  document.querySelectorAll('.sub-tab-row button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='slots'));
-  renderCategories();
-  renderGames();
-});
 
-subTabRow.addEventListener('click',e=>{
-  const btn=e.target.closest('button[data-tab]');
-  if(!btn)return;
-  activeTab=btn.dataset.tab;
-  document.querySelectorAll('.sub-tab-row button').forEach(b=>b.classList.toggle('active',b===btn));
-  renderGames();
-});
+function fetchJson(url){
+  return fetch(url, { cache: 'no-store' }).then(res => {
+    if(!res.ok) throw new Error('API error: ' + url);
+    return res.json();
+  });
+}
 
-renderCategories();
-renderGames();
+function buildUrl(url, params){
+  const fullUrl = new URL(url, window.location.href);
+  Object.keys(params || {}).forEach(key => {
+    if(params[key] !== null && params[key] !== undefined && params[key] !== ''){
+      fullUrl.searchParams.set(key, params[key]);
+    }
+  });
+  return fullUrl.toString();
+}
+
+function loadCategories(){
+  if(!categoryRow || !subTabRow || !gameGrid) return Promise.resolve();
+
+  return fetchJson(GAME_CATEGORY_API_URL)
+    .then(response => {
+      categories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
+      activeCategoryId = categories[0] ? categories[0].id : null;
+      renderCategories();
+      return loadSubCategories();
+    })
+    .catch(err => {
+      console.warn('Game category API failed:', err.message);
+      categories = [];
+      subCategories = [];
+      renderCategories();
+      renderSubTabs();
+      renderGames([]);
+    });
+}
+
+function loadSubCategories(){
+  if(!activeCategoryId){
+    subCategories = [];
+    renderSubTabs();
+    return loadGames();
+  }
+
+  const url = buildUrl(GAME_SUB_CATEGORY_API_URL, { categoryId: activeCategoryId });
+  return fetchJson(url)
+    .then(response => {
+      subCategories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
+      activeSubCategoryId = subCategories[0] ? subCategories[0].id : null;
+      renderSubTabs();
+      return loadGames();
+    })
+    .catch(err => {
+      console.warn('Game sub category API failed:', err.message);
+      subCategories = [];
+      activeSubCategoryId = null;
+      renderSubTabs();
+      return loadGames();
+    });
+}
+
+function loadGames(){
+  const params = { categoryId: activeCategoryId };
+  if(activeSubCategoryId) params.subCategoryId = activeSubCategoryId;
+
+  const url = buildUrl(GAME_API_URL, params);
+  return fetchJson(url)
+    .then(response => {
+      const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
+      renderGames(list);
+    })
+    .catch(err => {
+      console.warn('Game API failed:', err.message);
+      renderGames([]);
+    });
+}
+
+if(categoryRow){
+  categoryRow.addEventListener('click',e=>{
+    const btn=e.target.closest('.cat');
+    if(!btn)return;
+    activeCategoryId=btn.dataset.id;
+    activeSubCategoryId=null;
+    renderCategories();
+    loadSubCategories();
+  });
+}
+
+if(subTabRow){
+  subTabRow.addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-id]');
+    if(!btn)return;
+    activeSubCategoryId=btn.dataset.id || null;
+    subTabRow.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===btn));
+    loadGames();
+  });
+}
+
+loadCategories();
 document.addEventListener('i18n:changed', () => {
   renderCategories();
-  renderGames();
+  renderSubTabs();
 });
 
 function initSlider(slider){

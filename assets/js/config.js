@@ -8,5 +8,12 @@ window.NAGA_CONFIG = {
 };
 
 window.NAGA_API = {
-  sliderList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/slider/list'
+  sliderList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/slider/list',
+
+  bonusCategoryTitleList: window.NAGA_CONFIG.api.baseUrl + '/api/bonus-category-title',
+  bonusCategoryItemList: window.NAGA_CONFIG.api.baseUrl + '/api/bonus-category-item',
+
+  gameCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-category/list',
+  gameSubCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-sub-category/list',
+  gameList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list'
 };
