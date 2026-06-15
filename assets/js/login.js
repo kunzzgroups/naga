@@ -1,5 +1,5 @@
 (function(){
-  const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || 'http://localhost:8080';
+  const API_BASE = window.NAGA_CONFIG?.api?.baseUrl || 'http://localhost:8080';
   const loginTabButtons = document.querySelectorAll('.login-tab');
 
   loginTabButtons.forEach(function(tab){
