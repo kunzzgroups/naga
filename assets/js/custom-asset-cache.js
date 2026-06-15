@@ -17,7 +17,6 @@
     'favicon.png': 'faviconUrl',
     'favicon2.png': 'faviconUrl2',
     'favicon3.png': 'faviconUrl3',
-    'background.png': 'pageBackgroundUrl',
     'background.jpg': 'pageBackgroundUrl',
     'referral.png': 'referralUrl',
     'share.png': 'shareUrl',
