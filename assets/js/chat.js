@@ -69,6 +69,7 @@
 
   async function startChat(){
     await ensureConversation();
+    markMemberRead();
     renderLoading();
     if(unsubscribeMessages) unsubscribeMessages();
     unsubscribeMessages = db.collection('conversations').doc(conversationId).collection('messages')
@@ -153,8 +154,19 @@
       updatedAt: now,
       status: 'open',
       memberName: memberName(member),
-      memberUsername: member.username || member.mobile || ''
+      memberUsername: member.username || member.mobile || '',
+      adminUnreadCount: firebase.firestore.FieldValue.increment(1)
     }, {merge:true});
+  }
+
+  async function markMemberRead(){
+    if(!db || !conversationId) return;
+    try{
+      await db.collection('conversations').doc(conversationId).set({
+        memberUnreadCount: 0,
+        memberReadAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge:true});
+    }catch(e){}
   }
 
   function renderLoading(){
