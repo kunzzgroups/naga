@@ -5683,3 +5683,6 @@ body.login-page #registerForm .verify-row button{
         margin:0 auto;
     }
 }
+
+/* Firebase live chat states */
+.chat-bubble a{word-break:break-word}.chat-bubble.system a{text-decoration:none}.chat-attachment.image img{background:#111}.chat-attachment.file small{display:block;opacity:.7;font-size:11px}.chat-bubble.admin .chat-attachment.file{background:rgba(255,255,255,.12)}.chat-bubble.user .chat-attachment.file{background:rgba(0,0,0,.14)}

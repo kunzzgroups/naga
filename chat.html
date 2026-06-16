@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="chat_page_title">D2AUD - Live Chat</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.17" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.18" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
 </head>
 <body class="chat-page">
@@ -79,10 +79,10 @@
   </main>
 
   <nav class="bottom-nav">
-    <a class="active" href="index.html"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-alt="home"></a>
+    <a href="index.html"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-alt="home"></a>
     <a href="history.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-alt="history"></a>
     <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-alt="bonus"></a>
-    <a href="#"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-alt="live_chat"></a>
+    <a class="active" href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-alt="live_chat"></a>
     <a href="setting.html"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-alt="setting"></a>
   </nav>
 
@@ -94,8 +94,12 @@
   </div>
 
   <script src="assets/js/lang.js"></script>
-  <script src="assets/js/chat.js?v=1.0.4"></script>
-  <script src="assets/js/config.js?v=1.0.8"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+  <script src="assets/js/firebase-config.js?v=1.0.1"></script>
+  <script src="assets/js/chat.js?v=1.0.1"></script>
+  <script src="assets/js/config.js?v=1.0.9"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.10"></script>
 </body>
 </html>
