@@ -55,14 +55,20 @@ body{
 .lang-btn {
     position: absolute;
     right: 30px;
-    /* top: 14px; */
-    /* background: #fff; */
     border: 0;
-    border-radius: 2px;
-    font-weight: 700;
-    /* color: #333; */
-    padding: 3px;
-    font-size: 24px;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lang-btn img {
+    width: 28px;
+    height: 28px;
+    display: block;
+    object-fit: contain;
 }
 
 /* .main-layout{
