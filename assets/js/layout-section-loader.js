@@ -1,52 +1,68 @@
-function loadLayoutSections() {
-  const version = Date.now();
+(function () {
+  const BASE_PATH = '/assets/custom/sections/';
+  const VERSION = window.NAGA_CUSTOM_VERSION || Date.now();
 
-  const fetchTextIfNotEmpty = (url) => {
-    return fetch(url + '?v=' + version, { cache: 'no-store' })
-      .then((res) => {
-        if (!res.ok) return '';
-        return res.text();
-      })
-      .then((text) => {
-        const cleaned = (text || '').trim();
-        return cleaned ? text : '';
-      })
-      .catch(() => '');
+  function isEmptyText(text) {
+    return !text || !text.trim();
+  }
+
+  async function safeFetchText(url) {
+    try {
+      const res = await fetch(url + '?v=' + VERSION, { cache: 'no-store' });
+
+      if (!res.ok) return null;
+
+      const contentType = res.headers.get('content-type') || '';
+      const text = await res.text();
+
+      if (isEmptyText(text)) return null;
+
+      // prevent loading returned index.html / error html as css/js/html section
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        return null;
+      }
+
+      return text;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function loadHtml(sectionKey, targetSelector) {
+    const target = document.querySelector(targetSelector);
+    if (!target) return;
+
+    const html = await safeFetchText(BASE_PATH + sectionKey + '.html');
+    if (!html) return;
+
+    target.innerHTML = html;
+  }
+
+  async function loadCss(sectionKey) {
+    const css = await safeFetchText(BASE_PATH + sectionKey + '.css');
+    if (!css) return;
+
+    const style = document.createElement('style');
+    style.setAttribute('data-custom-section-css', sectionKey);
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  async function loadJs(sectionKey) {
+    const js = await safeFetchText(BASE_PATH + sectionKey + '.js');
+    if (!js) return;
+
+    const script = document.createElement('script');
+    script.setAttribute('data-custom-section-js', sectionKey);
+    script.textContent = js;
+    document.body.appendChild(script);
+  }
+
+  window.loadCustomSection = async function (sectionKey, targetSelector) {
+    if (!sectionKey || !targetSelector) return;
+
+    await loadHtml(sectionKey, targetSelector);
+    await loadCss(sectionKey);
+    await loadJs(sectionKey);
   };
-
-  document.querySelectorAll('[data-layout-section]').forEach((el) => {
-    const key = (el.dataset.layoutSection || '').trim();
-    if (!key) return;
-
-    const base = 'assets/custom/sections/' + key;
-
-    fetchTextIfNotEmpty(base + '.html')
-      .then((html) => {
-        // Important: if custom section HTML file is missing or empty,
-        // keep the original page content and do not load its CSS/JS.
-        if (!html) return;
-
-        el.innerHTML = html;
-
-        fetchTextIfNotEmpty(base + '.css').then((cssText) => {
-          if (!cssText) return;
-
-          const style = document.createElement('style');
-          style.setAttribute('data-layout-section-css', key);
-          style.textContent = cssText;
-          document.head.appendChild(style);
-        });
-
-        fetchTextIfNotEmpty(base + '.js').then((jsText) => {
-          if (!jsText) return;
-
-          const script = document.createElement('script');
-          script.setAttribute('data-layout-section-js', key);
-          script.textContent = jsText;
-          document.body.appendChild(script);
-        });
-      });
-  });
-}
-
-document.addEventListener('DOMContentLoaded', loadLayoutSections);
+})();
