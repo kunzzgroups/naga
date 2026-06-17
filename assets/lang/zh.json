@@ -96,7 +96,7 @@
   "visa_mastercard": "Visa / Mastercard",
   "e_wallet": "电子钱包",
   "instant_transfer": "即时转账",
-  "minimum_deposit_aud_10": "最低充值：AUD 10.00",
+  "minimum_deposit_aud_10": "最低充值：MYR 10.00",
   "deposit_note_desc": "提交前请确认金额。充值状态将在确认后更新。",
   "cancel": "取消",
   "submit_deposit": "提交充值",

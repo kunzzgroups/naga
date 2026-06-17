@@ -96,7 +96,7 @@
   "visa_mastercard": "Visa / Mastercard",
   "e_wallet": "E-Wallet",
   "instant_transfer": "Instant transfer",
-  "minimum_deposit_aud_10": "Minimum Deposit: AUD 10.00",
+  "minimum_deposit_aud_10": "Minimum Deposit: MYR 10.00",
   "deposit_note_desc": "Please check the amount before submitting. Deposit status will be updated after confirmation.",
   "cancel": "Cancel",
   "submit_deposit": "Submit Deposit",
