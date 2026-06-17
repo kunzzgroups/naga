@@ -38,12 +38,12 @@
 
   function apiBaseUrl(){
     var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-    return String((cfg && cfg.baseUrl) || 'https://bo.corepayx.com').replace(/\/+$/, '');
+    return String((cfg && cfg.baseUrl) || 'https://bo.titanxgaming.com').replace(/\/+$/, '');
   }
 
   function uploadBaseUrl(){
     var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-    return String((cfg && cfg.uploadBaseUrl) || 'https://static.corepayx.com/uploads').replace(/\/+$/, '');
+    return String((cfg && cfg.uploadBaseUrl) || 'https://static.titanxgaming.com/uploads').replace(/\/+$/, '');
   }
 
   function translationApiUrl(){
