@@ -1,28 +1,51 @@
 function loadLayoutSections() {
   const version = Date.now();
 
-  document.querySelectorAll('[data-layout-section]').forEach((el) => {
-    const key = el.dataset.layoutSection;
-    const base = 'assets/custom/sections/' + key;
-
-    fetch(base + '.html?v=' + version)
-      .then(res => {
-        if (!res.ok) throw new Error(key + ' not found');
+  const fetchTextIfNotEmpty = (url) => {
+    return fetch(url + '?v=' + version, { cache: 'no-store' })
+      .then((res) => {
+        if (!res.ok) return '';
         return res.text();
       })
-      .then(html => {
+      .then((text) => {
+        const cleaned = (text || '').trim();
+        return cleaned ? text : '';
+      })
+      .catch(() => '');
+  };
+
+  document.querySelectorAll('[data-layout-section]').forEach((el) => {
+    const key = (el.dataset.layoutSection || '').trim();
+    if (!key) return;
+
+    const base = 'assets/custom/sections/' + key;
+
+    fetchTextIfNotEmpty(base + '.html')
+      .then((html) => {
+        // Important: if custom section HTML file is missing or empty,
+        // keep the original page content and do not load its CSS/JS.
+        if (!html) return;
+
         el.innerHTML = html;
 
-        const css = document.createElement('link');
-        css.rel = 'stylesheet';
-        css.href = base + '.css?v=' + version;
-        document.head.appendChild(css);
+        fetchTextIfNotEmpty(base + '.css').then((cssText) => {
+          if (!cssText) return;
 
-        const js = document.createElement('script');
-        js.src = base + '.js?v=' + version;
-        document.body.appendChild(js);
-      })
-      .catch(err => console.warn(err.message));
+          const style = document.createElement('style');
+          style.setAttribute('data-layout-section-css', key);
+          style.textContent = cssText;
+          document.head.appendChild(style);
+        });
+
+        fetchTextIfNotEmpty(base + '.js').then((jsText) => {
+          if (!jsText) return;
+
+          const script = document.createElement('script');
+          script.setAttribute('data-layout-section-js', key);
+          script.textContent = jsText;
+          document.body.appendChild(script);
+        });
+      });
   });
 }
 
