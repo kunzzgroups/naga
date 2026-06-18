@@ -5702,3 +5702,23 @@ body.login-page #registerForm .verify-row button{
 .mini-messages{flex:1;overflow:auto;padding:12px;background:radial-gradient(circle at top,#252525,#090909)}.mini-system{color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px;font-size:13px}.mini-msg{display:flex;margin:8px 0}.mini-msg.me{justify-content:flex-end}.mini-bubble{max-width:82%;padding:9px 11px;border-radius:14px;background:#2b2b2b;color:#fff;font-size:13px;line-height:1.35;word-break:break-word}.mini-msg.me .mini-bubble{background:#078f00}.mini-files{display:grid;gap:6px;margin-top:6px}.mini-files a{color:#fff;text-decoration:none;font-size:12px}.mini-files img{max-width:140px;max-height:100px;object-fit:cover;border-radius:10px;display:block;margin-bottom:3px}
 .mini-compose{display:grid;grid-template-columns:1fr 38px 42px;gap:6px;padding:10px;background:#101010;border-top:1px solid rgba(255,255,255,.1)}.mini-compose textarea{grid-column:1/2;border:1px solid rgba(255,255,255,.18);background:#fff;color:#111;border-radius:12px;padding:9px 10px;resize:none;min-height:38px;max-height:80px}.mini-compose button{border:0;border-radius:12px;font-weight:900;cursor:pointer}.mini-compose button[type="button"]{background:#2d2d2d;color:#fff}.mini-compose button[type="submit"]{background:#09a000;color:#fff}.mini-preview{grid-column:1/4;display:none;gap:6px;flex-wrap:wrap}.mini-preview.show{display:flex}.mini-preview span{background:#fff3cd;color:#5a3500;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800}.mini-preview button{margin-left:5px;background:transparent!important;color:#5a3500!important}
 @media(max-width:600px){.livechat-widget{right:12px;bottom:76px}.livechat-float-text{display:none}.livechat-float-btn{width:54px;justify-content:center;padding:0}.livechat-mini-panel{height:430px}}
+
+/* Provider launch state - small additive style only, does not change current layout */
+.play-btn.is-launching,
+.detail-play-btn.is-launching{
+  opacity:.72;
+  cursor:wait;
+}
+
+
+.provider-launch-card,
+.provider-launch-img,
+.provider-launch-btn{
+  cursor:pointer;
+}
+.provider-launch-card.is-launching,
+.provider-launch-img.is-launching,
+.provider-launch-btn.is-launching{
+  opacity:.75;
+  pointer-events:none;
+}

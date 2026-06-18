@@ -161,21 +161,61 @@ function renderGames(list){
 
   list.forEach(item=>{
     const card=document.createElement('div');
-    card.className='game-card';
+    card.className='game-card provider-launch-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+
     const imageUrl = getImageUrl(item, 'assets/images/game.png', 'game');
     const gameName = langText(item, 'name', 'Game');
     const targetUrl = item.gameUrl || item.game_url || '';
+
+    const launchGameId = item.gameId || item.game_id || item.id || '';
+    const launchProviderCode = item.providerCode || item.provider_code || item.provider_code_name || item.vendorCode || item.vendor_code || (item.provider && (item.provider.providerCode || item.provider.provider_code || item.provider.code)) || '';
+    const launchGameCode = item.gameCode || item.game_code || item.launchCode || item.launch_code || item.providerGameCode || item.provider_game_code || item.code || '';
+
+    if(launchGameId) card.dataset.gameId = launchGameId;
+    if(launchProviderCode) card.dataset.providerCode = launchProviderCode;
+    if(launchGameCode) card.dataset.gameCode = launchGameCode;
+
     card.innerHTML=`
       <div class="game-card-img-wrap">
-        <img src="${imageUrl}" alt="${gameName}">
+        <img class="provider-launch-img"
+             src="${imageUrl}"
+             alt="${gameName}"
+             data-game-id="${launchGameId}"
+             data-provider-code="${launchProviderCode}"
+             data-game-code="${launchGameCode}">
       </div>
-      <button class="play-btn">${tr('play','PLAY')}</button>`;
+      <button class="play-btn provider-launch-btn"
+              type="button"
+              data-game-id="${launchGameId}"
+              data-provider-code="${launchProviderCode}"
+              data-game-code="${launchGameCode}">${tr('play','PLAY')}</button>`;
 
-    card.querySelector('.play-btn').addEventListener('click', () => {
+    const playBtn = card.querySelector('.play-btn');
+    const img = card.querySelector('.provider-launch-img');
+
+    function fallbackOpen(){
       if(targetUrl){
         window.location.href = targetUrl;
       }else{
         window.location.href = 'game-detail.html?id=' + encodeURIComponent(item.id || '');
+      }
+    }
+
+    if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.bindElement === 'function'){
+      window.NAGA_PROVIDER_LAUNCH.bindElement(card, item, { transferAmount: 0 });
+      window.NAGA_PROVIDER_LAUNCH.bindElement(img, item, { transferAmount: 0 });
+      window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0 });
+    }else{
+      card.addEventListener('click', fallbackOpen);
+      playBtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fallbackOpen(); });
+    }
+
+    card.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        card.click();
       }
     });
 
