@@ -1,0 +1,43 @@
+Live22
+
+Api Integration Service URL : 
+Https://smapi.xystem138.com/api/opgateway/v1/op/{function}
+
+Operator ID :    l22titanxgamingMYR 
+Secret Key :      1XZOT5DO4UTO23BP
+Currency :      MYR
+
+BO Report
+Address : https://l22bo.l22bo.com/
+
+Login ID :       l22titanxgamingMYR 
+Password :      PVIMT3C9
+
+————————————————————————————————
+
+Seamless and Fund transfer doc
+https://docs.google.com/document/d/1sh-i0zRRwlp7Qnxg4ukxxbVPEMWQUPse6oCo5lQ_nfw/edit
+
+Prod API link: 
+https://smapi.xystem138.com/api/opgateway/v1/op/{FUNCTION NAME}
+
+Live22 game list :
+https://docs.google.com/spreadsheets/d/1xiJirS5U8x8sjjM8urDHXRXbmLHHHIKCK
+ZP4SyvMkU0/edit?usp=sharing
+
+Live22 Metaverse Logo :
+https://drivte.google.com/drive/folders/1F1Isvsld7vaVn3Af9SZIk_cqfX-PmmuQ?usp=drive_link
+
+————————————————————————————————
+
+Here is the IP address that needs to whitelist:
+Outbound traffic IP
+
+UAT Environment:
+175.41.155.108
+13.215.78.156
+
+PROD Environment:
+13.228.208.147
+18.142.217.186
+3.0.144.240
