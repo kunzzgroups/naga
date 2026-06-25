@@ -618,6 +618,7 @@ loadSliderBanners().then(() => {
   const shareOverlay=document.getElementById('shareOverlay');
   const copyOverlay=document.getElementById('copyOverlay');
   const copyText=document.getElementById('copyText');
+  try{ const member=JSON.parse(localStorage.getItem('member_info')||'{}'); const code=member.referralCode||member.referrerCode||'RF1A850A95'; document.querySelectorAll('.share-head strong').forEach(el=>el.textContent=code); if(copyText) copyText.textContent=location.origin + '/register.html?ref=' + code; }catch(e){}
 
   function show(el){ if(el){ el.classList.add('show'); el.setAttribute('aria-hidden','false'); } }
   function hide(el){ if(el){ el.classList.remove('show'); el.setAttribute('aria-hidden','true'); } }
@@ -628,7 +629,10 @@ loadSliderBanners().then(() => {
 
   document.querySelectorAll('.copy-trigger').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      const text=(copyText && copyText.textContent.trim()) || 'https://d2aud.com/RF1A850A95';
+      const member=JSON.parse(localStorage.getItem('member_info')||'{}');
+      const code=member.referralCode||member.referrerCode||'RF1A850A95';
+      const text=location.origin + '/register.html?ref=' + code;
+      if(copyText) copyText.textContent=text;
       if(navigator.clipboard){ navigator.clipboard.writeText(text).catch(()=>{}); }
       show(copyOverlay);
     });

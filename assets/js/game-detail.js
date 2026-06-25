@@ -97,21 +97,22 @@
       item.setAttribute('role', 'button');
       item.setAttribute('tabindex', '0');
       item.dataset.gameCode = key;
+      item.dataset.gameName = name;
       item.innerHTML=`
         <div class="detail-game-img-wrap">
-          <img class="provider-launch-img" src="${gameImg}" alt="${name}" data-i18n-alt="${key}" data-game-code="${key}">
+          <img class="provider-launch-img" src="${gameImg}" alt="${name}" data-i18n-alt="${key}" data-game-code="${key}" data-game-name="${name}">
           ${index===0?'<span class="new-ribbon" data-i18n="new">'+translate('new')+'</span>':''}
         </div>
-        <button type="button" class="detail-play-btn provider-launch-btn" data-game-code="${key}" data-i18n="play">${translate('play')}</button>
+        <button type="button" class="detail-play-btn provider-launch-btn" data-game-code="${key}" data-game-name="${name}" data-i18n="play">${translate('play')}</button>
       `;
       grid.appendChild(item);
 
       if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.bindElement === 'function'){
-        window.NAGA_PROVIDER_LAUNCH.bindElement(item, { gameCode: key }, { transferAmount: 0 });
+        window.NAGA_PROVIDER_LAUNCH.bindElement(item, { gameCode: key, name: name, gameName: name }, { transferAmount: 0, gameName: name });
         const img = item.querySelector('.provider-launch-img');
         const btn = item.querySelector('.provider-launch-btn');
-        window.NAGA_PROVIDER_LAUNCH.bindElement(img, { gameCode: key }, { transferAmount: 0 });
-        window.NAGA_PROVIDER_LAUNCH.bindButton(btn, { gameCode: key }, { transferAmount: 0 });
+        window.NAGA_PROVIDER_LAUNCH.bindElement(img, { gameCode: key, name: name, gameName: name }, { transferAmount: 0, gameName: name });
+        window.NAGA_PROVIDER_LAUNCH.bindButton(btn, { gameCode: key, name: name, gameName: name }, { transferAmount: 0, gameName: name });
       }
     });
   }

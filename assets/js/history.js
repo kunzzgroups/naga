@@ -1,160 +1,87 @@
-const historyTabs = document.querySelectorAll('.history-tab');
-const transactionPanel = document.getElementById('transactionsPanel');
-const betPanel = document.getElementById('betPanel');
-const transactionsBody = document.getElementById('transactionsBody');
-const betBody = document.getElementById('betBody');
-const transactionsLazyStatus = document.getElementById('transactionsLazyStatus');
-const betLazyStatus = document.getElementById('betLazyStatus');
+(function(){
+  const historyTabs = document.querySelectorAll('.history-tab');
+  const transactionPanel = document.getElementById('transactionsPanel');
+  const betPanel = document.getElementById('betPanel');
+  const transactionsBody = document.getElementById('transactionsBody');
+  const betBody = document.getElementById('betBody');
+  const transactionsLazyStatus = document.getElementById('transactionsLazyStatus');
+  const betLazyStatus = document.getElementById('betLazyStatus');
+  const PAGE_SIZE = 8;
+  const SCROLL_OFFSET = 280;
+  const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '';
+  const TX_URL = (window.NAGA_API && window.NAGA_API.playerHistoryTransactions) || (API_BASE + '/api/player/history/transactions');
+  const BET_URL = (window.NAGA_API && window.NAGA_API.playerHistoryBets) || (API_BASE + '/api/player/history/bets');
 
-const PAGE_SIZE = 8;
-const SCROLL_OFFSET = 280;
+  const lazyState = {
+    transactions: {visible: 0, loading: false, body: transactionsBody, statusEl: transactionsLazyStatus, records: []},
+    bet: {visible: 0, loading: false, body: betBody, statusEl: betLazyStatus, records: []}
+  };
 
-const transactionRecords = [
-  {type:'txn_losscredit', typeClass:'', id:'#257847201', amount:'MYR 100.00', date:'3 Jun 2026 10:13PM', status:'completed'},
-  {type:'deposit', typeClass:'deposit', id:'#257847202', amount:'MYR 50.00', date:'3 Jun 2026 09:47PM', status:'completed'},
-  {type:'withdraw', typeClass:'withdraw', id:'#257847203', amount:'MYR 30.00', date:'7 Nov 2025 08:21PM', status:'pending'},
-  {type:'deposit', typeClass:'deposit', id:'#257847204', amount:'MYR 80.00', date:'7 Nov 2025 07:10PM', status:'completed'},
-  {type:'withdraw', typeClass:'withdraw', id:'#257847205', amount:'MYR 25.00', date:'6 Nov 2025 05:36PM', status:'completed'},
-  {type:'deposit', typeClass:'deposit', id:'#257847206', amount:'MYR 120.00', date:'6 Nov 2025 02:22PM', status:'completed'},
-  {type:'txn_losscredit', typeClass:'', id:'#257847207', amount:'MYR 40.00', date:'5 Nov 2025 11:04PM', status:'completed'},
-  {type:'withdraw', typeClass:'withdraw', id:'#257847208', amount:'MYR 60.00', date:'5 Nov 2025 09:18PM', status:'pending'},
-  {type:'deposit', typeClass:'deposit', id:'#257847209', amount:'MYR 200.00', date:'4 Nov 2025 08:46PM', status:'completed'},
-  {type:'txn_losscredit', typeClass:'', id:'#257847210', amount:'MYR 35.00', date:'4 Nov 2025 07:30PM', status:'completed'},
-  {type:'withdraw', typeClass:'withdraw', id:'#257847211', amount:'MYR 75.00', date:'3 Nov 2025 06:21PM', status:'completed'},
-  {type:'deposit', typeClass:'deposit', id:'#257847212', amount:'MYR 150.00', date:'3 Nov 2025 04:05PM', status:'completed'},
-  {type:'txn_losscredit', typeClass:'', id:'#257847213', amount:'MYR 20.00', date:'2 Nov 2025 10:19PM', status:'completed'},
-  {type:'deposit', typeClass:'deposit', id:'#257847214', amount:'MYR 90.00', date:'2 Nov 2025 07:41PM', status:'completed'},
-  {type:'withdraw', typeClass:'withdraw', id:'#257847215', amount:'MYR 45.00', date:'1 Nov 2025 09:55PM', status:'pending'},
-  {type:'deposit', typeClass:'deposit', id:'#257847216', amount:'MYR 300.00', date:'1 Nov 2025 01:28PM', status:'completed'},
-  {type:'txn_losscredit', typeClass:'', id:'#257847217', amount:'MYR 55.00', date:'31 Oct 2025 11:49PM', status:'completed'},
-  {type:'withdraw', typeClass:'withdraw', id:'#257847218', amount:'MYR 110.00', date:'31 Oct 2025 08:17PM', status:'completed'},
-  {type:'deposit', typeClass:'deposit', id:'#257847219', amount:'MYR 70.00', date:'30 Oct 2025 06:42PM', status:'completed'},
-  {type:'txn_losscredit', typeClass:'', id:'#257847220', amount:'MYR 15.00', date:'30 Oct 2025 03:35PM', status:'completed'}
-];
+  function tr(key){ return window.I18N && window.I18N.t ? window.I18N.t(key) : key; }
+  function token(){ return localStorage.getItem('member_token') || ''; }
+  function requireLogin(){ if(!token()){ location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'history.html'); return false; } return true; }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function num(v){ const n = Number(v || 0); return Number.isFinite(n) ? n : 0; }
+  function money(v){ return 'MYR ' + num(v).toFixed(2); }
+  function formatDate(v){ if(!v) return '-'; const d = new Date(String(v).replace(' ', 'T')); if(isNaN(d)) return esc(v); return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+  function txClass(type){ type=String(type||'').toUpperCase(); if(type.includes('DEPOSIT')||type==='TRANSFER_IN'||type==='BONUS') return 'deposit'; if(type.includes('WITHDRAW')||type==='TRANSFER_OUT') return 'withdraw'; return ''; }
+  function txName(type){ return String(type||'TRANSACTION').replace(/_/g,' '); }
+  function statusName(s){ s=String(s||'SUCCESS').toUpperCase(); if(s==='SUCCESS'||s==='APPROVED'||s==='COMPLETED') return 'completed'; if(s==='REJECTED'||s==='FAILED') return 'failed'; if(s==='PENDING') return 'pending'; return s.toLowerCase(); }
 
-const betRecords = [
-  {date:'3 Jun 2026 10:10PM', game:'FC 26', bet:'MYR 10.00', result:'+ MYR 18.00', resultClass:'win'},
-  {date:'3 Jun 2026 09:52PM', game:'Prosperity Bloom', bet:'MYR 20.00', result:'- MYR 20.00', resultClass:'loss'},
-  {date:'3 Jun 2026 09:30PM', game:'Aztec Riches', bet:'MYR 5.00', result:'+ MYR 7.50', resultClass:'win'},
-  {date:'2 Jun 2026 11:18PM', game:'Lucky Wheel', bet:'MYR 15.00', result:'+ MYR 29.00', resultClass:'win'},
-  {date:'2 Jun 2026 10:46PM', game:'Golden Tiger', bet:'MYR 12.00', result:'- MYR 12.00', resultClass:'loss'},
-  {date:'2 Jun 2026 08:10PM', game:'Rave Jump', bet:'MYR 8.00', result:'+ MYR 14.40', resultClass:'win'},
-  {date:'1 Jun 2026 11:41PM', game:'Super Ace', bet:'MYR 30.00', result:'- MYR 30.00', resultClass:'loss'},
-  {date:'1 Jun 2026 10:03PM', game:'Golden Shark', bet:'MYR 18.00', result:'+ MYR 33.80', resultClass:'win'},
-  {date:'31 May 2026 09:54PM', game:'Mega Gems', bet:'MYR 25.00', result:'- MYR 25.00', resultClass:'loss'},
-  {date:'31 May 2026 08:22PM', game:'Dragon Tiger', bet:'MYR 10.00', result:'+ MYR 19.00', resultClass:'win'},
-  {date:'30 May 2026 10:32PM', game:'Blackjack', bet:'MYR 40.00', result:'+ MYR 78.00', resultClass:'win'},
-  {date:'30 May 2026 07:20PM', game:'Fruit Blast', bet:'MYR 6.00', result:'- MYR 6.00', resultClass:'loss'},
-  {date:'29 May 2026 11:09PM', game:'Fishing King', bet:'MYR 16.00', result:'+ MYR 22.00', resultClass:'win'},
-  {date:'29 May 2026 09:12PM', game:'Baccarat', bet:'MYR 35.00', result:'- MYR 35.00', resultClass:'loss'},
-  {date:'28 May 2026 10:15PM', game:'Ocean Party', bet:'MYR 11.00', result:'+ MYR 20.50', resultClass:'win'},
-  {date:'28 May 2026 08:04PM', game:'Wild Star', bet:'MYR 14.00', result:'- MYR 14.00', resultClass:'loss'},
-  {date:'27 May 2026 10:51PM', game:'Lucky Dice', bet:'MYR 9.00', result:'+ MYR 16.20', resultClass:'win'},
-  {date:'27 May 2026 08:43PM', game:'Roulette', bet:'MYR 50.00', result:'- MYR 50.00', resultClass:'loss'},
-  {date:'26 May 2026 11:12PM', game:'Dragon VPS', bet:'MYR 22.00', result:'+ MYR 41.80', resultClass:'win'},
-  {date:'26 May 2026 09:33PM', game:'Royal Spin', bet:'MYR 13.00', result:'- MYR 13.00', resultClass:'loss'}
-];
-
-const lazyState = {
-  transactions: {visible: 0, loading: false, body: transactionsBody, statusEl: transactionsLazyStatus, records: transactionRecords},
-  bet: {visible: 0, loading: false, body: betBody, statusEl: betLazyStatus, records: betRecords}
-};
-
-function tr(key){
-  return window.I18N && window.I18N.t ? window.I18N.t(key) : key;
-}
-
-function updateLazyStatus(key){
-  const state = lazyState[key];
-  if(!state || !state.statusEl) return;
-  const finished = state.visible >= state.records.length;
-  state.statusEl.dataset.i18n = finished ? 'all_records_loaded' : 'loading_more_records';
-  state.statusEl.textContent = tr(state.statusEl.dataset.i18n);
-  state.statusEl.classList.toggle('is-finished', finished);
-}
-
-function createTransactionRow(item){
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td data-label="${tr('transactions')}" data-i18n-data-label="transactions">
-      <div class="txn-name ${item.typeClass}" data-i18n="${item.type}">${tr(item.type)}</div>
-      <div class="txn-id">${item.id}</div>
-      <div class="txn-amount"><span data-i18n="amount">${tr('amount')}</span> : <strong>${item.amount}</strong></div>
-      <div class="txn-date">${item.date}</div>
-    </td>
-    <td data-label="${tr('status')}" data-i18n-data-label="status">
-      <span class="status-badge ${item.status}"><i></i> <span data-i18n="${item.status}">${tr(item.status)}</span></span>
-    </td>`;
-  return row;
-}
-
-function createBetRow(item){
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td data-label="${tr('date_time')}" data-i18n-data-label="date_time">${item.date}</td>
-    <td data-label="${tr('game')}" data-i18n-data-label="game">${item.game}</td>
-    <td data-label="${tr('bet_amount')}" data-i18n-data-label="bet_amount">${item.bet}</td>
-    <td data-label="${tr('win_loss')}" data-i18n-data-label="win_loss"><span class="result-badge ${item.resultClass}">${item.result}</span></td>`;
-  return row;
-}
-
-function renderBatch(key){
-  const state = lazyState[key];
-  if(!state || !state.body || state.loading || state.visible >= state.records.length) return;
-
-  state.loading = true;
-  state.statusEl && state.statusEl.classList.add('is-loading');
-
-  setTimeout(() => {
-    const nextRecords = state.records.slice(state.visible, state.visible + PAGE_SIZE);
-    const fragment = document.createDocumentFragment();
-
-    nextRecords.forEach(item => {
-      fragment.appendChild(key === 'transactions' ? createTransactionRow(item) : createBetRow(item));
-    });
-
-    state.body.appendChild(fragment);
-    state.visible += nextRecords.length;
-    state.loading = false;
-    state.statusEl && state.statusEl.classList.remove('is-loading');
-    updateLazyStatus(key);
-
-    if(window.I18N && window.I18N.apply){ window.I18N.apply(); }
-  }, 120);
-}
-
-function activeKey(){
-  return betPanel && betPanel.classList.contains('active') ? 'bet' : 'transactions';
-}
-
-function loadMoreWhenNearBottom(){
-  const key = activeKey();
-  const scrollPosition = window.innerHeight + window.scrollY;
-  const pageHeight = document.documentElement.scrollHeight;
-  if(pageHeight - scrollPosition <= SCROLL_OFFSET){
-    renderBatch(key);
+  async function fetchJson(url){
+    const res = await fetch(url, {headers:{'Authorization':'Bearer ' + token()}});
+    const json = await res.json().catch(()=>({}));
+    if(res.status === 401 || json.message === 'Unauthorized'){ localStorage.removeItem('member_token'); location.href='login.html?redirect=history.html'; return {data:[]}; }
+    if(!res.ok || json.status === 'error') throw new Error(json.message || 'Load failed');
+    return json;
   }
-}
 
-historyTabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    historyTabs.forEach(item => item.classList.remove('active'));
-    tab.classList.add('active');
+  function updateLazyStatus(key){
+    const state = lazyState[key]; if(!state || !state.statusEl) return;
+    const finished = state.visible >= state.records.length;
+    state.statusEl.dataset.i18n = finished ? 'all_records_loaded' : 'loading_more_records';
+    state.statusEl.textContent = state.records.length ? tr(state.statusEl.dataset.i18n) : (key === 'bet' ? 'No bet records found.' : 'No transaction records found.');
+    state.statusEl.classList.toggle('is-finished', finished);
+  }
 
-    const key = tab.dataset.tab;
-    transactionPanel.classList.toggle('active', key === 'transactions');
-    betPanel.classList.toggle('active', key === 'bet');
-
-    renderBatch(key === 'bet' ? 'bet' : 'transactions');
-  });
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderBatch('transactions');
-  renderBatch('bet');
-  window.addEventListener('scroll', loadMoreWhenNearBottom, {passive:true});
-});
-
-document.addEventListener('i18n:changed', () => {
-  Object.keys(lazyState).forEach(updateLazyStatus);
-});
+  function createTransactionRow(item){
+    const row = document.createElement('tr');
+    const type = txName(item.type || item.ledgerType);
+    const cls = txClass(type);
+    const status = statusName(item.status);
+    row.innerHTML = `<td data-label="${tr('transactions')}">
+      <div class="txn-name ${cls}">${esc(type)}</div>
+      <div class="txn-id">#${esc(item.referenceNo || item.id || '-')}</div>
+      <div class="txn-amount"><span>${tr('amount')}</span> : <strong>${money(Math.abs(num(item.amount)))}</strong></div>
+      <div class="txn-date">${formatDate(item.createdAt)}</div>
+    </td><td data-label="${tr('status')}"><span class="status-badge ${status}"><i></i> <span>${esc(status.toUpperCase())}</span></span></td>`;
+    return row;
+  }
+  function createBetRow(item){
+    const row = document.createElement('tr');
+    const wl = num(item.winLoss);
+    row.innerHTML = `<td data-label="${tr('date_time')}">${formatDate(item.endedAt || item.startedAt)}</td>
+      <td data-label="${tr('game')}"><b>${esc(item.gameName || item.gameCode || item.providerCode || '-')}</b><br><small>${esc(item.providerCode || '')}</small></td>
+      <td data-label="${tr('bet_amount')}">${money(item.betAmount || 0)}</td>
+      <td data-label="${tr('win_loss')}"><span class="result-badge ${wl >= 0 ? 'win' : 'loss'}">${wl >= 0 ? '+ ' : '- '}${money(Math.abs(wl))}</span></td>`;
+    return row;
+  }
+  function renderBatch(key){
+    const state = lazyState[key]; if(!state || !state.body || state.loading || state.visible >= state.records.length) { updateLazyStatus(key); return; }
+    state.loading = true; state.statusEl && state.statusEl.classList.add('is-loading');
+    setTimeout(()=>{ const nextRecords = state.records.slice(state.visible, state.visible + PAGE_SIZE); const fragment = document.createDocumentFragment(); nextRecords.forEach(item => fragment.appendChild(key === 'transactions' ? createTransactionRow(item) : createBetRow(item))); state.body.appendChild(fragment); state.visible += nextRecords.length; state.loading = false; state.statusEl && state.statusEl.classList.remove('is-loading'); updateLazyStatus(key); if(window.I18N && window.I18N.apply) window.I18N.apply(); }, 80);
+  }
+  function activeKey(){ return betPanel && betPanel.classList.contains('active') ? 'bet' : 'transactions'; }
+  function loadMoreWhenNearBottom(){ const key = activeKey(); if(document.documentElement.scrollHeight - (window.innerHeight + window.scrollY) <= SCROLL_OFFSET) renderBatch(key); }
+  async function loadAll(){
+    transactionsBody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>'; betBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+    const [tx, bet] = await Promise.all([fetchJson(TX_URL), fetchJson(BET_URL)]);
+    lazyState.transactions.records = Array.isArray(tx.data) ? tx.data : [];
+    lazyState.bet.records = Array.isArray(bet.data) ? bet.data : [];
+    lazyState.transactions.visible = 0; lazyState.bet.visible = 0; transactionsBody.innerHTML=''; betBody.innerHTML='';
+    renderBatch('transactions'); renderBatch('bet');
+  }
+  historyTabs.forEach(tab => tab.addEventListener('click', () => { historyTabs.forEach(item => item.classList.remove('active')); tab.classList.add('active'); const key=tab.dataset.tab; transactionPanel.classList.toggle('active', key === 'transactions'); betPanel.classList.toggle('active', key === 'bet'); renderBatch(key === 'bet' ? 'bet' : 'transactions'); }));
+  document.addEventListener('DOMContentLoaded', () => { if(!requireLogin()) return; loadAll().catch(e=>{ transactionsBody.innerHTML='<tr><td colspan="2">'+esc(e.message)+'</td></tr>'; betBody.innerHTML='<tr><td colspan="4">'+esc(e.message)+'</td></tr>'; }); window.addEventListener('scroll', loadMoreWhenNearBottom, {passive:true}); });
+  document.addEventListener('i18n:changed', () => Object.keys(lazyState).forEach(updateLazyStatus));
+})();

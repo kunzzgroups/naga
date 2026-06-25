@@ -21,6 +21,22 @@ window.NAGA_API = {
 
   // Frontend player launch API. Frontend calls this API only; provider secrets stay in Spring Boot/BO.
   playerProviderLaunch: window.NAGA_CONFIG.api.baseUrl + '/api/player/provider/launch',
+  playerProviderWalletBalance: window.NAGA_CONFIG.api.baseUrl + '/api/player/provider/wallet-balance',
+  // Main wallet balance shown in frontend member panel / balance box
+  playerMainWalletBalance: window.NAGA_CONFIG.api.baseUrl + '/api/member/wallet/balance',
+  playerProviderExit: window.NAGA_CONFIG.api.baseUrl + '/api/player/provider/exit',
+  playerProviderHeartbeat: window.NAGA_CONFIG.api.baseUrl + '/api/player/provider/heartbeat',
+  playerPromotionList: window.NAGA_CONFIG.api.baseUrl + '/api/player/promotion/list',
+  playerPromotionClaim: window.NAGA_CONFIG.api.baseUrl + '/api/player/promotion/claim',
+  playerPromotionClaims: window.NAGA_CONFIG.api.baseUrl + '/api/player/promotion/my-claims',
+  playerHistoryTransactions: window.NAGA_CONFIG.api.baseUrl + '/api/player/history/transactions',
+  playerHistoryBets: window.NAGA_CONFIG.api.baseUrl + '/api/player/history/bets',
+
+  memberDeposit: window.NAGA_CONFIG.api.baseUrl + '/api/member/deposit',
+  memberWithdraw: window.NAGA_CONFIG.api.baseUrl + '/api/member/withdraw',
+  memberSetTransactionPassword: window.NAGA_CONFIG.api.baseUrl + '/api/member/transaction-password',
+  memberDownline: window.NAGA_CONFIG.api.baseUrl + '/api/member/downline',
+  paymentMethodList: window.NAGA_CONFIG.api.baseUrl + '/api/payment-method/list',
 
   siteCustomizeTranslation: window.NAGA_CONFIG.api.baseUrl + '/api/admin/language/translation'
 };
