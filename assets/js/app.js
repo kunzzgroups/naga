@@ -10,6 +10,10 @@ let categories = [];
 let subCategories = [];
 let activeCategoryId = null;
 let activeSubCategoryId = null;
+let gameLoadSequence = 0;
+let subCategoryLoadSequence = 0;
+const DEFAULT_GAME_SECTION_KEYWORD = 'slot';
+
 
 function tr(key, fallback){
   return (window.I18N && window.I18N.t && window.I18N.t(key) !== key) ? window.I18N.t(key) : (fallback || key);
@@ -86,6 +90,42 @@ function isActiveItem(item){
 function sortByOrder(a, b){
   return (Number(a.sortOrder || a.sort_order || 0) - Number(b.sortOrder || b.sort_order || 0))
       || (Number(a.id || 0) - Number(b.id || 0));
+}
+
+
+function safeLower(value){
+  return String(value == null ? '' : value).toLowerCase();
+}
+
+function getItemNameForMatch(item){
+  return [
+    item && item.name,
+    item && item.title,
+    item && item.code,
+    item && item.categoryCode,
+    item && item.category_code,
+    item && item.type,
+    transValue(item, 'name'),
+    transValue(item, 'title')
+  ].map(safeLower).join(' ');
+}
+
+function pickDefaultCategoryId(list){
+  if(!Array.isArray(list) || !list.length) return null;
+  const slot = list.find(item => getItemNameForMatch(item).includes(DEFAULT_GAME_SECTION_KEYWORD));
+  return (slot || list[0]).id;
+}
+
+function pickDefaultSubCategoryId(list){
+  if(!Array.isArray(list) || !list.length) return null;
+  const slot = list.find(item => getItemNameForMatch(item).includes(DEFAULT_GAME_SECTION_KEYWORD));
+  return (slot || list[0]).id;
+}
+
+function setGamesLoading(){
+  if(gameGrid){
+    gameGrid.innerHTML = '<div class="empty-state">Loading games...</div>';
+  }
 }
 
 function getImageUrl(item, fallback, folder){
@@ -176,6 +216,7 @@ function renderGames(list){
     if(launchGameId) card.dataset.gameId = launchGameId;
     if(launchProviderCode) card.dataset.providerCode = launchProviderCode;
     if(launchGameCode) card.dataset.gameCode = launchGameCode;
+    if(gameName) card.dataset.gameName = gameName;
 
     card.innerHTML=`
       <div class="game-card-img-wrap">
@@ -184,13 +225,15 @@ function renderGames(list){
              alt="${gameName}"
              data-game-id="${launchGameId}"
              data-provider-code="${launchProviderCode}"
-             data-game-code="${launchGameCode}">
+             data-game-code="${launchGameCode}"
+             data-game-name="${gameName}">
       </div>
       <button class="play-btn provider-launch-btn"
               type="button"
               data-game-id="${launchGameId}"
               data-provider-code="${launchProviderCode}"
-              data-game-code="${launchGameCode}">${tr('play','PLAY')}</button>`;
+              data-game-code="${launchGameCode}"
+              data-game-name="${gameName}">${tr('play','PLAY')}</button>`;
 
     const playBtn = card.querySelector('.play-btn');
     const img = card.querySelector('.provider-launch-img');
@@ -204,9 +247,9 @@ function renderGames(list){
     }
 
     if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.bindElement === 'function'){
-      window.NAGA_PROVIDER_LAUNCH.bindElement(card, item, { transferAmount: 0 });
-      window.NAGA_PROVIDER_LAUNCH.bindElement(img, item, { transferAmount: 0 });
-      window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0 });
+      window.NAGA_PROVIDER_LAUNCH.bindElement(card, item, { transferAmount: 0, gameName: gameName });
+      window.NAGA_PROVIDER_LAUNCH.bindElement(img, item, { transferAmount: 0, gameName: gameName });
+      window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0, gameName: gameName });
     }else{
       card.addEventListener('click', fallbackOpen);
       playBtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fallbackOpen(); });
@@ -224,7 +267,15 @@ function renderGames(list){
 }
 
 function fetchJson(url){
-  return fetch(url, { cache: 'no-store' }).then(res => {
+  const requestUrl = new URL(url, window.location.href);
+  requestUrl.searchParams.set('_t', Date.now().toString());
+  return fetch(requestUrl.toString(), {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  }).then(res => {
     if(!res.ok) throw new Error('API error: ' + url);
     return res.json();
   });
@@ -250,8 +301,10 @@ function loadCategories(){
   return fetchJson(GAME_CATEGORY_API_URL)
     .then(response => {
       categories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      activeCategoryId = categories[0] ? categories[0].id : null;
+      activeCategoryId = pickDefaultCategoryId(categories);
+      activeSubCategoryId = null;
       renderCategories();
+      setGamesLoading();
       return loadSubCategories();
     })
     .catch(err => {
@@ -265,24 +318,31 @@ function loadCategories(){
 }
 
 function loadSubCategories(){
+  const sequence = ++subCategoryLoadSequence;
+
   if(!activeCategoryId){
     subCategories = [];
     renderSubTabs();
     return loadGames();
   }
 
+  setGamesLoading();
+  const categoryIdForRequest = activeCategoryId;
   const url = buildUrl(GAME_SUB_CATEGORY_API_URL, {
-    categoryId: activeCategoryId,
+    categoryId: categoryIdForRequest,
     lang: currentLang()
   });
+
   return fetchJson(url)
     .then(response => {
+      if(sequence !== subCategoryLoadSequence || String(categoryIdForRequest) !== String(activeCategoryId)) return;
       subCategories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      activeSubCategoryId = subCategories[0] ? subCategories[0].id : null;
+      activeSubCategoryId = pickDefaultSubCategoryId(subCategories);
       renderSubTabs();
       return loadGames();
     })
     .catch(err => {
+      if(sequence !== subCategoryLoadSequence || String(categoryIdForRequest) !== String(activeCategoryId)) return;
       console.warn('Game sub category API failed:', err.message);
       subCategories = [];
       activeSubCategoryId = null;
@@ -292,16 +352,24 @@ function loadSubCategories(){
 }
 
 function loadGames(){
-  const params = { categoryId: activeCategoryId, lang: currentLang() };
-  if(activeSubCategoryId) params.subCategoryId = activeSubCategoryId;
+  const sequence = ++gameLoadSequence;
+  const categoryIdForRequest = activeCategoryId;
+  const subCategoryIdForRequest = activeSubCategoryId;
+  const params = { categoryId: categoryIdForRequest, lang: currentLang() };
+  if(subCategoryIdForRequest) params.subCategoryId = subCategoryIdForRequest;
 
+  setGamesLoading();
   const url = buildUrl(GAME_API_URL, params);
   return fetchJson(url)
     .then(response => {
+      if(sequence !== gameLoadSequence) return;
+      if(String(categoryIdForRequest || '') !== String(activeCategoryId || '')) return;
+      if(String(subCategoryIdForRequest || '') !== String(activeSubCategoryId || '')) return;
       const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
       renderGames(list);
     })
     .catch(err => {
+      if(sequence !== gameLoadSequence) return;
       console.warn('Game API failed:', err.message);
       renderGames([]);
     });
@@ -314,6 +382,7 @@ if(categoryRow){
     activeCategoryId=btn.dataset.id;
     activeSubCategoryId=null;
     renderCategories();
+    setGamesLoading();
     loadSubCategories();
   });
 }
@@ -340,6 +409,10 @@ document.addEventListener('i18n:changed', () => {
 });
 
 function initSlider(slider){
+  if(typeof slider._nagaSliderCleanup === 'function') slider._nagaSliderCleanup();
+  const sliderAbort = new AbortController();
+  const sliderEventOptions = { signal: sliderAbort.signal };
+
   let slideIndex=0;
   let slideTimer;
   let startX=0;
@@ -348,11 +421,18 @@ function initSlider(slider){
   let pointerId=null;
   let suppressClick=false;
   const slideDuration=4000;
-  const swipeDistance=45;
-  const slides=slider.querySelectorAll('.slide');
+  const slides=[...slider.querySelectorAll('.slide')];
   const dots=slider.querySelectorAll('.dots span');
   const timerBar=slider.querySelector('.slider-timer span');
   if(!slides.length)return;
+
+  let track=slider.querySelector('.slider-track');
+  if(!track){
+    track=document.createElement('div');
+    track.className='slider-track';
+    slider.insertBefore(track, slides[0]);
+    slides.forEach(slide=>track.appendChild(slide));
+  }
 
   function resetTimerBar(){
     if(!timerBar)return;
@@ -361,12 +441,17 @@ function initSlider(slider){
     timerBar.style.animation=`sliderTimer ${slideDuration}ms linear forwards`;
   }
 
+  function setTrack(offsetPx=0){
+    track.style.transform=`translate3d(calc(${-slideIndex * 100}% + ${offsetPx}px),0,0)`;
+  }
+
   function showSlide(index){
     slides[slideIndex].classList.remove('active');
     if(dots[slideIndex])dots[slideIndex].classList.remove('active');
     slideIndex=(index+slides.length)%slides.length;
     slides[slideIndex].classList.add('active');
     if(dots[slideIndex])dots[slideIndex].classList.add('active');
+    setTrack(0);
     resetTimerBar();
   }
 
@@ -389,7 +474,7 @@ function initSlider(slider){
       e.stopPropagation();
       showSlide(index);
       startSlider();
-    });
+    }, sliderEventOptions);
   });
 
   slider.addEventListener('pointerdown',e=>{
@@ -403,13 +488,15 @@ function initSlider(slider){
     if(timerBar)timerBar.style.animationPlayState='paused';
     slider.classList.add('is-dragging');
     try{ slider.setPointerCapture(pointerId); }catch(err){}
-  });
+  }, sliderEventOptions);
 
   slider.addEventListener('pointermove',e=>{
     if(!isDragging || e.pointerId!==pointerId)return;
     currentX=e.clientX;
-    if(Math.abs(currentX-startX)>8)suppressClick=true;
-  });
+    const diff=currentX-startX;
+    if(Math.abs(diff)>8)suppressClick=true;
+    setTrack(diff);
+  }, sliderEventOptions);
 
   function finishDrag(e){
     if(!isDragging || (e && e.pointerId!==pointerId))return;
@@ -417,18 +504,21 @@ function initSlider(slider){
     slider.classList.remove('is-dragging');
     try{ slider.releasePointerCapture(pointerId); }catch(err){}
     const diff=currentX-startX;
-    if(Math.abs(diff)>swipeDistance){
+    const changeDistance=slider.clientWidth * 0.45;
+
+    if(Math.abs(diff)>=changeDistance){
       diff>0 ? prevSlide() : nextSlide();
-    }else if(timerBar){
-      timerBar.style.animationPlayState='running';
+    }else{
+      setTrack(0);
+      if(timerBar)timerBar.style.animationPlayState='running';
     }
     startSlider();
     setTimeout(()=>{ suppressClick=false; },0);
   }
 
-  slider.addEventListener('pointerup',finishDrag);
-  slider.addEventListener('pointercancel',finishDrag);
-  slider.addEventListener('lostpointercapture',finishDrag);
+  slider.addEventListener('pointerup',finishDrag, sliderEventOptions);
+  slider.addEventListener('pointercancel',finishDrag, sliderEventOptions);
+  slider.addEventListener('lostpointercapture',finishDrag, sliderEventOptions);
 
   slider.addEventListener('click',e=>{
     if(e.target.closest('.dots'))return;
@@ -438,9 +528,14 @@ function initSlider(slider){
     }
     nextSlide();
     startSlider();
-  });
+  }, sliderEventOptions);
 
+  setTrack(0);
   startSlider();
+  slider._nagaSliderCleanup = () => {
+    clearInterval(slideTimer);
+    sliderAbort.abort();
+  };
 }
 
 
