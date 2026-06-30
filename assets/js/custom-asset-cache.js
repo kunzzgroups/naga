@@ -10,6 +10,7 @@
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
   var translationCache = {};
+  var versionJsonCache = null;
   var lastRunId = 0;
 
   var FILE_FIELD_MAP = {
@@ -18,6 +19,8 @@
     'favicon2.png': 'faviconUrl2',
     'favicon3.png': 'faviconUrl3',
     'background.jpg': 'pageBackgroundUrl',
+    'background.jpeg': 'pageBackgroundUrl',
+    'background.png': 'pageBackgroundUrl',
     'referral.png': 'referralUrl',
     'share.png': 'shareUrl',
     'downline.png': 'downlineUrl',
@@ -46,6 +49,32 @@
     return String((cfg && cfg.uploadBaseUrl) || 'https://static.titanxgaming.com/uploads').replace(/\/+$/, '');
   }
 
+
+  function customVersionJsonUrl(){
+    return 'assets/custom/version.json?ts=' + CUSTOM_ASSET_VERSION;
+  }
+
+  function loadVersionJson(){
+    if(versionJsonCache) return Promise.resolve(versionJsonCache);
+    return fetch(customVersionJsonUrl(), { cache: 'no-store' })
+      .then(function(res){ return res.ok ? res.json() : {}; })
+      .then(function(json){
+        versionJsonCache = json || {};
+        return versionJsonCache;
+      })
+      .catch(function(){
+        versionJsonCache = {};
+        return versionJsonCache;
+      });
+  }
+
+  function defaultBackgroundFromVersionJson(versionData){
+    versionData = versionData || {};
+    // BO site-customize writes the actual uploaded filename/url here.
+    // This can be background.png, background.jpg, background.jpeg, or a full uploaded URL.
+    return resolveImageValue(versionData.background || versionData.pageBackgroundUrl || '') || (CUSTOM_IMAGE_PATH + 'background.png');
+  }
+
   function translationApiUrl(){
     return apiBaseUrl() + '/api/admin/language/translation?' + new URLSearchParams({
       refType: REF_TYPE,
@@ -65,7 +94,7 @@
 
   function isFullUrl(value){
     value = String(value || '');
-    return /^(https?:)?\/\//i.test(value) || value.indexOf('data:') === 0 || value.indexOf('assets/') === 0 || value.charAt(0) === '/';
+    return /^(https?:)?\/\//i.test(value) || value.indexOf('data:') === 0 || value.indexOf('assets/') === 0 || value.indexOf('../') === 0 || value.indexOf('./') === 0 || value.charAt(0) === '/';
   }
 
   function resolveImageValue(value){
@@ -185,8 +214,8 @@
     });
   }
 
-  function applyBackground(data){
-    var fallback = CUSTOM_IMAGE_PATH + 'background.jpg';
+  function applyBackground(data, versionData){
+    var fallback = defaultBackgroundFromVersionJson(versionData);
     var translated = resolveImageValue(getTranslatedValue(data, 'pageBackgroundUrl'));
     var bgUrl = addCacheBuster(translated || fallback);
 
@@ -205,7 +234,10 @@
       'body.history-page,',
       'body.login-page,',
       'body.setting-page,',
-      'body.withdraw-page {',
+      'body.withdraw-page,',
+      'body.password-setting-page,',
+      'body.transaction-password-setting-page,',
+      'body.mobile-setting-page {',
       '  background-image: url("' + bgUrl + '") !important;',
       '  background-repeat: no-repeat !important;',
       '  background-position: center top !important;',
@@ -224,9 +256,11 @@
     // Required for switching zh -> en instantly.
     rememberDefaultAssets();
 
-    loadTranslationData(lang).then(function(data){
+    Promise.all([loadTranslationData(lang), loadVersionJson()]).then(function(result){
       if(runId !== lastRunId) return;
-      applyBackground(data);
+      var data = result[0] || {};
+      var versionData = result[1] || {};
+      applyBackground(data, versionData);
       applyImageTranslations(data);
     });
   }
@@ -234,6 +268,7 @@
   window.NAGA_CUSTOM_ASSET_TRANSLATION = {
     refresh: function(){
       translationCache = {};
+      versionJsonCache = null;
       CUSTOM_ASSET_VERSION = String(Date.now());
       run();
     }
