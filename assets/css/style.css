@@ -6063,3 +6063,36 @@ body.login-page #registerForm .verify-row button{
         margin:14px 0;
     }
 }
+
+/* Page splash loader: full screen, spinner only */
+html.page-loading,
+html.page-loading body {
+  overflow: hidden !important;
+}
+
+html.page-loading::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  background: #050505;
+}
+
+html.page-loading::after {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 2147483647;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 4px solid rgba(255, 255, 255, 0.22);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: pageLoaderSpin 0.8s linear infinite;
+}
+
+@keyframes pageLoaderSpin {
+  to { transform: rotate(360deg); }
+}
