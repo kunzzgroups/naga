@@ -60,7 +60,8 @@
         const json = await postJson(API_BASE + '/api/auth/member/login', {username, password});
         saveMemberAuth(json);
         showMessage(loginForm, 'Login success.', 'success');
-        window.location.href = 'index.html';
+        const redirect = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
+        window.location.href = redirect;
       }catch(err){
         showMessage(loginForm, err.message || 'Login failed.', 'error');
       }finally{
@@ -70,6 +71,7 @@
   }
 
   const registerForm = document.getElementById('registerForm');
+  if(registerForm){ const ref = new URLSearchParams(window.location.search).get('ref'); if(ref && formInput(registerForm,3)) formInput(registerForm,3).value = ref; }
   const registerBtn = registerForm ? registerForm.querySelector('.submit-login') : null;
   if(registerBtn){
     registerBtn.type = 'submit';
@@ -95,7 +97,8 @@
         });
         saveMemberAuth(json);
         showMessage(registerForm, 'Register success.', 'success');
-        window.location.href = 'index.html';
+        const redirect = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
+        window.location.href = redirect;
       }catch(err){
         showMessage(registerForm, err.message || 'Register failed.', 'error');
       }finally{

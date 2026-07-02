@@ -1,5 +1,7 @@
 (function(){
   const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || 'http://localhost:8080';
+  const API = window.NAGA_API || {};
+  const MAIN_WALLET_BALANCE_URL = API.playerMainWalletBalance || API.playerProviderWalletBalance || (API_BASE.replace(/\/+$/, '') + '/api/player/provider/wallet-balance');
 
   function esc(value){
     return String(value == null ? '' : value).replace(/[&<>"']/g, function(c){
@@ -35,6 +37,8 @@
   function clearMember(){
     localStorage.removeItem('member_token');
     localStorage.removeItem('member_info');
+    localStorage.removeItem('member_main_wallet_balance');
+    setMainWalletBalance(0);
   }
 
   function renderLoggedIn(member){
@@ -71,6 +75,69 @@
       '</div>';
   }
 
+
+  function formatMoney(value){
+    const n = Number(value || 0);
+    return 'MYR ' + (isNaN(n) ? '0.00' : n.toFixed(2));
+  }
+
+  function setMainWalletBalance(value){
+    const text = formatMoney(value);
+    document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){
+      el.textContent = text;
+    });
+  }
+
+  function extractBalance(json){
+    const data = (json && json.data) || json || {};
+    const candidates = [
+      data.balance,
+      data.mainWalletBalance,
+      data.main_wallet_balance,
+      data.walletBalance,
+      data.wallet_balance,
+      data.amount,
+      data.mainWallet && data.mainWallet.balance,
+      data.main_wallet && data.main_wallet.balance,
+      data.wallet && data.wallet.balance
+    ];
+    for(let i = 0; i < candidates.length; i++){
+      const value = candidates[i];
+      if(value !== undefined && value !== null && value !== ''){
+        const n = Number(value);
+        return isNaN(n) ? 0 : n;
+      }
+    }
+    return 0;
+  }
+
+  async function loadMainWalletBalance(){
+    const token = getToken();
+    if(!token){
+      setMainWalletBalance(0);
+      return 0;
+    }
+
+    const res = await fetch(MAIN_WALLET_BALANCE_URL, {
+      headers: {'Authorization': 'Bearer ' + token}
+    });
+    const json = await res.json().catch(() => ({}));
+
+    if(!res.ok || json.status === 'error'){
+      throw new Error(json.message || 'Unable to load main wallet balance.');
+    }
+
+    const balance = extractBalance(json);
+    setMainWalletBalance(balance);
+    localStorage.setItem('member_main_wallet_balance', String(balance));
+    return balance;
+  }
+
+  function renderCachedBalance(){
+    const cached = localStorage.getItem('member_main_wallet_balance');
+    if(cached !== null && cached !== '') setMainWalletBalance(cached);
+  }
+
   async function loadMemberFromApi(){
     const token = getToken();
     if(!token) return null;
@@ -96,20 +163,25 @@
     const token = getToken();
     if(!token){
       renderLoggedOut();
+      setMainWalletBalance(0);
       return;
     }
 
     const stored = getStoredMember();
     if(stored && Object.keys(stored).length){
       renderLoggedIn(stored);
+      renderCachedBalance();
     }
 
     try{
       const latest = await loadMemberFromApi();
-      if(latest) renderLoggedIn(latest);
+      if(latest){
+        renderLoggedIn(latest);
+        try{ await loadMainWalletBalance(); }catch(balanceErr){ renderCachedBalance(); }
+      }
       else renderLoggedOut();
     }catch(e){
-      if(stored && Object.keys(stored).length) renderLoggedIn(stored);
+      if(stored && Object.keys(stored).length){ renderLoggedIn(stored); renderCachedBalance(); }
       else renderLoggedOut();
     }
   }
@@ -127,6 +199,7 @@
   window.NAGA_MEMBER_AUTH = {
     refresh: initMemberPanel,
     logout: function(){ clearMember(); renderLoggedOut(); },
-    member: getStoredMember
+    member: getStoredMember,
+    refreshBalance: loadMainWalletBalance
   };
 })();

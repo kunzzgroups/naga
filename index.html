@@ -7,7 +7,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/custom/images/favicon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/custom/images/favicon2.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/custom/images/favicon3.png">
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.22" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.23" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
 </head>
 <body>
@@ -95,7 +95,7 @@
         <div class="balance-box">
           <div class="balance-text">
             <p data-i18n="balance_label">Balance:</p>
-            <h3>MYR 0.00</h3>
+            <h3 data-main-wallet-balance>MYR 0.00</h3>
             <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>MYR 10.00</b></p>
             <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b>MYR 50.00</b></p>
           </div>
@@ -105,11 +105,28 @@
             <button type="button" aria-label="Refresh"><img src="assets/custom/images/refresh.png" alt="REFRESH"></button>
           </div>
         </div>
+        <div class="bonus-progress-widget" id="bonusProgressWidget" data-bonus-progress-widget hidden>
+          <div class="bonus-progress-head">
+            <span>Active Bonus</span>
+            <strong id="bonusProgressStatus">0%</strong>
+          </div>
+          <div class="bonus-progress-name" id="bonusProgressName">-</div>
+          <div class="bonus-progress-bar" aria-label="Bonus winover progress">
+            <span id="bonusProgressBar"></span>
+          </div>
+          <div class="bonus-progress-meta">
+            <span id="bonusProgressCurrent">MYR 0.00</span>
+            <span id="bonusProgressRequired">MYR 0.00</span>
+          </div>
+          <div class="bonus-progress-note" id="bonusProgressNote">Winover progress</div>
+        </div>
+
       </div>
       <br>
       <div data-layout-section="home-after-account-status"></div>
       <section class="bonus-container">
-        <div class="bonus-section">
+        <div id="dynamicPromotionBox" data-promotion-box="index-right"></div>
+        <div class="bonus-section promo-static-fallback">
           <img class="bonus-title-img" src="assets/images/bonus/bonus_text.png" data-i18n-img="img.bonus_title" alt="Information Center">
           <!-- Adjust layout by class only:
               d-cols-1/2/3 = desktop columns
@@ -121,7 +138,7 @@
           </div>
         </div>
 
-        <div class="bonus-section">
+        <div class="bonus-section promo-static-fallback">
           <img class="bonus-title-img" src="assets/images/bonus/kick_start_bonus_text.png" alt="Kick Start Bonus">
           <div class="bonus-grid d-cols-2 m-cols-1">
             <a class="bonus-card" href="#"><img src="assets/images/bonus/bonus.png" alt="Register Free"></a>
@@ -235,14 +252,16 @@
     </div>
   </div>
 
-  <script src="assets/js/lang.js?v=1.0.7"></script>
-  <script src="assets/js/config.js?v=1.0.13"></script>
+  <script src="assets/js/lang.js?v=1.0.8"></script>
+  <script src="assets/js/config.js?v=1.0.14"></script>
   <script src="assets/js/provider-launch.js?v=1.0.0"></script>
-  <script src="assets/js/app.js?v=1.0.11"></script>
-  <script src="assets/js/bonus.js?v=1.0.7"></script>
+  <script src="assets/js/app.js?v=1.0.12"></script>
+  <script src="assets/js/bonus.js?v=1.0.8"></script>
+  <script src="assets/js/promotion-bonus.js?v=1.0.6"></script>
   <script src="assets/js/layout-section-loader.js?v=1.0.10"></script>
-  <script src="assets/js/custom-asset-cache.js?v=1.0.10"></script>
+  <script src="assets/js/custom-asset-cache.js?v=1.0.11"></script>
   <script src="assets/js/member-auth.js?v=1.0.1"></script>
+  <script src="assets/js/bonus-progress.js?v=1.0.0"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>

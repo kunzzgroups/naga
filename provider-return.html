@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Return From Game</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <main class="provider-return-page" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div style="max-width:420px;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:22px;text-align:center;color:#fff;">
+      <h2 style="margin:0 0 8px;">Game Closed</h2>
+      <p style="opacity:.75;margin:0 0 18px;">Click below to transfer provider balance back to your Main Wallet.</p>
+      <button id="providerExitBtn" style="width:100%;height:46px;border:0;border-radius:12px;font-weight:900;background:linear-gradient(135deg,#ffcc33,#ff8a00);">Transfer Back & Return Home</button>
+      <p id="providerExitMsg" style="min-height:22px;margin:14px 0 0;color:#ffcc33;font-weight:700;"></p>
+    </div>
+  </main>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/provider-launch.js"></script>
+  <script>
+    document.getElementById('providerExitBtn').addEventListener('click', async function(){
+      const btn = this;
+      const msg = document.getElementById('providerExitMsg');
+      btn.disabled = true;
+      btn.textContent = 'Transferring...';
+      msg.textContent = '';
+      try{
+        if(window.NAGA_PROVIDER_LAUNCH && window.NAGA_PROVIDER_LAUNCH.exitProviderGame){
+          await window.NAGA_PROVIDER_LAUNCH.exitProviderGame({transferBackAll:true});
+        }
+        location.href = 'index.html';
+      }catch(e){
+        msg.textContent = e.message || 'Transfer back failed.';
+        btn.disabled = false;
+        btn.textContent = 'Transfer Back & Return Home';
+      }
+    });
+  </script>
+</body>
+</html>
