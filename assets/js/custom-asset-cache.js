@@ -5,7 +5,7 @@
   //   GET /api/admin/language/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = String(Date.now());
+  var CUSTOM_ASSET_VERSION = '1.0.28';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
@@ -51,15 +51,16 @@
 
 
   function customVersionJsonUrl(){
-    return 'assets/custom/version.json?ts=' + CUSTOM_ASSET_VERSION;
+    return 'assets/custom/version.json?v=' + CUSTOM_ASSET_VERSION;
   }
 
   function loadVersionJson(){
     if(versionJsonCache) return Promise.resolve(versionJsonCache);
-    return fetch(customVersionJsonUrl(), { cache: 'no-store' })
+    return fetch(customVersionJsonUrl(), { cache: 'default' })
       .then(function(res){ return res.ok ? res.json() : {}; })
       .then(function(json){
         versionJsonCache = json || {};
+        CUSTOM_ASSET_VERSION = String(versionJsonCache.version || CUSTOM_ASSET_VERSION);
         return versionJsonCache;
       })
       .catch(function(){
@@ -110,15 +111,15 @@
     if(!url) return url;
     if(url.indexOf('data:') === 0) return url;
 
+    // Do not add Date.now() on every page load.
+    // Date.now() disables browser cache and makes logo/background/gif download again.
+    // Keep existing version query from BO version.json, otherwise add stable version.
+    if(/[?&](v|_cb)=/i.test(url)) return url;
+
     var parts = String(url).split('#');
     var base = parts[0];
     var hash = parts.length > 1 ? '#' + parts.slice(1).join('#') : '';
-
-    base = base.replace(/([?&])_cb=\d+(&?)/, function(match, p1, p2){
-      return p2 ? p1 : '';
-    });
-
-    return base + (base.indexOf('?') === -1 ? '?' : '&') + '_cb=' + CUSTOM_ASSET_VERSION + hash;
+    return base + (base.indexOf('?') === -1 ? '?' : '&') + 'v=' + encodeURIComponent(CUSTOM_ASSET_VERSION) + hash;
   }
 
   function cleanPath(url){
@@ -169,7 +170,7 @@
     if(isDefaultLang(lang)) return Promise.resolve({});
     if(translationCache[lang]) return Promise.resolve(translationCache[lang]);
 
-    return fetch(translationApiUrl(), { cache: 'no-store' })
+    return fetch(translationApiUrl(), { cache: 'no-cache' })
       .then(function(res){ if(!res.ok) throw new Error('translation api failed'); return res.json(); })
       .then(function(json){
         var all = (json && json.data) || {};
@@ -262,6 +263,7 @@
       var versionData = result[1] || {};
       applyBackground(data, versionData);
       applyImageTranslations(data);
+      document.dispatchEvent(new CustomEvent('naga:custom-assets-ready'));
     });
   }
 
