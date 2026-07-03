@@ -17,6 +17,7 @@ window.NAGA_API = {
 
   gameCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-category/list',
   gameSubCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-sub-category/list',
+  gameProviderList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-provider/list',
   gameList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list',
 
   // Frontend player launch API. Frontend calls this API only; provider secrets stay in Spring Boot/BO.

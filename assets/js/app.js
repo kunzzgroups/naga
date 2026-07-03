@@ -5,11 +5,17 @@ const GAME_SUB_CATEGORY_API_URL =
   API.gameSubCategoryList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-sub-category/list' : 'https://bo.titanxgaming.com/api/admin/game-sub-category/list');
 const GAME_API_URL =
   API.gameList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list' : 'https://bo.titanxgaming.com/api/admin/game/list');
+const GAME_PROVIDER_API_URL =
+  API.gameProviderList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-provider/list' : 'https://bo.titanxgaming.com/api/admin/game-provider/list');
 
 let categories = [];
 let subCategories = [];
+let providers = [];
 let activeCategoryId = null;
 let activeSubCategoryId = null;
+let activeProviderCode = null;
+let currentGameList = [];
+let showingProviderList = true;
 let gameLoadSequence = 0;
 let subCategoryLoadSequence = 0;
 const DEFAULT_GAME_SECTION_KEYWORD = 'slot';
@@ -110,10 +116,54 @@ function getItemNameForMatch(item){
   ].map(safeLower).join(' ');
 }
 
+function normalizeKey(value){
+  return String(value == null ? '' : value).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function categoryTypeKey(cat){
+  const raw = cat?.code || cat?.categoryCode || cat?.type || cat?.name || transValue(cat, 'name') || '';
+  const key = normalizeKey(raw);
+  if(key.includes('SLOT')) return 'SLOT';
+  if(key.includes('LIVE')) return 'LIVE';
+  if(key.includes('SPORT')) return 'SPORT';
+  if(key.includes('FISH')) return 'FISHING';
+  if(key.includes('OTHER')) return 'OTHER';
+  if(key.includes('HOT')) return 'HOT';
+  return key;
+}
+
+function activeCategoryTypeKey(){
+  const cat = categories.find(c => String(c.id) === String(activeCategoryId));
+  return categoryTypeKey(cat);
+}
+
+function activeCategory(){
+  return categories.find(c => String(c.id) === String(activeCategoryId));
+}
+
+function activeCategoryDisplayMode(){
+  const cat = activeCategory();
+  const mode = String(cat?.displayMode || cat?.display_mode || '').trim().toUpperCase();
+  return mode === 'DIRECT_GAME' ? 'DIRECT_GAME' : 'PROVIDER';
+}
+
+function isDirectGameCategory(){
+  return activeCategoryDisplayMode() === 'DIRECT_GAME';
+}
+
+function providerTypeOf(provider){
+  return normalizeKey(provider?.providerType || provider?.provider_type || provider?.type || '');
+}
+
+function providersForActiveCategory(){
+  const key = activeCategoryTypeKey();
+  if(!key) return providers;
+  return providers.filter(p => providerTypeOf(p) === key);
+}
+
 function pickDefaultCategoryId(list){
   if(!Array.isArray(list) || !list.length) return null;
-  const slot = list.find(item => getItemNameForMatch(item).includes(DEFAULT_GAME_SECTION_KEYWORD));
-  return (slot || list[0]).id;
+  return list[0].id;
 }
 
 function pickDefaultSubCategoryId(list){
@@ -166,9 +216,9 @@ function renderSubTabs(){
   if(!subTabRow) return;
   subTabRow.innerHTML = '';
 
-  if(!subCategories.length){
+  if(!activeProviderCode || !subCategories.length){
     subTabRow.style.display = 'none';
-    activeSubCategoryId = null;
+    if(!activeProviderCode) activeSubCategoryId = null;
     return;
   }
 
@@ -189,17 +239,101 @@ function renderSubTabs(){
   });
 }
 
-function renderGames(list){
-  if(!gameGrid) return;
-  gameGrid.innerHTML='';
-  gameGrid.classList.add('provider-grid');
+function providerCodeOf(item){
+  return String(item?.providerCode || item?.provider_code || item?.code || '').trim().toUpperCase();
+}
 
-  if(!list.length){
-    gameGrid.innerHTML = '<div class="empty-state">No game available</div>';
+function providerNameOf(provider){
+  return provider?.name || provider?.title || providerCodeOf(provider) || 'Provider';
+}
+
+function providerForCode(code){
+  const clean = String(code || '').trim().toUpperCase();
+  return providers.find(p => providerCodeOf(p) === clean) || { code: clean, name: clean };
+}
+
+function providerInitials(name){
+  const words = String(name || 'P').trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'P';
+}
+
+function providerImageOf(provider){
+  const value = provider?.imageUrl || provider?.image_url || provider?.providerImageUrl || provider?.provider_image_url || provider?.logoUrl || provider?.logo_url || provider?.logo || provider?.image;
+  return resolveUploadImage(value, 'provider', '');
+}
+
+function renderProviderCards(games){
+  if(!gameGrid) return;
+  showingProviderList = true;
+  activeProviderCode = null;
+  currentGameList = Array.isArray(games) ? games : [];
+  if(subTabRow){
+    subTabRow.innerHTML = '';
+    subTabRow.style.display = 'none';
+  }
+  gameGrid.innerHTML = '';
+  gameGrid.classList.add('provider-grid', 'provider-first-grid');
+
+  const countByProvider = new Map();
+  currentGameList.forEach(game => {
+    const code = providerCodeOf(game);
+    if(code) countByProvider.set(code, (countByProvider.get(code) || 0) + 1);
+  });
+
+  const rows = providersForActiveCategory().sort((a, b) => {
+    const ao = Number(a.sortOrder || a.sort_order || 0);
+    const bo = Number(b.sortOrder || b.sort_order || 0);
+    return (ao - bo) || providerNameOf(a).localeCompare(providerNameOf(b));
+  }).map(provider => ({ code: providerCodeOf(provider), provider, count: countByProvider.get(providerCodeOf(provider)) || 0 }))
+    .filter(row => row.code);
+
+  if(!rows.length){
+    gameGrid.innerHTML = '<div class="empty-state">No provider available for this category</div>';
     return;
   }
 
-  list.forEach(item=>{
+  rows.forEach(row => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'game-card provider-card';
+    card.dataset.providerCode = row.code;
+    const name = providerNameOf(row.provider);
+    const imageUrl = providerImageOf(row.provider);
+    card.innerHTML = `
+      <div class="provider-card-face ${imageUrl ? 'has-provider-image' : ''}">
+        ${imageUrl ? `<img class="provider-card-img" src="${imageUrl}" alt="${name}" loading="lazy">` : `<div class="provider-card-glow">${providerInitials(name)}</div><b>${name}</b><span>${row.count} Games</span>`}
+      </div>`;
+    card.addEventListener('click', () => {
+      activeProviderCode = row.code;
+      setGamesLoading();
+      loadSubCategories();
+    });
+    gameGrid.appendChild(card);
+  });
+}
+
+function renderGames(list){
+  if(!gameGrid) return;
+  showingProviderList = false;
+  const provider = providerForCode(activeProviderCode);
+  gameGrid.innerHTML='';
+  gameGrid.classList.add('provider-grid');
+  gameGrid.classList.remove('provider-first-grid');
+
+  if(activeProviderCode){
+    // provider header removed
+  }
+
+  const gameList = Array.isArray(list) ? list : [];
+  if(!gameList.length){
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'No game available';
+    gameGrid.appendChild(empty);
+    return;
+  }
+
+  gameList.forEach(item=>{
     const card=document.createElement('div');
     card.className='game-card provider-launch-card';
     card.setAttribute('role', 'button');
@@ -252,10 +386,10 @@ function renderGames(list){
       window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0, gameName: gameName });
     }else{
       card.addEventListener('click', fallbackOpen);
-      playBtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); fallbackOpen(); });
+      playBtn.addEventListener('click', e=>{ e.stopPropagation(); fallbackOpen(); });
     }
 
-    card.addEventListener('keydown', function(e){
+    card.addEventListener('keydown', e=>{
       if(e.key === 'Enter' || e.key === ' '){
         e.preventDefault();
         card.click();
@@ -298,8 +432,9 @@ function currentLang(){
 function loadCategories(){
   if(!categoryRow || !subTabRow || !gameGrid) return Promise.resolve();
 
-  return fetchJson(GAME_CATEGORY_API_URL)
-    .then(response => {
+  return Promise.all([fetchJson(GAME_CATEGORY_API_URL), fetchJson(GAME_PROVIDER_API_URL).catch(() => ({data: []}))])
+    .then(([response, providerResponse]) => {
+      providers = normalizeApiList(providerResponse).filter(isActiveItem).sort(sortByOrder);
       categories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
       activeCategoryId = pickDefaultCategoryId(categories);
       activeSubCategoryId = null;
@@ -326,10 +461,18 @@ function loadSubCategories(){
     return loadGames();
   }
 
+  if(!activeProviderCode || isDirectGameCategory()){
+    subCategories = [];
+    activeSubCategoryId = null;
+    renderSubTabs();
+    return loadGames();
+  }
+
   setGamesLoading();
   const categoryIdForRequest = activeCategoryId;
   const url = buildUrl(GAME_SUB_CATEGORY_API_URL, {
     categoryId: categoryIdForRequest,
+    providerCode: activeProviderCode,
     lang: currentLang()
   });
 
@@ -356,7 +499,8 @@ function loadGames(){
   const categoryIdForRequest = activeCategoryId;
   const subCategoryIdForRequest = activeSubCategoryId;
   const params = { categoryId: categoryIdForRequest, lang: currentLang() };
-  if(subCategoryIdForRequest) params.subCategoryId = subCategoryIdForRequest;
+  if(activeProviderCode) params.providerCode = activeProviderCode;
+  if(activeProviderCode && subCategoryIdForRequest) params.subCategoryId = subCategoryIdForRequest;
 
   setGamesLoading();
   const url = buildUrl(GAME_API_URL, params);
@@ -366,7 +510,17 @@ function loadGames(){
       if(String(categoryIdForRequest || '') !== String(activeCategoryId || '')) return;
       if(String(subCategoryIdForRequest || '') !== String(activeSubCategoryId || '')) return;
       const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      renderGames(list);
+      if(isDirectGameCategory()){
+        currentGameList = list;
+        activeProviderCode = null;
+        if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
+        renderGames(list);
+      }else if(activeProviderCode){
+        renderGames(list.filter(item => providerCodeOf(item) === activeProviderCode));
+      }else{
+        currentGameList = list;
+        renderProviderCards(list);
+      }
     })
     .catch(err => {
       if(sequence !== gameLoadSequence) return;
@@ -381,6 +535,7 @@ if(categoryRow){
     if(!btn)return;
     activeCategoryId=btn.dataset.id;
     activeSubCategoryId=null;
+    activeProviderCode=null;
     renderCategories();
     setGamesLoading();
     loadSubCategories();
