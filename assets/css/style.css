@@ -6273,9 +6273,9 @@ body.member-logged-in .top-member-actions{display:flex;}
     .top-header-actions{gap:10px;}
     .top-login-btn,.top-register-btn,.top-wallet-pill{
         min-width:104px;
-        height:43px;
+        height:40px;
         border-radius:11px;
-        font-size:17px;
+        font-size:14px;
         padding:0 18px;
     }
     .top-wallet-pill{min-width:132px;font-size:14px;}
@@ -6412,8 +6412,8 @@ body.member-logged-in .top-member-actions{display:flex;}
     .top-header{padding:0 14px;}
     .top-header .site-logo{height:34px;max-width:94px;}
     .top-header-actions{gap:8px;}
-    .top-login-btn,.top-register-btn{min-width:104px;height:43px;font-size:17px;padding:0 15px;}
-    .top-wallet-pill{min-width:122px;height:42px;font-size:13px;padding:0 12px;}
+    .top-login-btn,.top-register-btn{min-width:104px;height:40px;font-size:14px;padding:0 15px;}
+    .top-wallet-pill{min-width:122px;height:40px;font-size:13px;padding:0 12px;}
     .top-lang-btn.lang-btn{width:40px;height:40px;}
 }
 
