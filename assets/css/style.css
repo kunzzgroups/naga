@@ -8197,3 +8197,244 @@ body:not(.member-logged-in) .mobile-menu-auth{display:grid !important;}
     font-size: 20px !important;
   }
 }
+
+/* ===== Patch: show setting wallet + promo/social content on desktop too ===== */
+@media (min-width:901px){
+  body.setting-page{
+    overflow:hidden !important;
+    padding-bottom:0 !important;
+  }
+  body.setting-page .setting-main{
+    height:calc(100vh - 69px - 57px) !important;
+    min-height:0 !important;
+    overflow-y:auto !important;
+    padding:24px 18px 34px !important;
+    align-items:flex-start !important;
+  }
+  body.setting-page .setting-shell{
+    width:min(1180px, 96vw) !important;
+    max-width:none !important;
+    display:grid !important;
+    grid-template-columns:minmax(360px, 470px) minmax(360px, 430px) !important;
+    justify-content:center !important;
+    align-items:start !important;
+    gap:22px 28px !important;
+  }
+  body.setting-page .profile-card{grid-column:1; grid-row:1;}
+  body.setting-page .setting-card{grid-column:1; grid-row:2;}
+  body.setting-page .setting-mobile-wallet,
+  body.setting-page .setting-mobile-promos{
+    display:block !important;
+    grid-column:2;
+    width:100% !important;
+  }
+  body.setting-page .setting-mobile-wallet{
+    grid-row:1;
+    background:rgba(0,7,22,.72) !important;
+    border:1px solid rgba(0,168,255,.35) !important;
+    box-shadow:0 0 18px rgba(0,168,255,.16), inset 0 0 22px rgba(0,0,0,.35) !important;
+    color:#fff !important;
+    border-radius:16px !important;
+    padding:14px 14px 18px !important;
+  }
+  body.setting-page .setting-mobile-promos{
+    grid-row:2 / span 3;
+    margin-top:0 !important;
+  }
+  body.setting-page .setting-wallet-auth .member-welcome-card{
+    margin:0 0 12px !important;
+    border-radius:14px !important;
+  }
+  body.setting-page .setting-wallet-auth .login-row{display:none !important;}
+  body.setting-page .setting-wallet-balance{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) 132px !important;
+    gap:10px !important;
+    align-items:center !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    padding:0 !important;
+    margin:0 !important;
+  }
+  body.setting-page .setting-wallet-balance .balance-text p{
+    color:#fff !important;
+    font-size:14px !important;
+    line-height:1.35 !important;
+    margin:0 0 8px !important;
+  }
+  body.setting-page .setting-wallet-balance .balance-text h3{
+    color:#fff200 !important;
+    font-size:25px !important;
+    line-height:1.05 !important;
+    margin:0 0 14px !important;
+    text-shadow:0 0 8px rgba(255,218,0,.55) !important;
+  }
+  body.setting-page .setting-wallet-balance .money-btns{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:10px !important;
+    align-items:stretch !important;
+    margin-top:0 !important;
+  }
+  body.setting-page .setting-wallet-balance .money-btns button{
+    border:0 !important;
+    background:transparent !important;
+    padding:0 !important;
+    width:100% !important;
+  }
+  body.setting-page .setting-wallet-balance .money-btns img{
+    width:128px !important;
+    max-width:100% !important;
+    height:auto !important;
+    display:block !important;
+  }
+  body.setting-page .setting-kickstart-promo,
+  body.setting-page .setting-info-promo{
+    display:block !important;
+    margin:0 0 18px !important;
+  }
+  body.setting-page .setting-mobile-promos .bonus-title-img{
+    display:block !important;
+    width:100% !important;
+    max-height:54px !important;
+    object-fit:contain !important;
+    object-position:left center !important;
+    margin:0 0 8px !important;
+  }
+  body.setting-page .setting-mobile-promos .bonus-card,
+  body.setting-page .setting-mobile-promos .promo-img,
+  body.setting-page .setting-mobile-promos .social-image{
+    display:block !important;
+    width:100% !important;
+    margin:0 0 10px !important;
+  }
+  body.setting-page .setting-mobile-promos .bonus-card img,
+  body.setting-page .setting-mobile-promos .promo-img,
+  body.setting-page .setting-mobile-promos .social-image img{
+    width:100% !important;
+    height:auto !important;
+    border-radius:8px !important;
+  }
+  body.setting-page .setting-mobile-promos .action-grid{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+    margin:8px 0 10px !important;
+  }
+  body.setting-page .setting-mobile-promos .action-grid .image-action-btn:nth-child(3){
+    grid-column:1 / 2 !important;
+  }
+  body.setting-page .setting-mobile-promos .image-action-btn{
+    border:0 !important;
+    background:transparent !important;
+    padding:0 !important;
+    display:block !important;
+    cursor:pointer !important;
+  }
+  body.setting-page .setting-mobile-promos .copy-image{
+    width:100% !important;
+    height:auto !important;
+    display:block !important;
+  }
+}
+
+/* ===== Patch: desktop setting page 3-column layout (left promo / center profile / right wallet) ===== */
+@media (min-width:901px){
+  body.setting-page{
+    overflow:hidden !important;
+    padding-bottom:0 !important;
+  }
+  body.setting-page .setting-main{
+    height:calc(100vh - 69px - 57px) !important;
+    min-height:0 !important;
+    overflow-y:auto !important;
+    padding:24px 16px 34px !important;
+    align-items:flex-start !important;
+  }
+  body.setting-page .setting-shell{
+    width:min(1240px, 96vw) !important;
+    max-width:none !important;
+    display:grid !important;
+    grid-template-columns:minmax(250px,340px) minmax(320px,470px) minmax(300px,430px) !important;
+    gap:20px 18px !important;
+    justify-content:center !important;
+    align-items:start !important;
+  }
+  body.setting-page .setting-mobile-promos{
+    grid-column:1 !important;
+    grid-row:1 / span 4 !important;
+    width:100% !important;
+    max-width:340px !important;
+    display:block !important;
+    margin:0 !important;
+  }
+  body.setting-page .profile-card{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    width:100% !important;
+    max-width:none !important;
+  }
+  body.setting-page .setting-card{
+    grid-column:2 !important;
+    grid-row:2 !important;
+    width:100% !important;
+    max-width:none !important;
+    margin-top:0 !important;
+  }
+  body.setting-page .setting-mobile-wallet{
+    grid-column:3 !important;
+    grid-row:1 !important;
+    width:100% !important;
+    max-width:430px !important;
+    display:block !important;
+    justify-self:start !important;
+  }
+  body.setting-page .setting-kickstart-promo,
+  body.setting-page .setting-info-promo{
+    display:block !important;
+    margin:0 0 16px !important;
+  }
+  body.setting-page .setting-mobile-promos .bonus-title-img{
+    display:block !important;
+    width:100% !important;
+    max-height:50px !important;
+    object-fit:contain !important;
+    object-position:left center !important;
+    margin:0 0 8px !important;
+  }
+  body.setting-page .setting-mobile-promos .bonus-card,
+  body.setting-page .setting-mobile-promos .promo-img,
+  body.setting-page .setting-mobile-promos .social-image{
+    display:block !important;
+    width:100% !important;
+    margin:0 0 10px !important;
+  }
+  body.setting-page .setting-mobile-promos .bonus-card img,
+  body.setting-page .setting-mobile-promos .promo-img,
+  body.setting-page .setting-mobile-promos .social-image img{
+    display:block !important;
+    width:100% !important;
+    height:auto !important;
+    border-radius:8px !important;
+  }
+  body.setting-page .setting-mobile-promos .action-grid{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+    margin:8px 0 10px !important;
+  }
+  body.setting-page .setting-mobile-promos .action-grid .image-action-btn:nth-child(3){
+    grid-column:1 / 2 !important;
+  }
+  body.setting-page .setting-mobile-promos .image-action-btn{
+    display:block !important;
+    border:0 !important;
+    background:transparent !important;
+    padding:0 !important;
+  }
+  body.setting-page .setting-mobile-promos .copy-image{
+    display:block !important;
+    width:100% !important;
+    height:auto !important;
+  }
+}
