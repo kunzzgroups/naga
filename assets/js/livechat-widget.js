@@ -16,7 +16,7 @@
     member = getMember();
     if(!isLoggedIn()) return;
     conversationId = getConversationId(member);
-    injectWidget();
+    // injectWidget();
     bindWidget();
     ensureConversation();
     listenConversationDoc();
