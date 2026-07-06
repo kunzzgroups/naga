@@ -8438,3 +8438,43 @@ body:not(.member-logged-in) .mobile-menu-auth{display:grid !important;}
     height:auto !important;
   }
 }
+
+/* ===== Fix: History page must scroll normally on desktop/mobile ===== */
+html:has(body.history-page),
+html:has(body.history-page) body.history-page{
+  height:auto!important;
+  max-height:none!important;
+  min-height:100%!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+}
+
+body.history-page{
+  display:block!important;
+  min-height:100vh!important;
+  padding-bottom:57px!important;
+}
+
+body.history-page .top-header{
+  height:69px!important;
+  flex:initial!important;
+}
+
+body.history-page .history-main{
+  min-height:calc(100vh - 69px - 57px)!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+
+body.history-page .history-panel,
+body.history-page .history-content,
+body.history-page .history-table-wrap{
+  max-height:none!important;
+  overflow-y:visible!important;
+}
+
+body.history-page .bottom-nav{
+  height:57px!important;
+  flex:initial!important;
+}
