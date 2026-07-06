@@ -963,7 +963,7 @@ loadSliderBanners().then(() => {
       btn.className = 'naga-scroll-top-btn';
       btn.type = 'button';
       btn.setAttribute('aria-label','Back to top');
-      btn.innerHTML = '↑';
+      btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
       document.body.appendChild(btn);
     }
     return btn;
