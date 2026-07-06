@@ -6218,7 +6218,7 @@ html.page-loading::after {
 .top-register-btn,
 .top-wallet-pill{
     min-width:104px;
-    height:44px;
+    height:40px;
     padding:0 18px;
     border-radius:12px;
     display:inline-flex;
@@ -6226,7 +6226,7 @@ html.page-loading::after {
     justify-content:center;
     text-decoration:none;
     font-weight:900;
-    font-size:16px;
+    font-size:14px;
     border:1.5px solid #42ff85;
 }
 .top-login-btn{
