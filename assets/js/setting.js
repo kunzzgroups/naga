@@ -47,7 +47,7 @@
     if(!logout) return;
     e.preventDefault();
     localStorage.removeItem('member_token'); localStorage.removeItem('member_info'); localStorage.removeItem('member_main_wallet_balance');
-    location.href = 'login.html';
+    location.href = 'index.html';
   });
   document.addEventListener('i18n:changed', function(){
     try {

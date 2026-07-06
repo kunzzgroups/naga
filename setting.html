@@ -5,8 +5,8 @@
   <style id="page-loader-critical">html.page-loading,html.page-loading body{overflow:hidden!important}html.page-loading:before{content:"";position:fixed;inset:0;z-index:2147483646;background:#050505}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:38px;height:38px;margin:-19px 0 0 -19px;border:3px solid rgba(255,255,255,.22);border-top-color:#fff;border-radius:50%;animation:pageLoaderSpin .65s linear infinite}@keyframes pageLoaderSpin{to{transform:rotate(360deg)}} </style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n="setting_page_title">D2AUD - Setting</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.29" />
+  <title data-i18n="setting_page_title">TitanXGaming - Setting</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.30" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
 </head>
 <body class="setting-page">
@@ -34,6 +34,40 @@
         </div>
       </article>
 
+      <article class="setting-mobile-wallet game-glass-card">
+        <div data-member-auth-area class="setting-wallet-auth"></div>
+        <div class="balance-box setting-wallet-balance">
+          <div class="balance-text">
+            <p data-i18n="balance_label">Balance:</p>
+            <h3 data-main-wallet-balance>MYR 0.00</h3>
+            <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>MYR 10.00</b></p>
+            <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b>MYR 50.00</b></p>
+          </div>
+          <div class="money-btns">
+            <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="DEPOSIT" decoding="async" loading="lazy"></button>
+            <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="WITHDRAW" decoding="async" loading="lazy"></button>
+            <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="REFRESH" decoding="async" loading="lazy"></button>
+          </div>
+        </div>
+      </article>
+
+
+      <section class="setting-mobile-promos">
+        <div class="setting-kickstart-promo">
+          <img class="bonus-title-img" src="assets/images/bonus/kick_start_bonus_text.png" alt="Kick Start Bonus" decoding="async" loading="lazy">
+          <a class="bonus-card" href="#"><img src="assets/images/bonus/bonus.png" alt="Register Free" decoding="async" loading="lazy"></a>
+        </div>
+
+        <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" decoding="async" loading="lazy">
+        <div class="action-grid">
+          <button class="image-action-btn share-trigger" type="button"><img class="copy-image" src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy"></button>
+          <a class="image-action-btn" href="downline.html"><img class="copy-image" src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy"></a>
+          <button class="image-action-btn copy-trigger" type="button"><img class="copy-image" src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy"></button>
+        </div>
+        <a class="social-image" href="#"><img src="assets/custom/images/facebook.png" alt="Facebook" decoding="async" loading="lazy"></a>
+        <a class="social-image" href="#"><img src="assets/custom/images/telegram.png" alt="Telegram" decoding="async" loading="lazy"></a>
+      </section>
+
       <article class="setting-card game-glass-card">
         <button class="setting-toggle" id="settingToggle" type="button" aria-expanded="false">
           <span data-i18n="setting_title">Setting</span>
@@ -41,6 +75,7 @@
         </button>
 
         <div class="setting-menu" id="settingMenu">
+          <a href="history.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-clock-rotate-left"></i></span><span data-i18n="setting_history">History</span><em>›</em></a>
           <a href="mobile-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-mobile"></i></span><span data-i18n="mobile_number">Mobile Number</span><em>›</em></a>
           <a href="password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-lock"></i></span><span data-i18n="password">Password</span><em>›</em></a>
           <a href="transaction-password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-key"></i></span><span>Transaction Password</span><em>›</em></a>
@@ -49,12 +84,14 @@
           <a href="login.html" class="setting-item logout"><span class="setting-ico"><i class="fa-solid fa-gear"></i></span><span data-i18n="logout">Logout</span><em>›</em></a>
         </div>
       </article>
+
+
     </section>
   </main>
 
   <nav class="bottom-nav">
-    <a class="active" href="index.html"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-img="img.bottom_home" data-i18n-alt="home" decoding="async" loading="lazy"></a>
-    <a href="history.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-img="img.bottom_history" data-i18n-alt="history" decoding="async" loading="lazy"></a>
+    <a class="active" href="#"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-img="img.bottom_home" data-i18n-alt="home" decoding="async" loading="lazy"></a>
+    <a href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-img="img.bottom_history" data-i18n-alt="history" decoding="async" loading="lazy"></a>
     <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-img="img.bottom_bonus" data-i18n-alt="bonus" decoding="async" loading="lazy"></a>
     <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-img="img.bottom_chat" data-i18n-alt="live_chat" decoding="async" loading="lazy"></a>
     <a href="#"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-img="img.bottom_setting" data-i18n-alt="setting" decoding="async" loading="lazy"></a>
@@ -68,7 +105,9 @@
   </div>
 
   <script src="assets/js/config.js?v=1.0.14"></script>
+  <script src="assets/js/site-shell.js?v=1.0.2"></script>
   <script src="assets/js/lang.js"></script>
+  <script src="assets/js/member-auth.js?v=1.0.2"></script>
   <script src="assets/js/setting.js?v=1.0.3"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.12"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>

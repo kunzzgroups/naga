@@ -14,6 +14,9 @@
   let unsubscribeMessages = null;
   let pendingFiles = [];
   let pendingPreviewUrls = [];
+  let editingMessageId = '';
+  let editingOriginalText = '';
+  let chatLocked = false;
 
   init();
 
@@ -43,7 +46,7 @@
 
   function bindInputs(){
     if(attachBtn && fileInput){
-      attachBtn.addEventListener('click', function(){ fileInput.click(); });
+      attachBtn.addEventListener('click', function(){ if(!isLoggedIn()){ renderLoginRequired(); return; } fileInput.click(); });
       fileInput.addEventListener('change', function(){
         addPendingFiles(Array.from(fileInput.files || []));
         fileInput.value = '';
@@ -57,6 +60,10 @@
           e.preventDefault();
           submitChat();
         }
+        if(e.key === 'Escape' && editingMessageId){
+          e.preventDefault();
+          clearEditMode();
+        }
       });
     }
     if(form){
@@ -68,6 +75,10 @@
   }
 
   async function startChat(){
+    chatLocked = false;
+    if(form) form.style.display = '';
+    if(input) input.disabled = false;
+    if(attachBtn) attachBtn.disabled = false;
     await ensureConversation();
     markMemberRead();
     renderLoading();
@@ -79,7 +90,7 @@
         if(snapshot.empty){
           renderWelcomeMessage();
         }else{
-          snapshot.forEach(function(doc){ renderMessage(doc.data()); });
+          snapshot.forEach(function(doc){ renderMessage(doc.data(), doc.id); });
         }
         scrollBottom();
       }, function(error){
@@ -103,8 +114,20 @@
   }
 
   async function submitChat(){
-    if(!input || !db || !conversationId) return;
+    if(!isLoggedIn()){ renderLoginRequired(); return; }
+    if(!input || !db || !conversationId || chatLocked) return;
     const text = input.value.trim();
+    if(editingMessageId){
+      if(!text) return;
+      try{
+        await db.collection('conversations').doc(conversationId).collection('messages').doc(editingMessageId).set({
+          text: text,
+          editedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+        clearEditMode();
+      }catch(e){ showSystem(e.message || 'Edit failed.'); }
+      return;
+    }
     if(!text && !pendingFiles.length) return;
     const sendFiles = pendingFiles.slice();
     input.value = '';
@@ -174,21 +197,43 @@
   }
 
   function renderLoginRequired(){
-    messages.innerHTML = '<article class="chat-bubble system wide"><div class="bubble-name">System</div><p>Please login first to use live chat.</p><p><a href="login.html" style="color:#facc15;font-weight:800;">Go to Login</a></p></article>';
+    chatLocked = true;
+    if(unsubscribeMessages){ try{ unsubscribeMessages(); }catch(e){} unsubscribeMessages = null; }
+    conversationId = '';
+    clearPendingFiles();
+    clearEditMode();
+    if(messages){
+      messages.innerHTML = '<article class="chat-bubble system wide"><div class="bubble-name">System</div><p>Please login first to use live chat.</p><p><a href="login.html?redirect=chat.html" style="color:#facc15;font-weight:800;">Go to Login</a></p></article>';
+    }
     if(form) form.style.display = 'none';
+    if(input) input.disabled = true;
+    if(attachBtn) attachBtn.disabled = true;
   }
 
   function renderWelcomeMessage(){
     messages.innerHTML = '<div class="chat-date">Today</div><article class="chat-bubble system wide"><div class="bubble-name">System</div><p>✅ Welcome to live chat. Please send your question and our admin will reply here.</p></article>';
   }
 
-  function renderMessage(msg){
+  function renderMessage(msg, messageId){
     const isMe = msg.senderType === 'member';
     const bubble = document.createElement('article');
     bubble.className = 'chat-bubble ' + (isMe ? 'user' : 'admin') + (hasLongContent(msg) ? ' medium' : '');
-    let html = '<div class="bubble-name">' + esc(msg.senderName || (isMe ? 'You' : 'Admin')) + '</div>';
-    if(msg.text) html += '<p class="chat-text-message">' + formatMessageText(msg.text) + '</p>';
-    const files = Array.isArray(msg.attachments) ? msg.attachments : [];
+    let html = '';
+    if(isMe && messageId && isLoggedIn()){
+      html += '<button class="chat-msg-more" type="button" aria-label="Message actions" title="Message actions">⋮</button>';
+      html += '<div class="chat-msg-menu" hidden>';
+      if(msg.text && !msg.recalled) html += '<button type="button" data-chat-action="edit">Edit Message</button>';
+      if(!msg.recalled) html += '<button type="button" data-chat-action="recall">Recall Message</button>';
+      html += '<button type="button" data-chat-action="delete">Delete Message</button>';
+      html += '</div>';
+    }
+    html += '<div class="bubble-name">' + esc(msg.senderName || (isMe ? 'You' : 'Admin')) + '</div>';
+    if(msg.recalled){
+      html += '<p class="chat-text-message chat-recalled">You recalled a message</p>';
+    }else if(msg.text){
+      html += '<p class="chat-text-message">' + formatMessageText(msg.text) + '</p>';
+    }
+    const files = msg.recalled ? [] : (Array.isArray(msg.attachments) ? msg.attachments : []);
     if(files.length){
       html += '<div class="chat-attachments">';
       files.forEach(function(file){
@@ -204,7 +249,89 @@
       html += '</div>';
     }
     bubble.innerHTML = html;
+    if(isMe && messageId && isLoggedIn()) bindMessageActions(bubble, messageId, msg);
     messages.appendChild(bubble);
+  }
+
+  function bindMessageActions(bubble, messageId, msg){
+    const more = bubble.querySelector('.chat-msg-more');
+    const menu = bubble.querySelector('.chat-msg-menu');
+    if(!more || !menu) return;
+    more.addEventListener('click', function(e){
+      e.stopPropagation();
+      closeAllMessageMenus(menu);
+      menu.hidden = !menu.hidden;
+    });
+    menu.addEventListener('click', async function(e){
+      const btn = e.target.closest('button[data-chat-action]');
+      if(!btn) return;
+      e.stopPropagation();
+      menu.hidden = true;
+      const action = btn.getAttribute('data-chat-action');
+      if(action === 'edit') return editMessage(messageId, msg, bubble);
+      if(action === 'recall') return recallMessage(messageId);
+      if(action === 'delete') return deleteMessage(messageId);
+    });
+  }
+
+  function closeAllMessageMenus(except){
+    document.querySelectorAll('.chat-msg-menu').forEach(function(m){ if(m !== except) m.hidden = true; });
+  }
+
+  document.addEventListener('click', function(){ closeAllMessageMenus(); });
+
+  function editMessage(messageId, msg){
+    if(!db || !conversationId || !messageId || !msg.text || msg.recalled || !input) return;
+    clearPendingFiles();
+    editingMessageId = messageId;
+    editingOriginalText = String(msg.text || '');
+    input.value = editingOriginalText;
+    autoResizeInput();
+    if(editBar){
+      const previewText = editingOriginalText.length > 42 ? editingOriginalText.slice(0, 42) + '...' : editingOriginalText;
+      const previewEl = editBar.querySelector('#chatEditPreview');
+      if(previewEl) previewEl.textContent = previewText;
+      editBar.hidden = false;
+    }
+    if(attachBtn) attachBtn.disabled = true;
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+
+  function clearEditMode(){
+    editingMessageId = '';
+    editingOriginalText = '';
+    if(input){
+      input.value = '';
+      autoResizeInput();
+    }
+    if(input){
+      input.placeholder = 'Text here...';
+      input.classList.remove('is-editing-message');
+    }
+    if(form) form.classList.remove('is-editing-message');
+    if(attachBtn) attachBtn.disabled = false;
+  }
+
+  async function recallMessage(messageId){
+    if(!db || !conversationId || !messageId) return;
+    if(!confirm('Recall this message for everyone?')) return;
+    try{
+      await db.collection('conversations').doc(conversationId).collection('messages').doc(messageId).set({
+        text: '',
+        attachments: [],
+        recalled: true,
+        recalledAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge:true});
+    }catch(e){ showSystem(e.message || 'Recall failed.'); }
+  }
+
+  async function deleteMessage(messageId){
+    if(!db || !conversationId || !messageId) return;
+    if(!confirm('Delete this message from your chat view?')) return;
+    try{
+      await db.collection('conversations').doc(conversationId).collection('messages').doc(messageId).delete();
+    }catch(e){ showSystem(e.message || 'Delete failed.'); }
   }
 
   function hasLongContent(msg){
@@ -221,7 +348,9 @@
   }
 
   function isLoggedIn(){
-    return !!localStorage.getItem('member_token') && !!(member.id || member.memberId || member.username || member.mobile);
+    member = getMember();
+    const token = localStorage.getItem('member_token') || '';
+    return !!token && !!(member.id || member.memberId || member.username || member.mobile);
   }
 
   function getConversationId(member){
@@ -237,6 +366,7 @@
   }
 
   function handlePasteFiles(e){
+    if(!isLoggedIn()){ renderLoginRequired(); return; }
     const clipboard = e.clipboardData || window.clipboardData;
     if(!clipboard) return;
     const files = [];
@@ -371,4 +501,11 @@
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];
     });
   }
+
+
+  window.addEventListener('storage', function(e){
+    if(e.key === 'member_token' && !e.newValue) renderLoginRequired();
+  });
+  document.addEventListener('naga:member-logout', function(){ renderLoginRequired(); });
+
 })();

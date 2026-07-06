@@ -1,3 +1,14 @@
+// Normalize root home URL so / and /index.html run exactly the same home initialization.
+(function(){
+  try{
+    var path = window.location.pathname || '';
+    if(path === '/' || /\/$/.test(path)){
+      var normalized = path.replace(/\/$/, '/') + 'index.html' + (window.location.search || '') + (window.location.hash || '');
+      window.history.replaceState(window.history.state, document.title, normalized);
+    }
+  }catch(e){}
+})();
+
 const API = window.NAGA_API || {};
 const GAME_CATEGORY_API_URL =
   API.gameCategoryList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-category/list' : 'https://bo.titanxgaming.com/api/admin/game-category/list');
@@ -19,6 +30,12 @@ let showingProviderList = true;
 let gameLoadSequence = 0;
 let subCategoryLoadSequence = 0;
 const DEFAULT_GAME_SECTION_KEYWORD = 'slot';
+const ALL_PROVIDER_CODE = '__ALL__';
+let subCategoryAutoTriedIds = new Set();
+
+function isAllProviderCode(code){
+  return String(code || '') === ALL_PROVIDER_CODE;
+}
 
 
 function tr(key, fallback){
@@ -191,6 +208,27 @@ function getImageUrl(item, fallback, folder){
   return resolveUploadImage(value, folder, fallback);
 }
 
+
+function centerActiveMobileCategory(){
+  if(!categoryRow || !window.matchMedia || !window.matchMedia('(max-width: 768px)').matches) return;
+  const active = categoryRow.querySelector('.cat.active') || categoryRow.querySelector('.cat');
+  if(!active || typeof active.scrollIntoView !== 'function') return;
+  window.requestAnimationFrame(() => {
+    active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  });
+}
+
+
+
+function centerActiveMobileSubCategory(){
+  if(!subTabRow || !window.matchMedia || !window.matchMedia('(max-width: 768px)').matches) return;
+  const active = subTabRow.querySelector('button.active') || subTabRow.querySelector('button');
+  if(!active || typeof active.scrollIntoView !== 'function') return;
+  window.requestAnimationFrame(() => {
+    active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  });
+}
+
 function renderCategories(){
   if(!categoryRow) return;
   categoryRow.innerHTML='';
@@ -199,6 +237,13 @@ function renderCategories(){
     categoryRow.innerHTML = '<div class="empty-state">No category available</div>';
     return;
   }
+
+  const allEl=document.createElement('button');
+  allEl.className=`cat mobile-all-cat ${!activeCategoryId?'active':''}`;
+  allEl.type='button';
+  allEl.dataset.id='';
+  allEl.innerHTML='<span class="mobile-cat-emoji">🏠</span><span>All</span>';
+  categoryRow.appendChild(allEl);
 
   categories.forEach(cat=>{
     const el=document.createElement('button');
@@ -210,13 +255,14 @@ function renderCategories(){
     el.innerHTML=`<img src="${icon}" class="cat-icon" alt="${catName}"><span>${catName}</span>`;
     categoryRow.appendChild(el);
   });
+  centerActiveMobileCategory();
 }
 
 function renderSubTabs(){
   if(!subTabRow) return;
   subTabRow.innerHTML = '';
 
-  if(!activeProviderCode || !subCategories.length){
+  if(!activeProviderCode || isAllProviderCode(activeProviderCode) || !subCategories.length){
     subTabRow.style.display = 'none';
     if(!activeProviderCode) activeSubCategoryId = null;
     return;
@@ -237,6 +283,7 @@ function renderSubTabs(){
 
     subTabRow.appendChild(btn);
   });
+  centerActiveMobileSubCategory();
 }
 
 function providerCodeOf(item){
@@ -262,142 +309,212 @@ function providerImageOf(provider){
   return resolveUploadImage(value, 'provider', '');
 }
 
+
+
+function categoryIdForProviderCode(providerCode){
+  const provider = providerForCode(providerCode);
+  const providerType = providerTypeOf(provider);
+  if(providerType){
+    const matched = categories.find(cat => categoryTypeKey(cat) === providerType);
+    if(matched && matched.id != null) return matched.id;
+  }
+  const slot = categories.find(cat => categoryTypeKey(cat) === 'SLOT');
+  return slot && slot.id != null ? slot.id : (categories[0] && categories[0].id != null ? categories[0].id : null);
+}
+
+function ensureCategoryForSelectedProvider(){
+  if(activeCategoryId || !activeProviderCode || isAllProviderCode(activeProviderCode)) return false;
+  const inferredId = categoryIdForProviderCode(activeProviderCode);
+  if(inferredId == null) return false;
+  activeCategoryId = inferredId;
+  renderCategories();
+  return true;
+}
+
+function providerRowsForActiveCategory(games){
+  const sourceGames = Array.isArray(games) ? games : currentGameList;
+  const countByProvider = new Map();
+  sourceGames.forEach(game => {
+    const code = providerCodeOf(game);
+    if(code) countByProvider.set(code, (countByProvider.get(code) || 0) + 1);
+  });
+
+  return providersForActiveCategory().sort((a, b) => {
+    const ao = Number(a.sortOrder || a.sort_order || 0);
+    const bo = Number(b.sortOrder || b.sort_order || 0);
+    return (ao - bo) || providerNameOf(a).localeCompare(providerNameOf(b));
+  }).map(provider => ({
+    code: providerCodeOf(provider),
+    provider,
+    count: countByProvider.get(providerCodeOf(provider)) || 0
+  })).filter(row => row.code);
+}
+
+function buildProviderRail(rows){
+  const rail = document.createElement('div');
+  rail.className = 'provider-side-rail';
+
+  const allBtn = document.createElement('button');
+  allBtn.type = 'button';
+  allBtn.className = 'provider-rail-card provider-rail-all' + (isAllProviderCode(activeProviderCode) ? ' active' : '');
+  allBtn.dataset.providerCode = ALL_PROVIDER_CODE;
+  allBtn.innerHTML = '<div class="provider-rail-all-icon">All</div><span>All</span>';
+  allBtn.addEventListener('click', () => {
+    if(isAllProviderCode(activeProviderCode)) return;
+    activeProviderCode = ALL_PROVIDER_CODE;
+    activeSubCategoryId = null;
+    subCategories = [];
+    renderSubTabs();
+    setGamesLoading();
+    loadGames();
+  });
+  rail.appendChild(allBtn);
+
+  rows.forEach(row => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'provider-rail-card' + (String(row.code) === String(activeProviderCode) ? ' active' : '');
+    btn.dataset.providerCode = row.code;
+    const name = providerNameOf(row.provider);
+    const imageUrl = providerImageOf(row.provider);
+    btn.innerHTML = imageUrl
+      ? `<img src="${imageUrl}" alt="${name}" loading="lazy"><span>${name}</span>`
+      : `<div class="provider-rail-initial">${providerInitials(name)}</div><span>${name}</span>`;
+    btn.addEventListener('click', () => {
+      if(String(activeProviderCode) === String(row.code)) return;
+      activeProviderCode = row.code;
+      activeSubCategoryId = null;
+      subCategoryAutoTriedIds = new Set();
+      ensureCategoryForSelectedProvider();
+      setGamesLoading();
+      loadSubCategories();
+    });
+    rail.appendChild(btn);
+  });
+  return rail;
+}
+
 function renderProviderCards(games){
   if(!gameGrid) return;
   showingProviderList = true;
-  activeProviderCode = null;
+  activeProviderCode = ALL_PROVIDER_CODE;
   currentGameList = Array.isArray(games) ? games : [];
   if(subTabRow){
     subTabRow.innerHTML = '';
     subTabRow.style.display = 'none';
   }
   gameGrid.innerHTML = '';
-  gameGrid.classList.add('provider-grid', 'provider-first-grid');
+  gameGrid.classList.remove('provider-grid', 'provider-first-grid');
+  gameGrid.classList.add('provider-with-rail');
 
-  const countByProvider = new Map();
-  currentGameList.forEach(game => {
-    const code = providerCodeOf(game);
-    if(code) countByProvider.set(code, (countByProvider.get(code) || 0) + 1);
-  });
-
-  const rows = providersForActiveCategory().sort((a, b) => {
-    const ao = Number(a.sortOrder || a.sort_order || 0);
-    const bo = Number(b.sortOrder || b.sort_order || 0);
-    return (ao - bo) || providerNameOf(a).localeCompare(providerNameOf(b));
-  }).map(provider => ({ code: providerCodeOf(provider), provider, count: countByProvider.get(providerCodeOf(provider)) || 0 }))
-    .filter(row => row.code);
-
+  const rows = providerRowsForActiveCategory(currentGameList);
   if(!rows.length){
     gameGrid.innerHTML = '<div class="empty-state">No provider available for this category</div>';
     return;
   }
 
-  rows.forEach(row => {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'game-card provider-card';
-    card.dataset.providerCode = row.code;
-    const name = providerNameOf(row.provider);
-    const imageUrl = providerImageOf(row.provider);
-    card.innerHTML = `
-      <div class="provider-card-face ${imageUrl ? 'has-provider-image' : ''}">
-        ${imageUrl ? `<img class="provider-card-img" src="${imageUrl}" alt="${name}" loading="lazy">` : `<div class="provider-card-glow">${providerInitials(name)}</div><b>${name}</b><span>${row.count} Games</span>`}
-      </div>`;
-    card.addEventListener('click', () => {
-      activeProviderCode = row.code;
-      setGamesLoading();
-      loadSubCategories();
-    });
-    gameGrid.appendChild(card);
-  });
+  renderGames(currentGameList);
 }
 
 function renderGames(list){
   if(!gameGrid) return;
   showingProviderList = false;
-  const provider = providerForCode(activeProviderCode);
   gameGrid.innerHTML='';
-  gameGrid.classList.add('provider-grid');
-  gameGrid.classList.remove('provider-first-grid');
-
-  if(activeProviderCode){
-    // provider header removed
-  }
+  gameGrid.classList.remove('provider-grid', 'provider-first-grid');
 
   const gameList = Array.isArray(list) ? list : [];
+  const shouldShowProviderRail = !!activeProviderCode && !isDirectGameCategory();
+  const targetGrid = document.createElement('div');
+  targetGrid.className = shouldShowProviderRail ? 'provider-games-list' : 'direct-games-list';
+
   if(!gameList.length){
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.textContent = 'No game available';
-    gameGrid.appendChild(empty);
-    return;
+    targetGrid.appendChild(empty);
+  }else{
+    gameList.forEach(item=>{
+      const card=document.createElement('div');
+      card.className='game-card provider-launch-card';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+
+      const imageUrl = getImageUrl(item, 'assets/images/game.png', 'game');
+      const gameName = langText(item, 'name', 'Game');
+      const targetUrl = item.gameUrl || item.game_url || '';
+
+      const launchGameId = item.gameId || item.game_id || item.id || '';
+      const launchProviderCode = item.providerCode || item.provider_code || item.provider_code_name || item.vendorCode || item.vendor_code || (item.provider && (item.provider.providerCode || item.provider.provider_code || item.provider.code)) || '';
+      const launchGameCode = item.gameCode || item.game_code || item.launchCode || item.launch_code || item.providerGameCode || item.provider_game_code || item.code || '';
+
+      if(launchGameId) card.dataset.gameId = launchGameId;
+      if(launchProviderCode) card.dataset.providerCode = launchProviderCode;
+      if(launchGameCode) card.dataset.gameCode = launchGameCode;
+      if(gameName) card.dataset.gameName = gameName;
+
+      card.innerHTML=`
+        <div class="game-card-img-wrap">
+          <img class="provider-launch-img"
+               src="${imageUrl}"
+               alt="${gameName}"
+               data-game-id="${launchGameId}"
+               data-provider-code="${launchProviderCode}"
+               data-game-code="${launchGameCode}"
+               data-game-name="${gameName}">
+        </div>
+        <button class="play-btn provider-launch-btn"
+                type="button"
+                data-game-id="${launchGameId}"
+                data-provider-code="${launchProviderCode}"
+                data-game-code="${launchGameCode}"
+                data-game-name="${gameName}">${tr('play','PLAY')}</button>`;
+
+      const playBtn = card.querySelector('.play-btn');
+      const img = card.querySelector('.provider-launch-img');
+
+      function fallbackOpen(){
+        if(targetUrl){
+          window.location.href = targetUrl;
+        }else{
+          window.location.href = 'game-detail.html?id=' + encodeURIComponent(item.id || '');
+        }
+      }
+
+      if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.bindElement === 'function'){
+        window.NAGA_PROVIDER_LAUNCH.bindElement(card, item, { transferAmount: 0, gameName: gameName });
+        window.NAGA_PROVIDER_LAUNCH.bindElement(img, item, { transferAmount: 0, gameName: gameName });
+        window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0, gameName: gameName });
+      }else{
+        card.addEventListener('click', fallbackOpen);
+        playBtn.addEventListener('click', e=>{ e.stopPropagation(); fallbackOpen(); });
+      }
+
+      card.addEventListener('keydown', e=>{
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          card.click();
+        }
+      });
+
+      targetGrid.appendChild(card);
+    });
   }
 
-  gameList.forEach(item=>{
-    const card=document.createElement('div');
-    card.className='game-card provider-launch-card';
-    card.setAttribute('role', 'button');
-    card.setAttribute('tabindex', '0');
-
-    const imageUrl = getImageUrl(item, 'assets/images/game.png', 'game');
-    const gameName = langText(item, 'name', 'Game');
-    const targetUrl = item.gameUrl || item.game_url || '';
-
-    const launchGameId = item.gameId || item.game_id || item.id || '';
-    const launchProviderCode = item.providerCode || item.provider_code || item.provider_code_name || item.vendorCode || item.vendor_code || (item.provider && (item.provider.providerCode || item.provider.provider_code || item.provider.code)) || '';
-    const launchGameCode = item.gameCode || item.game_code || item.launchCode || item.launch_code || item.providerGameCode || item.provider_game_code || item.code || '';
-
-    if(launchGameId) card.dataset.gameId = launchGameId;
-    if(launchProviderCode) card.dataset.providerCode = launchProviderCode;
-    if(launchGameCode) card.dataset.gameCode = launchGameCode;
-    if(gameName) card.dataset.gameName = gameName;
-
-    card.innerHTML=`
-      <div class="game-card-img-wrap">
-        <img class="provider-launch-img"
-             src="${imageUrl}"
-             alt="${gameName}"
-             data-game-id="${launchGameId}"
-             data-provider-code="${launchProviderCode}"
-             data-game-code="${launchGameCode}"
-             data-game-name="${gameName}">
-      </div>
-      <button class="play-btn provider-launch-btn"
-              type="button"
-              data-game-id="${launchGameId}"
-              data-provider-code="${launchProviderCode}"
-              data-game-code="${launchGameCode}"
-              data-game-name="${gameName}">${tr('play','PLAY')}</button>`;
-
-    const playBtn = card.querySelector('.play-btn');
-    const img = card.querySelector('.provider-launch-img');
-
-    function fallbackOpen(){
-      if(targetUrl){
-        window.location.href = targetUrl;
-      }else{
-        window.location.href = 'game-detail.html?id=' + encodeURIComponent(item.id || '');
-      }
-    }
-
-    if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.bindElement === 'function'){
-      window.NAGA_PROVIDER_LAUNCH.bindElement(card, item, { transferAmount: 0, gameName: gameName });
-      window.NAGA_PROVIDER_LAUNCH.bindElement(img, item, { transferAmount: 0, gameName: gameName });
-      window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0, gameName: gameName });
-    }else{
-      card.addEventListener('click', fallbackOpen);
-      playBtn.addEventListener('click', e=>{ e.stopPropagation(); fallbackOpen(); });
-    }
-
-    card.addEventListener('keydown', e=>{
-      if(e.key === 'Enter' || e.key === ' '){
-        e.preventDefault();
-        card.click();
-      }
-    });
-
-    gameGrid.appendChild(card);
-  });
+  if(shouldShowProviderRail){
+    gameGrid.classList.add('provider-with-rail');
+    const rows = providerRowsForActiveCategory(currentGameList);
+    const lobby = document.createElement('div');
+    lobby.className = 'provider-lobby-shell';
+    lobby.appendChild(buildProviderRail(rows));
+    const panel = document.createElement('div');
+    panel.className = 'provider-games-panel';
+    panel.appendChild(targetGrid);
+    lobby.appendChild(panel);
+    gameGrid.appendChild(lobby);
+  }else{
+    gameGrid.classList.remove('provider-with-rail');
+    gameGrid.appendChild(targetGrid);
+  }
 }
 
 function fetchJson(url){
@@ -436,7 +553,7 @@ function loadCategories(){
     .then(([response, providerResponse]) => {
       providers = normalizeApiList(providerResponse).filter(isActiveItem).sort(sortByOrder);
       categories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      activeCategoryId = pickDefaultCategoryId(categories);
+      activeCategoryId = null;
       activeSubCategoryId = null;
       renderCategories();
       setGamesLoading();
@@ -456,12 +573,16 @@ function loadSubCategories(){
   const sequence = ++subCategoryLoadSequence;
 
   if(!activeCategoryId){
+    ensureCategoryForSelectedProvider();
+  }
+
+  if(!activeCategoryId){
     subCategories = [];
     renderSubTabs();
     return loadGames();
   }
 
-  if(!activeProviderCode || isDirectGameCategory()){
+  if(!activeProviderCode || isAllProviderCode(activeProviderCode) || isDirectGameCategory()){
     subCategories = [];
     activeSubCategoryId = null;
     renderSubTabs();
@@ -481,6 +602,7 @@ function loadSubCategories(){
       if(sequence !== subCategoryLoadSequence || String(categoryIdForRequest) !== String(activeCategoryId)) return;
       subCategories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
       activeSubCategoryId = pickDefaultSubCategoryId(subCategories);
+      subCategoryAutoTriedIds = new Set();
       renderSubTabs();
       return loadGames();
     })
@@ -499,8 +621,8 @@ function loadGames(){
   const categoryIdForRequest = activeCategoryId;
   const subCategoryIdForRequest = activeSubCategoryId;
   const params = { categoryId: categoryIdForRequest, lang: currentLang() };
-  if(activeProviderCode) params.providerCode = activeProviderCode;
-  if(activeProviderCode && subCategoryIdForRequest) params.subCategoryId = subCategoryIdForRequest;
+  if(activeProviderCode && !isAllProviderCode(activeProviderCode)) params.providerCode = activeProviderCode;
+  if(activeProviderCode && !isAllProviderCode(activeProviderCode) && subCategoryIdForRequest) params.subCategoryId = subCategoryIdForRequest;
 
   setGamesLoading();
   const url = buildUrl(GAME_API_URL, params);
@@ -516,7 +638,22 @@ function loadGames(){
         if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
         renderGames(list);
       }else if(activeProviderCode){
-        renderGames(list.filter(item => providerCodeOf(item) === activeProviderCode));
+        if(isAllProviderCode(activeProviderCode)){
+          currentGameList = list;
+          renderGames(list);
+        }else{
+          const providerList = list.filter(item => providerCodeOf(item) === activeProviderCode);
+          if(!providerList.length && activeSubCategoryId && subCategories.length){
+            subCategoryAutoTriedIds.add(String(activeSubCategoryId));
+            const nextSub = subCategories.find(sub => !subCategoryAutoTriedIds.has(String(sub.id)));
+            if(nextSub){
+              activeSubCategoryId = nextSub.id;
+              renderSubTabs();
+              return loadGames();
+            }
+          }
+          renderGames(providerList);
+        }
       }else{
         currentGameList = list;
         renderProviderCards(list);
@@ -536,6 +673,7 @@ if(categoryRow){
     activeCategoryId=btn.dataset.id;
     activeSubCategoryId=null;
     activeProviderCode=null;
+    subCategoryAutoTriedIds = new Set();
     renderCategories();
     setGamesLoading();
     loadSubCategories();
@@ -548,6 +686,7 @@ if(subTabRow){
     if(!btn)return;
     activeSubCategoryId=btn.dataset.id || null;
     subTabRow.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===btn));
+    centerActiveMobileSubCategory();
     loadGames();
   });
 }
@@ -805,4 +944,53 @@ loadSliderBanners().then(() => {
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){ hide(shareOverlay); hide(copyOverlay); }
   });
+})();
+
+// Final scroll container and back-to-top behaviour
+(function(){
+  function q(sel){ return document.querySelector(sel); }
+  function getScrollTarget(){
+    if (window.matchMedia('(min-width: 769px)').matches) {
+      return q('.provider-games-panel') || q('.game-grid') || document.scrollingElement || document.documentElement;
+    }
+    return q('.provider-games-panel') || document.scrollingElement || document.documentElement;
+  }
+  function ensureBtn(){
+    var btn = document.getElementById('nagaScrollTopBtn');
+    if(!btn){
+      btn = document.createElement('button');
+      btn.id = 'nagaScrollTopBtn';
+      btn.className = 'naga-scroll-top-btn';
+      btn.type = 'button';
+      btn.setAttribute('aria-label','Back to top');
+      btn.innerHTML = '↑';
+      document.body.appendChild(btn);
+    }
+    return btn;
+  }
+  function bind(){
+    var btn = ensureBtn();
+    var currentTarget = null;
+    function update(){
+      var t = getScrollTarget();
+      var st = t === document.scrollingElement || t === document.documentElement ? (window.pageYOffset || document.documentElement.scrollTop || 0) : t.scrollTop;
+      btn.classList.toggle('show', st > 160);
+      if(t !== currentTarget){
+        if(currentTarget && currentTarget.removeEventListener) currentTarget.removeEventListener('scroll', update);
+        currentTarget = t;
+        if(currentTarget && currentTarget.addEventListener) currentTarget.addEventListener('scroll', update, {passive:true});
+      }
+    }
+    btn.onclick = function(){
+      var t = getScrollTarget();
+      if(t === document.scrollingElement || t === document.documentElement){ window.scrollTo({top:0, behavior:'smooth'}); }
+      else { t.scrollTo({top:0, behavior:'smooth'}); }
+    };
+    window.addEventListener('resize', function(){ setTimeout(update, 80); }, {passive:true});
+    window.addEventListener('scroll', update, {passive:true});
+    document.addEventListener('click', function(){ setTimeout(update, 180); }, true);
+    setInterval(update, 1200);
+    setTimeout(update, 300);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
 })();

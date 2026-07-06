@@ -68,6 +68,7 @@
   document.addEventListener('click', function (event) {
     var link = event.target.closest && event.target.closest('a[href]');
     if (!link) return;
+    if (link.matches && link.matches('.bottom-nav a:first-child, .bottom-nav a[href="index.html"], .bottom-nav a[href="./index.html"]')) { document.documentElement.classList.add('page-loaded'); document.documentElement.classList.remove('page-loading'); return; }
 
     var href = link.getAttribute('href') || '';
     if (!href || href.charAt(0) === '#' || href.indexOf('javascript:') === 0) return;

@@ -39,6 +39,9 @@
     localStorage.removeItem('member_info');
     localStorage.removeItem('member_main_wallet_balance');
     setMainWalletBalance(0);
+    if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshHeaderAuth === 'function'){
+      try{ window.NAGA_SITE_SHELL.refreshHeaderAuth(); }catch(e){}
+    }
   }
 
   function renderLoggedIn(member){
@@ -130,6 +133,9 @@
     const balance = extractBalance(json);
     setMainWalletBalance(balance);
     localStorage.setItem('member_main_wallet_balance', String(balance));
+    if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshBalance === 'function'){
+      try{ window.NAGA_SITE_SHELL.refreshBalance(); }catch(e){}
+    }
     return balance;
   }
 
@@ -186,19 +192,24 @@
     }
   }
 
+  function redirectToIndex(){
+    window.location.href = 'index.html';
+  }
+
   document.addEventListener('click', function(e){
     const btn = e.target.closest && e.target.closest('[data-member-logout]');
     if(!btn) return;
     e.preventDefault();
     clearMember();
     renderLoggedOut();
+    redirectToIndex();
   });
 
   document.addEventListener('DOMContentLoaded', initMemberPanel);
 
   window.NAGA_MEMBER_AUTH = {
     refresh: initMemberPanel,
-    logout: function(){ clearMember(); renderLoggedOut(); },
+    logout: function(){ clearMember(); renderLoggedOut(); redirectToIndex(); },
     member: getStoredMember,
     refreshBalance: loadMainWalletBalance
   };
