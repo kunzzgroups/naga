@@ -6348,7 +6348,7 @@ body.member-logged-in .top-member-actions{display:flex;}
         width:104px;
         border-radius:11px;
         display:flex;align-items:center;justify-content:center;
-        font-size:16px;font-weight:900;text-decoration:none;
+        font-size:12px;font-weight:900;text-decoration:none;
         white-space:nowrap;
     }
     .mobile-login-btn{border:1.5px solid #42ff85;color:#4cff8b;background:rgba(20,22,30,.8);}
@@ -6573,7 +6573,7 @@ body.member-logged-in .top-member-actions{display:flex;}
     .mobile-menu-head{display:flex;align-items:center;gap:12px;margin-bottom:18px;min-height:76px;}
     .mobile-avatar{width:70px;height:70px;border-radius:50%;flex:0 0 70px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#9aa0aa,#616773);border:2px solid rgba(255,255,255,.32);font-size:42px;color:#f2f2f2;}
     .mobile-menu-auth{display:flex;gap:10px;flex:1 1 auto;justify-content:flex-end;align-items:center;}
-    .mobile-login-btn,.mobile-register-btn{height:36px;width:104px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;text-decoration:none;white-space:nowrap;}
+    .mobile-login-btn,.mobile-register-btn{height:36px;width:104px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;text-decoration:none;white-space:nowrap;}
     .mobile-login-btn{border:1.5px solid #42ff85;color:#4cff8b;background:rgba(20,22,30,.8);}
     .mobile-register-btn{color:#06130a;background:linear-gradient(135deg,#37ff82,#62ff92);}
     .mobile-menu-wallet{display:none;flex:1 1 auto;color:#4cff8b;font-size:20px;font-weight:900;text-align:right;white-space:nowrap;}

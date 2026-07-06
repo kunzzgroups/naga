@@ -216,7 +216,7 @@
           <div class="mobile-avatar"><i class="fa-solid fa-user"></i></div>
           <div class="mobile-menu-auth">
             <a href="login.html" class="mobile-login-btn" data-i18n="login">LOGIN</a>
-            <a href="register.html" class="mobile-register-btn"><span data-i18n="register">REGISTER</span> <span>🎁</span></a>
+            <a href="register.html" class="mobile-register-btn"><span data-i18n="register">REGISTER</span></a>
           </div>
           <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>MYR 0.00</span></div></div>
         </div>
