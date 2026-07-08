@@ -226,7 +226,7 @@
           <a href="setting.html"><span class="menu-emoji">👑</span><span data-i18n="side_vip">VIP</span> <b>›</b></a>
           <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt=""><span data-i18n="side_bonus">Bonus</span> <b>›</b></a>
           <a href="#"><span class="menu-emoji">🎡</span><span data-i18n="side_spin">Spin</span> <b>›</b></a>
-          <a href="#"><span class="menu-emoji">🛡️</span><span data-i18n="side_compliance_policy">Compliance Policy</span> <b>›</b></a>
+          <a href="policies.html"><span class="menu-emoji">🛡️</span><span data-i18n="side_compliance_policy">Compliance Policy</span> <b>›</b></a>
           <a href="chat.html"><img src="assets/custom/images/livechat.png" alt=""><span data-i18n="side_live_chat">Live Chat</span> <b>›</b></a>
           <button type="button" class="mobile-menu-list-logout" data-member-logout><span class="menu-emoji">🚪</span><span data-i18n="side_logout">Logout</span> <b>›</b></button>
         </div>
