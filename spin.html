@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" class="page-loading">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NAGA - Spin Bonus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.39">
+</head>
+<body class="spin-page member-logged-in">
+  <main class="spin-main">
+    <header class="spin-topbar">
+      <button class="spin-back" type="button" aria-label="Back" onclick="history.length > 1 ? history.back() : location.href='index.html'">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <!-- <div class="spin-title"><span id="topSpinCount">1× Spin</span></div> -->
+      <div class="spin-title"><span>Get MYR 18.00 Free Spin</span></div>
+      <div class="spin-actions">
+        <button class="spin-action-btn" id="spinRuleOpen" type="button" aria-label="Rule"><i class="fa-solid fa-question"></i></button>
+        <a class="spin-action-btn" href="bonus.html" aria-label="More bonus"><i class="fa-solid fa-list"></i></a>
+      </div>
+    </header>
+
+    <div class="spin-page-layout">
+    <section class="spin-hero">
+      <button class="more-bonus-btn" type="button"><span>🪙</span> More Bonus <i class="fa-solid fa-chevron-right"></i></button>
+      <div class="spin-stage-card" aria-label="Bonus wheel stage">
+        <img class="spin-stage-bg" src="assets/images/spin/spin_main_turn_bg.webp" alt="">
+        <div class="spin-wheel-card" aria-label="Bonus wheel">
+          <img class="spin-wheel-img" id="spinWheelImg" src="assets/images/spin/spin_turn.webp" alt="Bonus wheel">
+          <img class="spin-pointer-img" id="spinPointerImg" src="assets/images/spin/spin_turn_pointer.webp" alt="">
+          <div class="wheel-reward reward-top"><img src="assets/images/spin/lucky_draw.png" alt=""><b>1×Spin</b></div>
+          <div class="wheel-reward reward-right"><img src="assets/images/spin/lucky_draw.png" alt=""><b>MYR88</b></div>
+          <div class="wheel-reward reward-cash"><img src="assets/images/spin/lucky_draw.png" alt=""><b>Cash Out</b></div>
+          <div class="wheel-reward reward-bottom"><img src="assets/images/spin/lucky_draw.png" alt=""><b>MYR0-9.99</b></div>
+          <div class="wheel-reward reward-left"><img src="assets/images/spin/lucky_draw.png" alt=""><b>2×Spin</b></div>
+          <div class="wheel-reward reward-coin"><img src="assets/images/spin/lucky_draw.png" alt=""><b>MYR3</b></div>
+        </div>
+      </div>
+      <div class="spin-lucky-range">Lucky Bonus: MYR 0.00 - 9.99</div><button class="spin-ticket-img-wrap" id="spinButton" type="button" aria-label="Spin now"><img src="assets/images/spin/spin_turn_button.png" alt="Spin"><span class="spin-button-label" id="spinButtonLabel">1×Spin</span><span class="spin-button-shine"></span></button>
+      <div class="spin-expire">Expires in&nbsp; <b id="spinCountdown">02 d 23:52:02</b></div><div class="spin-result-toast" id="spinResultToast" aria-live="polite"></div>
+    </section>
+
+    <div class="spin-side-panel">
+    <section class="treasure-summary" id="treasureSummary">
+      <div>
+        <p>My Amount:</p>
+        <strong id="treasureAmount">MYR17.91</strong>
+      </div>
+      <button type="button">Cash Out</button>
+      <div class="treasure-progress"><span style="width:99.5%"></span><em>99.5%</em></div>
+      <div class="cashout-note">Only <b>MYR 0.09</b> to cash out <strong>MYR 18.00</strong></div>
+      <button class="invite-spin-btn" type="button"><i class="fa-solid fa-share-nodes"></i> Invite Friends To Get Spin</button>
+    </section>
+
+    <section class="spin-record-card">
+      <div class="spin-record-tabs" role="tablist" aria-label="Bonus record tabs">
+        <button class="active" type="button" data-spin-tab="record" role="tab" aria-selected="true">Record</button>
+        <button type="button" data-spin-tab="helper" role="tab" aria-selected="false">Helper</button>
+      </div>
+      <div class="spin-tab-panel active" data-spin-panel="record" role="tabpanel">
+        <div class="spin-record-row"><div class="spin-record-user"><span class="spin-record-avatar">🧙</span><b>Me</b></div><strong id="recordAmount">MYR17.91</strong></div>
+      </div>
+      <div class="spin-tab-panel" data-spin-panel="helper" role="tabpanel">
+        <div class="spin-helper-row"><span class="spin-record-avatar">🎁</span><div><b>Invite helper</b><small>Invite friends to get extra free spins.</small></div></div>
+      </div>
+    </section>
+    </div>
+    </div>
+  </main>
+
+  <div class="lucky-overlay show loading" id="luckyOverlay" aria-hidden="false">
+    <div class="lucky-loading-effect" aria-hidden="true">
+      <img src="assets/images/spin/lucky-open-flash.png" alt="">
+    </div>
+    <div class="lucky-panel" id="luckyPanel">
+      <img class="lucky-logo-img" src="assets/images/spin/lucky-bonus-en.webp" alt="Lucky Bonus">
+      <div class="lucky-subtitle"><span></span> Choose Your Bonus <span></span></div>
+      <div class="lucky-box-grid" id="luckyBoxGrid">
+        <button class="lucky-box" type="button" aria-label="Open lucky box"><img src="assets/images/spin/lucky-box-open-flash.png" alt="Treasure box"></button>
+        <button class="lucky-box" type="button" aria-label="Open lucky box"><img src="assets/images/spin/lucky-box-open-flash.png" alt="Treasure box"></button>
+        <button class="lucky-box" type="button" aria-label="Open lucky box"><img src="assets/images/spin/lucky-box-open-flash.png" alt="Treasure box"></button>
+        <button class="lucky-box" type="button" aria-label="Open lucky box"><img src="assets/images/spin/lucky-box-open-flash.png" alt="Treasure box"></button>
+      </div>
+      <div class="lucky-result" id="luckyResult" aria-live="polite">
+        <img class="lucky-result-flash" src="assets/images/spin/lucky-open-flash.png" alt="" aria-hidden="true">
+        <img class="lucky-result-box" src="assets/images/spin/lucky-box-open-reveal.png" alt="Opened treasure box">
+        <strong>MYR 17.91</strong>
+      </div>
+      <button class="lucky-close" id="luckyClose" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <div class="spin-rule-overlay" id="spinRuleOverlay" aria-hidden="true">
+    <section class="spin-rule-panel" role="dialog" aria-modal="true" aria-labelledby="spinRuleTitle">
+      <header class="spin-rule-topbar">
+        <button class="spin-rule-back" id="spinRuleClose" type="button" aria-label="Back">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <h2 id="spinRuleTitle">Rule</h2>
+        <button class="spin-rule-refresh" type="button" aria-label="Refresh rule">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </header>
+      <div class="spin-rule-content">
+        <ul>
+          <li>You can apply for a cash withdrawal reward when the accumulated amount reaches 18 MYR.</li>
+          <li>Successfully invite a helper, and the helper must enter the rotation page through your invitation link.</li>
+          <li>Every time you successfully invite a friend to register on the website, you will be successful and you can get 1 free spin.</li>
+          <li>The event lasts for 3 days. After the event ends, the accumulated bonus will be reset and the event will start again, so please withdraw as soon as possible after the collection is full.</li>
+          <li>Each user can enjoy 1 free spin opportunity per day, and the number of spins will be reset at 00:00 every day.</li>
+          <li>After the application is approved, the reward will be directly deposited into your wallet.</li>
+          <li>The reward needs to be successfully bet once in any game before it can be withdrawn.</li>
+          <li>This site reserves the right to interpret the final event. If you have any questions, please contact customer service.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <script src="assets/js/config.js?v=1.0.14"></script>
+  <script src="assets/js/site-shell.js?v=1.0.5"></script>
+  <script src="assets/js/lang.js?v=1.0.8"></script>
+  <script src="assets/js/spin.js?v=1.0.2"></script>
+  <script src="assets/js/page-loader.js?v=1.0.3"></script>
+</body>
+</html>

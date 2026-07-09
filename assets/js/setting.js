@@ -55,10 +55,120 @@
       if(member) render(member);
     } catch(e) {}
   });
+
+
+  function initReferralShareCopy(){
+    const shareOverlay = document.getElementById('shareOverlay');
+    const copyOverlay = document.getElementById('copyOverlay');
+    const copyText = document.getElementById('copyText');
+
+    function getReferralCode(){
+      try{
+        const member = JSON.parse(localStorage.getItem('member_info') || '{}');
+        return member.referralCode || member.referrerCode || member.inviteCode || 'RF1A850A95';
+      }catch(e){
+        return 'RF1A850A95';
+      }
+    }
+
+    function getReferralLink(){
+      const code = getReferralCode();
+      return location.origin + '/register.html?ref=' + encodeURIComponent(code);
+    }
+
+    function updateShareContent(){
+      const code = getReferralCode();
+      const link = getReferralLink();
+      document.querySelectorAll('.share-head strong').forEach(el => { el.textContent = code; });
+      if(copyText) copyText.textContent = link;
+      document.querySelectorAll('[data-share-channel]').forEach(a => {
+        const channel = a.getAttribute('data-share-channel');
+        const text = 'Join me on TitanXGaming: ' + link;
+        let href = '#';
+        if(channel === 'whatsapp') href = 'https://wa.me/?text=' + encodeURIComponent(text);
+        if(channel === 'telegram') href = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Join me on TitanXGaming');
+        if(channel === 'line') href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(link);
+        if(channel === 'viber') href = 'viber://forward?text=' + encodeURIComponent(text);
+        if(channel === 'messenger') href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link);
+        a.setAttribute('href', href);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener');
+      });
+    }
+
+    function show(el){
+      if(!el) return;
+      updateShareContent();
+      el.classList.add('show');
+      el.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    }
+
+    function hide(el){
+      if(!el) return;
+      el.classList.remove('show');
+      el.setAttribute('aria-hidden', 'true');
+      if(!document.querySelector('.share-overlay.show,.copy-overlay.show')) document.body.classList.remove('modal-open');
+    }
+
+    document.querySelectorAll('.share-trigger').forEach(btn => {
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        updateShareContent();
+        if(navigator.share){
+          navigator.share({title:'TitanXGaming', text:'Join me on TitanXGaming', url:getReferralLink()}).catch(() => show(shareOverlay));
+        }else{
+          show(shareOverlay);
+        }
+      });
+    });
+
+    document.querySelectorAll('.copy-trigger').forEach(btn => {
+      btn.addEventListener('click', async function(e){
+        e.preventDefault();
+        const link = getReferralLink();
+        updateShareContent();
+        if(copyText) copyText.textContent = link;
+        try{
+          if(navigator.clipboard && window.isSecureContext){
+            await navigator.clipboard.writeText(link);
+          }else{
+            const ta = document.createElement('textarea');
+            ta.value = link;
+            ta.setAttribute('readonly','');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+        }catch(err){}
+        show(copyOverlay);
+      });
+    });
+
+    document.querySelectorAll('.modal-x,.copy-ok').forEach(btn => {
+      btn.addEventListener('click', function(){ hide(shareOverlay); hide(copyOverlay); });
+    });
+
+    [shareOverlay, copyOverlay].forEach(overlay => {
+      if(!overlay) return;
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) hide(overlay); });
+    });
+
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape'){ hide(shareOverlay); hide(copyOverlay); }
+    });
+
+    updateShareContent();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const list=document.getElementById('memberProfileList');
     if(list) list.innerHTML=row('loading', '...', 'Loading');
     if(!requireLogin()) return;
-    loadProfile().catch(e => { if(list) list.innerHTML=row('error', e.message || t('load_failed', 'Load failed'), 'Error'); });
+    initReferralShareCopy();
+    loadProfile().then(initReferralShareCopy).catch(e => { if(list) list.innerHTML=row('error', e.message || t('load_failed', 'Load failed'), 'Error'); });
   });
 })();

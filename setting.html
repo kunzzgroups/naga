@@ -6,7 +6,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="setting_page_title">TitanXGaming - Setting</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.37" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.39" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
 </head>
 <body class="setting-page">
@@ -19,79 +19,109 @@
   </header>
 
   <main class="setting-main">
-    <section class="setting-shell">
-      <article class="profile-card game-glass-card">
-        <div class="card-heading">
-          <div>
-            <h1 data-i18n="profile">Profile</h1>
-            <p data-i18n="account_information">Account information</p>
+    <section class="setting-shell setting-dashboard-shell">
+      <section class="setting-dashboard-grid">
+        <article class="setting-quick-card game-glass-card">
+          <div class="setting-panel-head">
+            <span>Quick Actions</span>
           </div>
-          <span class="profile-badge" data-i18n="vip">VIP</span>
-        </div>
+          <div class="setting-quick-grid setting-referral-actions">
+            <button type="button" class="setting-image-action share-trigger" aria-label="Share">
+              <img src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy">
+            </button>
+            <a class="setting-image-action" href="downline.html" aria-label="Downline">
+              <img src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy">
+            </a>
+            <button type="button" class="setting-image-action copy-trigger" aria-label="Copy Link">
+              <img src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy">
+            </button>
+          </div>
+        </article>
 
-        <div class="profile-list" id="memberProfileList">
-          <div class="profile-row"><span data-i18n="loading">Loading</span><strong>...</strong></div>
-        </div>
-      </article>
+        <article class="setting-profile-summary game-glass-card">
+          <div class="setting-panel-head">
+            <span>Profile</span>
+            <em>VIP</em>
+          </div>
+          <div class="setting-profile-mini">
+            <div class="setting-profile-avatar">W</div>
+            <div>
+              <h2>Wang Zai</h2>
+              <p><i class="fa-solid fa-mobile-screen-button"></i> 0112345678</p>
+              <p><i class="fa-solid fa-location-dot"></i> Malaysia</p>
+            </div>
+          </div>
+          <a class="setting-view-profile" href="#profileDetails">View Profile <i class="fa-solid fa-arrow-right"></i></a>
+        </article>
 
-      <article class="setting-mobile-wallet game-glass-card">
-        <div data-member-auth-area class="setting-wallet-auth"></div>
-        <div class="balance-box setting-wallet-balance">
-          <div class="balance-text">
-            <p data-i18n="balance_label">Balance:</p>
-            <h3 data-main-wallet-balance>MYR 0.00</h3>
+        <article class="setting-wallet-card game-glass-card">
+          <div class="setting-panel-head account-title">
+            <span>Account Overview</span>
+          </div>
+          <div class="setting-wallet-hero">
+            <div>
+              <p>Total Balance</p>
+              <h2 data-main-wallet-balance>MYR 44.99</h2>
+            </div>
+            <div class="setting-wallet-glow"><i class="fa-solid fa-wallet"></i></div>
+          </div>
+          <div class="setting-wallet-actions setting-wallet-image-actions">
+            <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="Deposit" decoding="async" loading="lazy"></button>
+            <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="Withdraw" decoding="async" loading="lazy"></button>
+            <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="Refresh" decoding="async" loading="lazy"></button>
+          </div>
+          <div class="setting-wallet-limits">
             <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>MYR 10.00</b></p>
             <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b>MYR 50.00</b></p>
           </div>
-          <div class="money-btns">
-            <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="DEPOSIT" decoding="async" loading="lazy"></button>
-            <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="WITHDRAW" decoding="async" loading="lazy"></button>
-            <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="REFRESH" decoding="async" loading="lazy"></button>
-          </div>
-        </div>
-      </article>
-
-
-      <section class="setting-mobile-promos">
-        <div class="setting-kickstart-promo">
-          <img class="bonus-title-img" src="assets/images/bonus/kick_start_bonus_text.png" alt="Kick Start Bonus" decoding="async" loading="lazy">
-          <a class="bonus-card" href="bonus.html"><img src="assets/images/bonus/bonus.png" alt="Kick Start Bonus" decoding="async" loading="lazy"></a>
-        </div>
-
-        <div class="setting-info-promo">
-          <img class="bonus-title-img" src="assets/images/bonus/bonus_text.png" alt="Information Center" decoding="async" loading="lazy">
-          <a class="bonus-card" href="bonus.html"><img src="assets/images/bonus/bonus.png" alt="Information Center" decoding="async" loading="lazy"></a>
-        </div>
-
-        <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" decoding="async" loading="lazy">
-        <div class="action-grid">
-          <button class="image-action-btn share-trigger" type="button"><img class="copy-image" src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy"></button>
-          <a class="image-action-btn" href="downline.html"><img class="copy-image" src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy"></a>
-          <button class="image-action-btn copy-trigger" type="button"><img class="copy-image" src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy"></button>
-        </div>
-        <a class="social-image" href="#"><img src="assets/custom/images/facebook.png" alt="Facebook" decoding="async" loading="lazy"></a>
-        <a class="social-image" href="#"><img src="assets/custom/images/telegram.png" alt="Telegram" decoding="async" loading="lazy"></a>
+          <div data-member-auth-area class="setting-wallet-auth setting-auth-hidden"></div>
+        </article>
       </section>
 
-      <article class="setting-card game-glass-card">
-        <button class="setting-toggle" id="settingToggle" type="button" aria-expanded="false">
-          <span data-i18n="setting_title">Setting</span>
-          <i>▲</i>
-        </button>
+      <section class="setting-detail-grid">
+        <article class="profile-card game-glass-card" id="profileDetails">
+          <div class="card-heading">
+            <div>
+              <h1 data-i18n="profile">Profile</h1>
+              <p data-i18n="account_information">Account information</p>
+            </div>
+            <span class="profile-badge" data-i18n="vip">VIP</span>
+          </div>
+          <div class="profile-list" id="memberProfileList">
+            <div class="profile-row"><span data-i18n="loading">Loading</span><strong>...</strong></div>
+          </div>
+        </article>
 
-        <div class="setting-menu" id="settingMenu">
-          <a href="history.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-clock-rotate-left"></i></span><span data-i18n="setting_history">History</span><em>›</em></a>
-          <a href="mobile-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-mobile"></i></span><span data-i18n="mobile_number">Mobile Number</span><em>›</em></a>
-          <a href="password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-lock"></i></span><span data-i18n="password">Password</span><em>›</em></a>
-          <a href="transaction-password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-key"></i></span><span>Transaction Password</span><em>›</em></a>
-          <a href="policies.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-shield-halved"></i></span><span>Compliance Policy</span><em>›</em></a>
-          <button class="setting-item" id="settingLangBtn" type="button"><span class="setting-ico"><i class="fa-solid fa-language"></i></span><span data-i18n="language">Language</span><em>›</em></button>
-          <!-- <a href="#" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-bug"></i></span><span data-i18n="report_a_problem">Report A Problem</span><em>›</em></a> -->
-          <a href="login.html" class="setting-item logout"><span class="setting-ico"><i class="fa-solid fa-gear"></i></span><span data-i18n="logout">Logout</span><em>›</em></a>
+        <article class="setting-card game-glass-card">
+          <button class="setting-toggle" id="settingToggle" type="button" aria-expanded="false">
+            <span data-i18n="setting_title">Setting</span>
+            <i>▲</i>
+          </button>
+          <div class="setting-menu" id="settingMenu">
+            <a href="history.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-clock-rotate-left"></i></span><span data-i18n="setting_history">History</span><em>›</em></a>
+            <a href="mobile-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-mobile"></i></span><span data-i18n="mobile_number">Mobile Number</span><em>›</em></a>
+            <a href="password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-lock"></i></span><span data-i18n="password">Password</span><em>›</em></a>
+            <a href="transaction-password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-key"></i></span><span>Transaction Password</span><em>›</em></a>
+            <a href="policies.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-shield-halved"></i></span><span>Compliance Policy</span><em>›</em></a>
+            <a href="vip.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-crown"></i></span><span>VIP</span><em>›</em></a>
+            <button class="setting-item" id="settingLangBtn" type="button"><span class="setting-ico"><i class="fa-solid fa-language"></i></span><span data-i18n="language">Language</span><em>›</em></button>
+            <a href="login.html" class="setting-item logout"><span class="setting-ico"><i class="fa-solid fa-right-from-bracket"></i></span><span data-i18n="logout">Logout</span><em>›</em></a>
+          </div>
+        </article>
+      </section>
+
+      <section class="setting-bonus-panel game-glass-card">
+        <div class="setting-bonus-head">
+          <div>
+          </div>
+          <a href="bonus.html">View All <i class="fa-solid fa-arrow-right"></i></a>
         </div>
-      </article>
-
-
+        <div class="bonus-container setting-bonus-container">
+          <div id="dynamicPromotionBox" data-promotion-box>
+            <div class="bonus-loading">Loading bonus...</div>
+          </div>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -103,6 +133,43 @@
     <a href="#"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-img="img.bottom_setting" data-i18n-alt="setting" decoding="async" loading="lazy"></a>
   </nav>
 
+  <div class="share-overlay" id="shareOverlay" aria-hidden="true">
+    <div class="share-modal" role="dialog" aria-modal="true" aria-label="Share method">
+      <button class="modal-x" type="button" aria-label="Close">×</button>
+      <div class="share-head">
+        <h3 data-i18n="share_method_title">Select Share Method</h3>
+        <strong>RF1A850A95</strong>
+      </div>
+      <div class="qr-box" aria-label="QR Code"><img class="qr-img" src="assets/images/qr-dummy.png" alt="QR Code" decoding="async" loading="lazy"></div>
+      <p class="share-desc" data-i18n="share_desc">Share your QR code with your friends, they can scan it with their camera to register as your downline.</p>
+      <div class="share-list">
+        <a href="#" data-share-channel="whatsapp"><span class="wa">☘</span>Whatsapp</a>
+        <a href="#" data-share-channel="telegram"><span class="tg">➤</span>Telegram</a>
+        <a href="#" data-share-channel="line"><span class="ln">LINE</span>Line</a>
+        <a href="#" data-share-channel="viber"><span class="vb">☎</span>Viber</a>
+        <a href="#" data-share-channel="messenger"><span class="ms">✦</span>Messenger</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="copy-overlay" id="copyOverlay" aria-hidden="true">
+    <div class="copy-modal" role="dialog" aria-modal="true" aria-label="Copied link">
+      <div class="copy-check">✓</div>
+      <h3 data-i18n="copied">Copied</h3>
+      <p id="copyText">https://d2aud.com/RF1A850A95</p>
+      <button type="button" class="copy-ok" data-i18n="ok">OK</button>
+    </div>
+  </div>
+
+
+  <div class="bonus-detail-overlay" id="bonusDetailOverlay" aria-hidden="true">
+    <div class="bonus-detail-modal" role="dialog" aria-modal="true" aria-labelledby="bonusDetailTitle">
+      <button class="bonus-close-x" id="bonusCloseBtn" type="button" aria-label="Close">×</button>
+      <h2 id="bonusDetailTitle">Promotion Bonus</h2>
+      <div class="bonus-detail-content"></div>
+    </div>
+  </div>
+
   <div class="lang-overlay" id="langOverlay" aria-hidden="true">
     <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Language selection" data-i18n-aria-label="language_selection">
       <button class="lang-option active" type="button" data-lang="en"><span data-i18n="lang_english">English</span> <span class="checkmark">✔</span></button>
@@ -111,7 +178,7 @@
   </div>
 
   <script src="assets/js/config.js?v=1.0.14"></script>
-  <script src="assets/js/site-shell.js?v=1.0.4"></script>
+  <script src="assets/js/site-shell.js?v=1.0.5"></script>
   <script src="assets/js/lang.js"></script>
   <script src="assets/js/member-auth.js?v=1.0.2"></script>
   <script src="assets/js/setting.js?v=1.0.3"></script>
@@ -121,6 +188,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
   <script src="assets/js/firebase-config.js?v=1.0.0"></script>
   <script src="assets/js/livechat-widget.js?v=1.0.1"></script>
+  <script src="assets/js/promotion-bonus.js?v=1.0.1"></script>
   <script src="assets/js/page-loader.js?v=1.0.3"></script>
 </body>
 </html>
