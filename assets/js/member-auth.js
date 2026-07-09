@@ -73,8 +73,8 @@
     if(!authArea) return;
     authArea.innerHTML =
       '<div class="login-row">' +
-        '<a href="login.html"><img src="assets/custom/images/login.gif" alt="LOGIN" class="auth-gif"></a>' +
-        '<a href="register.html"><img src="assets/custom/images/register.gif" alt="REGISTER" class="auth-gif"></a>' +
+        '<a href="login.html"><img src="assets/custom/images/login.png" alt="LOGIN" class="auth-gif"></a>' +
+        '<a href="register.html"><img src="assets/custom/images/register.png" alt="REGISTER" class="auth-gif"></a>' +
       '</div>';
   }
 
