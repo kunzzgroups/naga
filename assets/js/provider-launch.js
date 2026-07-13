@@ -10,9 +10,119 @@
   let walletBalanceCache = null;
   let providerMonitorTimer = null;
   let providerCloseCheckTimer = null;
+  let providerSettlementPromise = null;
+  let activeProviderTab = null;
+  let providerLaunchInProgress = false;
+  const PROVIDER_PAGE_INSTANCE_ID = 'provider-page-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  const PENDING_LAUNCH_LOCK_KEY = 'naga_provider_launch_pending_lock';
+  const PENDING_LAUNCH_LOCK_TTL_MS = 45000;
+  const ACTIVE_GAME_MESSAGE = 'You already have a game open. Please exit the current game before starting another game.';
+  const LAUNCHING_GAME_MESSAGE = 'A game is currently being opened. Please wait.';
+  const SETTLING_GAME_MESSAGE = 'Your previous game is closing and the balance is being returned. Please wait a moment.';
+  const DEFAULT_CONFIRM_TEXT = 'Confirm & Play';
+  const TERMINAL_SESSION_STATES = ['CLOSED', 'SETTLED', 'COMPLETED', 'EXITED', 'EXPIRED', 'INACTIVE', 'CANCELLED'];
 
   function getToken(){
     return localStorage.getItem('member_token') || localStorage.getItem('token') || localStorage.getItem('access_token') || '';
+  }
+
+  function getActiveProviderSessionId(){
+    return localStorage.getItem('naga_active_provider_session_id') || '';
+  }
+
+  function getPendingLaunchLock(){
+    const raw = localStorage.getItem(PENDING_LAUNCH_LOCK_KEY);
+    if(!raw) return null;
+    try{
+      const lock = JSON.parse(raw);
+      if(!lock || !lock.owner || Number(lock.expiresAt || 0) <= Date.now()){
+        localStorage.removeItem(PENDING_LAUNCH_LOCK_KEY);
+        return null;
+      }
+      return lock;
+    }catch(e){
+      localStorage.removeItem(PENDING_LAUNCH_LOCK_KEY);
+      return null;
+    }
+  }
+
+  function releasePendingLaunchLock(){
+    const lock = getPendingLaunchLock();
+    if(!lock || lock.owner === PROVIDER_PAGE_INSTANCE_ID){
+      localStorage.removeItem(PENDING_LAUNCH_LOCK_KEY);
+    }
+  }
+
+  function acquirePendingLaunchLock(){
+    const currentLock = getPendingLaunchLock();
+    if(currentLock && currentLock.owner !== PROVIDER_PAGE_INSTANCE_ID){
+      throw new Error(LAUNCHING_GAME_MESSAGE);
+    }
+
+    const lock = {
+      owner: PROVIDER_PAGE_INSTANCE_ID,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + PENDING_LAUNCH_LOCK_TTL_MS
+    };
+    localStorage.setItem(PENDING_LAUNCH_LOCK_KEY, JSON.stringify(lock));
+
+    // Read it back so two pages clicking at nearly the same time cannot both continue.
+    const confirmedLock = getPendingLaunchLock();
+    if(!confirmedLock || confirmedLock.owner !== PROVIDER_PAGE_INSTANCE_ID){
+      throw new Error(LAUNCHING_GAME_MESSAGE);
+    }
+    return lock;
+  }
+
+  function syncLaunchAvailabilityUi(){
+    const pendingLock = getPendingLaunchLock();
+    const locked = Boolean(getActiveProviderSessionId()) || Boolean(pendingLock) || providerLaunchInProgress || Boolean(providerSettlementPromise);
+    if(document.body){
+      document.body.setAttribute('data-provider-game-locked', locked ? '1' : '0');
+    }
+    document.querySelectorAll('.provider-launch-card, .provider-launch-img, .provider-launch-btn, [data-provider-launch="1"]').forEach(function(el){
+      el.setAttribute('aria-disabled', locked ? 'true' : 'false');
+      el.classList.toggle('provider-session-locked', locked);
+    });
+  }
+
+  function showProviderBusyMessage(message){
+    const modal = document.getElementById('providerTransferModal');
+    if(modal && !modal.classList.contains('hidden')){
+      setError(message);
+      return;
+    }
+    alert(message);
+  }
+
+  async function ensureProviderCanLaunch(showMessage){
+    if(providerSettlementPromise){
+      if(showMessage !== false) showProviderBusyMessage(SETTLING_GAME_MESSAGE);
+      return false;
+    }
+    if(providerLaunchInProgress){
+      if(showMessage !== false) showProviderBusyMessage(LAUNCHING_GAME_MESSAGE);
+      return false;
+    }
+
+    const pendingLock = getPendingLaunchLock();
+    if(pendingLock && pendingLock.owner !== PROVIDER_PAGE_INSTANCE_ID){
+      if(showMessage !== false) showProviderBusyMessage(LAUNCHING_GAME_MESSAGE);
+      return false;
+    }
+
+    const sessionId = getActiveProviderSessionId();
+    if(!sessionId) return true;
+
+    // Verify the stored session before blocking. If the backend already marked it
+    // CLOSED/SETTLED, clear the stale lock and allow the next game immediately.
+    try{
+      const heartbeat = await sendProviderHeartbeat(sessionId);
+      if(handleHeartbeatResult(heartbeat, sessionId)) return true;
+    }catch(e){}
+
+    if(showMessage !== false) showProviderBusyMessage(ACTIVE_GAME_MESSAGE);
+    return false;
   }
 
   function goLogin(){
@@ -225,18 +335,85 @@
     if(err) err.textContent = msg || '';
   }
 
+  function resetTransferAction(){
+    const modal = document.getElementById('providerTransferModal');
+    if(!modal) return;
+    const btn = modal.querySelector('[data-provider-transfer-confirm]');
+    if(btn){
+      btn.disabled = false;
+      btn.textContent = DEFAULT_CONFIRM_TEXT;
+    }
+  }
+
   function closeModal(){
     const modal = ensureModal();
     modal.classList.add('hidden');
     pendingLaunch = null;
+    resetTransferAction();
+  }
+
+  function clearStoredProviderSession(){
+    localStorage.removeItem('naga_last_provider_session_id');
+    localStorage.removeItem('naga_active_provider_session_id');
+    localStorage.removeItem('naga_active_provider_code');
+    activeProviderTab = null;
+    resetTransferAction();
+    syncLaunchAvailabilityUi();
+    try{
+      document.dispatchEvent(new CustomEvent('naga:provider-session-cleared'));
+    }catch(e){}
+  }
+
+  async function refreshWalletAfterProviderExit(){
+    try{
+      let balance;
+      if(window.NAGA_MEMBER_AUTH && typeof window.NAGA_MEMBER_AUTH.refreshBalance === 'function'){
+        balance = await window.NAGA_MEMBER_AUTH.refreshBalance();
+      }else{
+        balance = await fetchMainWalletBalance();
+        localStorage.setItem('member_main_wallet_balance', String(balance));
+        document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){
+          el.textContent = 'MYR ' + money(balance);
+        });
+      }
+      if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshBalance === 'function'){
+        try{ window.NAGA_SITE_SHELL.refreshBalance(); }catch(e){}
+      }
+      try{
+        document.dispatchEvent(new CustomEvent('naga:provider-balance-returned', { detail: { balance: balance } }));
+      }catch(e){}
+    }catch(e){}
+  }
+
+  function getProviderSessionState(json){
+    const data = json && json.data ? json.data : (json || {});
+    const session = data && data.session ? data.session : {};
+    const rawState = firstValue(
+      data.sessionStatus, data.session_status, data.sessionState, data.session_state,
+      session.status, session.state,
+      data.providerSessionStatus, data.provider_session_status
+    );
+    const state = String(rawState || '').trim().toUpperCase();
+    const explicitlyClosed = data.closed === true || data.active === false || data.open === false ||
+      session.closed === true || session.active === false || session.open === false;
+    return {
+      state: state,
+      terminal: explicitlyClosed || TERMINAL_SESSION_STATES.indexOf(state) !== -1
+    };
+  }
+
+  function isTerminalSessionMessage(message){
+    return /(already\s*(closed|settled|exited)|session\s*(is\s*)?(closed|settled|expired|inactive)|no\s*(active|open)\s*session|session\s*not\s*found)/i.test(String(message || ''));
   }
 
   async function openTransferModal(payload){
     const token = getToken();
     if(!token){ goLogin(); return; }
     if(!payload.gameId && !payload.providerCode) throw new Error('Provider Code is required.');
+    if(!(await ensureProviderCanLaunch(true))) return;
 
     const modal = ensureModal();
+    resetTransferAction();
     pendingLaunch = payload;
     clearError();
     modal.querySelector('[data-provider-transfer-game-name]').textContent = payload._display.gameName || 'Selected Game';
@@ -258,6 +435,7 @@
     if(!pendingLaunch) return;
     const modal = ensureModal();
     const btn = modal.querySelector('[data-provider-transfer-confirm]');
+    if(!(await ensureProviderCanLaunch(true))) return;
     const amountValue = modal.querySelector('[data-provider-transfer-amount]').value;
     const amount = Number(amountValue || 0);
     if(isNaN(amount) || amount < 0){ setError('Please enter a valid amount.'); return; }
@@ -284,14 +462,19 @@
 
 
   function saveActiveProviderSession(data){
-    if(data && data.sessionId){
-      localStorage.setItem('naga_last_provider_session_id', String(data.sessionId));
-      localStorage.setItem('naga_active_provider_session_id', String(data.sessionId));
-      if(data.providerCode){
-        localStorage.setItem('naga_last_provider_code', String(data.providerCode));
-        localStorage.setItem('naga_active_provider_code', String(data.providerCode));
+    const session = data && data.session ? data.session : {};
+    const sessionId = firstValue(data && data.sessionId, data && data.session_id, data && data.providerSessionId, data && data.provider_session_id, data && data.playerProviderSessionId, data && data.player_provider_session_id, session.id, session.sessionId, session.session_id);
+    const providerCode = firstValue(data && data.providerCode, data && data.provider_code, session.providerCode, session.provider_code);
+    if(sessionId){
+      localStorage.setItem('naga_last_provider_session_id', String(sessionId));
+      localStorage.setItem('naga_active_provider_session_id', String(sessionId));
+      if(providerCode){
+        localStorage.setItem('naga_last_provider_code', String(providerCode));
+        localStorage.setItem('naga_active_provider_code', String(providerCode));
       }
+      syncLaunchAvailabilityUi();
     }
+    return { sessionId: sessionId, providerCode: providerCode };
   }
 
   async function sendProviderHeartbeat(sessionId){
@@ -302,7 +485,26 @@
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ sessionId: sessionId })
     });
-    return res.json().catch(function(){ return {}; });
+    const json = await res.json().catch(function(){ return {}; });
+    json.__httpOk = res.ok;
+    json.__httpStatus = res.status;
+    return json;
+  }
+
+  function handleHeartbeatResult(json, sessionId){
+    if(!json) return false;
+    const currentSessionId = localStorage.getItem('naga_active_provider_session_id');
+    if(currentSessionId && sessionId && String(currentSessionId) !== String(sessionId)) return false;
+
+    const statusInfo = getProviderSessionState(json);
+    const message = firstValue(json.message, json.error, json.data && json.data.message);
+    const terminalByError = json.__httpOk === false && isTerminalSessionMessage(message);
+    if(!statusInfo.terminal && !terminalByError) return false;
+
+    stopProviderMonitor();
+    clearStoredProviderSession();
+    refreshWalletAfterProviderExit();
+    return true;
   }
 
   function stopProviderMonitor(){
@@ -319,66 +521,101 @@
   function startProviderMonitor(sessionId, providerCode, popupWindow){
     stopProviderMonitor();
     if(!sessionId) return;
+    activeProviderTab = popupWindow || null;
     localStorage.setItem('naga_active_provider_session_id', String(sessionId));
     if(providerCode) localStorage.setItem('naga_active_provider_code', String(providerCode));
+    syncLaunchAvailabilityUi();
 
     async function closeAndSettle(){
+      if(providerSettlementPromise) return providerSettlementPromise;
       stopProviderMonitor();
-      try{ await exitProviderGame({ sessionId: sessionId, providerCode: providerCode, transferBackAll: true }); }catch(e){}
+      providerSettlementPromise = (async function(){
+        try{
+          await exitProviderGame({ sessionId: sessionId, providerCode: providerCode, transferBackAll: true });
+        }catch(e){
+          // The backend heartbeat/scheduler may have settled it first. In that case,
+          // clear the stale frontend session instead of keeping the Play button locked.
+          if(isTerminalSessionMessage(e && e.message)){
+            clearStoredProviderSession();
+            refreshWalletAfterProviderExit();
+          }
+        }finally{
+          providerSettlementPromise = null;
+          resetTransferAction();
+          syncLaunchAvailabilityUi();
+        }
+      })();
+      return providerSettlementPromise;
     }
 
-    sendProviderHeartbeat(sessionId).catch(function(){});
+    sendProviderHeartbeat(sessionId)
+      .then(function(json){ handleHeartbeatResult(json, sessionId); })
+      .catch(function(){});
 
-    // Check tab close faster than heartbeat. This handles normal new-tab close.
+    // Detect a manually closed provider tab quickly and settle immediately.
     providerCloseCheckTimer = setInterval(function(){
-      if(popupWindow && popupWindow.closed){
+      if(activeProviderTab && activeProviderTab.closed){
         closeAndSettle();
       }
-    }, 3000);
+    }, 1200);
 
-    // Heartbeat is only for backend stale-session protection.
+    // Keep the backend session alive, but also consume a CLOSED/SETTLED heartbeat
+    // response so the frontend unlocks without requiring a page refresh.
     providerMonitorTimer = setInterval(function(){
-      if(popupWindow && popupWindow.closed){
+      if(activeProviderTab && activeProviderTab.closed){
         closeAndSettle();
         return;
       }
-      sendProviderHeartbeat(sessionId).catch(function(){});
+      sendProviderHeartbeat(sessionId)
+        .then(function(json){ handleHeartbeatResult(json, sessionId); })
+        .catch(function(){});
     }, 10000);
   }
 
   async function directLaunch(payload){
     const token = getToken();
     if(!token){ goLogin(); return null; }
+    if(!(await ensureProviderCanLaunch(false))) throw new Error(getActiveProviderSessionId() ? ACTIVE_GAME_MESSAGE : LAUNCHING_GAME_MESSAGE);
 
-    if(window.NAGA_PROVIDER_LAUNCH_DEBUG) console.log('[NAGA launch] endpoint:', LAUNCH_API_URL, 'payload:', payload);
+    providerLaunchInProgress = true;
+    try{
+      acquirePendingLaunchLock();
+      syncLaunchAvailabilityUi();
 
-    const res = await fetch(LAUNCH_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json().catch(function(){ return {}; });
-    if(window.NAGA_PROVIDER_LAUNCH_DEBUG) console.log('[NAGA launch] response:', res.status, json);
-    if(!res.ok || json.status === 'error') throw new Error(json.message || json.error || 'Launch game failed.');
+      if(window.NAGA_PROVIDER_LAUNCH_DEBUG) console.log('[NAGA launch] endpoint:', LAUNCH_API_URL, 'payload:', payload);
 
-    const data = json.data || {};
-    saveActiveProviderSession(data);
+      const res = await fetch(LAUNCH_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json().catch(function(){ return {}; });
+      if(window.NAGA_PROVIDER_LAUNCH_DEBUG) console.log('[NAGA launch] response:', res.status, json);
+      if(!res.ok || json.status === 'error') throw new Error(json.message || json.error || 'Launch game failed.');
 
-    const launchUrl = extractLaunchUrl(json);
-    if(!launchUrl) throw new Error('Provider launch URL not returned. Please check BO provider response launch URL path.');
-    closeModal();
-    // Open provider game in a normal browser tab instead of a popup window.
-    // Keep the returned tab reference so we can detect tab close when the browser allows it.
-    // Backend auto-settlement is still the final backup if the browser/tab is killed.
-    const gameTab = window.open(launchUrl, '_blank');
-    if(gameTab){
-      try{ gameTab.focus(); }catch(e){}
-      startProviderMonitor(data.sessionId, data.providerCode || payload.providerCode || '', gameTab);
-    }else{
-      // New tab blocked fallback: redirect same window. Backend scheduler will still auto-settle stale OPEN sessions.
-      window.location.href = launchUrl;
+      const data = json.data || {};
+      const activeSession = saveActiveProviderSession(data);
+
+      const launchUrl = extractLaunchUrl(json);
+      if(!launchUrl) throw new Error('Provider launch URL not returned. Please check BO provider response launch URL path.');
+      closeModal();
+      // Open provider game in a normal browser tab instead of a popup window.
+      // The active session remains locked until exit/heartbeat settlement completes.
+      const gameTab = window.open(launchUrl, '_blank');
+      if(gameTab){
+        try{ gameTab.focus(); }catch(e){}
+        startProviderMonitor(activeSession.sessionId, activeSession.providerCode || payload.providerCode || '', gameTab);
+      }else{
+        // New tab blocked fallback: redirect same window. The saved session still
+        // prevents a second game from launching in another tab.
+        window.location.href = launchUrl;
+      }
+      return launchUrl;
+    }finally{
+      providerLaunchInProgress = false;
+      releasePendingLaunchLock();
+      syncLaunchAvailabilityUi();
     }
-    return launchUrl;
   }
 
   async function launch(game, options){
@@ -404,9 +641,11 @@
     const json = await res.json().catch(function(){ return {}; });
     if(!res.ok || json.status === 'error') throw new Error(json.message || json.error || 'Exit provider failed.');
     stopProviderMonitor();
-    localStorage.removeItem('naga_last_provider_session_id');
-    localStorage.removeItem('naga_active_provider_session_id');
-    localStorage.removeItem('naga_active_provider_code');
+    clearStoredProviderSession();
+    releasePendingLaunchLock();
+    providerLaunchInProgress = false;
+    syncLaunchAvailabilityUi();
+    refreshWalletAfterProviderExit();
     return json;
   }
 
@@ -448,6 +687,38 @@
 
   window.addEventListener('pagehide', trySettleOnPageClose);
 
+  // A provider-return tab and the main page share localStorage. When either tab
+  // clears the active session, immediately reset the main page launch controls.
+  window.addEventListener('storage', function(e){
+    if(e.key === 'naga_active_provider_session_id'){
+      syncLaunchAvailabilityUi();
+      if(!e.newValue){
+        stopProviderMonitor();
+        activeProviderTab = null;
+        resetTransferAction();
+        refreshWalletAfterProviderExit();
+      }
+    }
+    if(e.key === PENDING_LAUNCH_LOCK_KEY){
+      syncLaunchAvailabilityUi();
+    }
+  });
+
+  window.addEventListener('focus', function(){
+    if(activeProviderTab && activeProviderTab.closed){
+      const sessionId = localStorage.getItem('naga_active_provider_session_id');
+      const providerCode = localStorage.getItem('naga_active_provider_code') || localStorage.getItem('naga_last_provider_code') || '';
+      if(sessionId){
+        exitProviderGame({ sessionId: sessionId, providerCode: providerCode, transferBackAll: true })
+          .catch(function(e){
+            if(isTerminalSessionMessage(e && e.message)) clearStoredProviderSession();
+          });
+      }else{
+        resetTransferAction();
+      }
+    }
+  });
+
   window.NAGA_PROVIDER_LAUNCH = {
     launch: launch,
     directLaunch: directLaunch,
@@ -461,8 +732,15 @@
     heartbeatEndpoint: HEARTBEAT_API_URL,
     sendProviderHeartbeat: sendProviderHeartbeat,
     startProviderMonitor: startProviderMonitor,
-    stopProviderMonitor: stopProviderMonitor
+    stopProviderMonitor: stopProviderMonitor,
+    resetTransferAction: resetTransferAction,
+    clearStoredProviderSession: clearStoredProviderSession,
+    isGameActive: function(){ return Boolean(getActiveProviderSessionId()); },
+    canLaunchAnotherGame: ensureProviderCanLaunch
   };
 
-  document.addEventListener('DOMContentLoaded', bindExisting);
+  document.addEventListener('DOMContentLoaded', function(){
+    bindExisting();
+    syncLaunchAvailabilityUi();
+  });
 })();
