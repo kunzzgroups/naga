@@ -153,7 +153,8 @@
     const logoBox = header.querySelector('.logo-box');
     if(logoBox) logoBox.classList.add('mobile-style-logo');
 
-    const oldLang = header.querySelector('.lang-btn');
+    // Header language/translate control is intentionally removed on every page.
+    header.querySelectorAll('.lang-btn, .top-lang-btn').forEach(function(el){ el.remove(); });
     const actions = document.createElement('div');
     actions.className = 'top-header-actions';
 
@@ -167,17 +168,6 @@
 
     actions.appendChild(guest);
     actions.appendChild(member);
-    if(oldLang){
-      oldLang.classList.add('top-lang-btn');
-      actions.appendChild(oldLang);
-    }else{
-      const lang = document.createElement('button');
-      lang.className = 'lang-btn top-lang-btn';
-      lang.id = 'langBtn';
-      lang.type = 'button';
-      lang.innerHTML = '<img src="assets/images/translate-language.png" alt="Change language">';
-      actions.appendChild(lang);
-    }
     header.appendChild(actions);
     refreshHeaderAuth();
     if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();

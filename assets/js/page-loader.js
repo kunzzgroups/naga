@@ -1,47 +1,41 @@
 (function () {
+  'use strict';
+
+  var root = document.documentElement;
   var startTime = Date.now();
-  var MIN_SHOW_MS = 120;       // keep spinner visible only briefly, avoid feeling slow
-  var MAX_WAIT_MS = 900;       // never wait for every image/gif/firebase to finish
+  var MIN_SHOW_MS = 60;
+  var MAX_WAIT_MS = 700;
   var domReady = document.readyState !== 'loading';
   var customAssetsReady = false;
-  var hidden = false;
+  var revealed = false;
 
-  function nextPaint(cb) {
+  function nextPaint(callback) {
     requestAnimationFrame(function () {
-      requestAnimationFrame(cb);
+      requestAnimationFrame(callback);
     });
   }
 
-  function hideLoader(force) {
-    if (hidden) return;
+  function revealPage(force) {
+    if (revealed) return;
     var elapsed = Date.now() - startTime;
     var delay = force ? 0 : Math.max(0, MIN_SHOW_MS - elapsed);
+    revealed = true;
 
-    hidden = true;
     setTimeout(function () {
       nextPaint(function () {
-        document.documentElement.classList.add('page-loaded');
-        document.documentElement.classList.remove('page-loading');
+        root.classList.remove('page-loading', 'page-leaving');
+        root.classList.add('page-loaded');
       });
     }, delay);
   }
 
-  function tryHide() {
-    // Hide after DOM is ready and custom assets/background were applied.
-    // If custom asset API/version is slow, MAX_WAIT_MS fallback below will release it.
-    if (domReady && customAssetsReady) hideLoader(false);
+  function tryReveal() {
+    if (domReady && customAssetsReady) revealPage(false);
   }
 
   function onDomReady() {
     domReady = true;
-    tryHide();
-  }
-
-  function showLoader() {
-    startTime = Date.now();
-    hidden = false;
-    document.documentElement.classList.remove('page-loaded');
-    document.documentElement.classList.add('page-loading');
+    tryReveal();
   }
 
   if (document.readyState === 'loading') {
@@ -52,34 +46,18 @@
 
   document.addEventListener('naga:custom-assets-ready', function () {
     customAssetsReady = true;
-    tryHide();
+    tryReveal();
   }, { once: true });
 
-  // Fast fallback: do not wait for large gifs, lazy images, firebase, or slow network calls.
+  // Never hold the page because of a slow remote image or API.
   setTimeout(function () {
-    if (!hidden) hideLoader(true);
+    if (!revealed) revealPage(true);
   }, MAX_WAIT_MS);
 
-  // Browser back/forward cache restore should not show loader forever.
-  window.addEventListener('pageshow', function (event) {
-    if (event.persisted) hideLoader(true);
+  // Internal links now use normal immediate browser navigation. There is no
+  // pre-navigation fade, delay, scaling or movement, so taps feel direct.
+  window.addEventListener('pageshow', function () {
+    root.classList.remove('page-leaving');
+    if (!root.classList.contains('page-loaded')) revealPage(true);
   });
-
-  document.addEventListener('click', function (event) {
-    var link = event.target.closest && event.target.closest('a[href]');
-    if (!link) return;
-    if (link.matches && link.matches('.bottom-nav a:first-child, .bottom-nav a[href="index.html"], .bottom-nav a[href="./index.html"]')) { document.documentElement.classList.add('page-loaded'); document.documentElement.classList.remove('page-loading'); return; }
-
-    var href = link.getAttribute('href') || '';
-    if (!href || href.charAt(0) === '#' || href.indexOf('javascript:') === 0) return;
-    if (link.target && link.target !== '_self') return;
-    if (link.hasAttribute('download')) return;
-
-    try {
-      var url = new URL(href, window.location.href);
-      if (url.origin === window.location.origin && url.pathname !== window.location.pathname) {
-        showLoader();
-      }
-    } catch (e) {}
-  }, true);
 })();

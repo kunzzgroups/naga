@@ -190,9 +190,33 @@ function pickDefaultSubCategoryId(list){
 }
 
 function setGamesLoading(){
-  if(gameGrid){
-    gameGrid.innerHTML = '<div class="empty-state">Loading games...</div>';
+  if(!gameGrid) return;
+
+  // Keep the provider rail mounted while only the selected provider's games reload.
+  // This preserves its scroll position and avoids the sidebar flashing/rebuilding.
+  const existingLobby = gameGrid.querySelector('.provider-lobby-shell');
+  const existingPanel = existingLobby && existingLobby.querySelector('.provider-games-panel');
+  const keepProviderRail = existingPanel && activeProviderCode && !isDirectGameCategory();
+
+  if(keepProviderRail){
+    existingPanel.innerHTML = '<div class="games-loading-indicator" role="status" aria-label="Loading games"><span class="games-loading-spinner" aria-hidden="true"></span></div>';
+    existingPanel.scrollTop = 0;
+    return;
   }
+
+  gameGrid.innerHTML = '<div class="games-loading-indicator" role="status" aria-label="Loading games"><span class="games-loading-spinner" aria-hidden="true"></span></div>';
+}
+
+function syncProviderRailActiveState(rail){
+  if(!rail) return;
+  rail.querySelectorAll('.provider-rail-card').forEach(btn => {
+    const code = btn.dataset.providerCode || '';
+    const active = isAllProviderCode(activeProviderCode)
+      ? isAllProviderCode(code)
+      : String(code) === String(activeProviderCode || '');
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 }
 
 function getImageUrl(item, fallback, folder){
@@ -416,10 +440,95 @@ function renderProviderCards(games){
   renderGames(currentGameList);
 }
 
+const GAME_RENDER_BATCH_DESKTOP = 48;
+const GAME_RENDER_BATCH_MOBILE = 30;
+let gameBatchObserver = null;
+let gameBatchToken = 0;
+
+function disconnectGameBatchObserver(){
+  if(gameBatchObserver){
+    gameBatchObserver.disconnect();
+    gameBatchObserver = null;
+  }
+}
+
+function gameRenderBatchSize(){
+  return (window.matchMedia && window.matchMedia('(max-width: 768px)').matches)
+    ? GAME_RENDER_BATCH_MOBILE
+    : GAME_RENDER_BATCH_DESKTOP;
+}
+
+function createGameCard(item){
+  const card=document.createElement('div');
+  card.className='game-card provider-launch-card';
+  card.setAttribute('role', 'button');
+  card.setAttribute('tabindex', '0');
+
+  const imageUrl = getImageUrl(item, 'assets/images/game.png', 'game');
+  const gameName = langText(item, 'name', 'Game');
+  const targetUrl = item.gameUrl || item.game_url || '';
+
+  const launchGameId = item.gameId || item.game_id || item.id || '';
+  const launchProviderCode = item.providerCode || item.provider_code || item.provider_code_name || item.vendorCode || item.vendor_code || (item.provider && (item.provider.providerCode || item.provider.provider_code || item.provider.code)) || '';
+  const launchGameCode = item.gameCode || item.game_code || item.launchCode || item.launch_code || item.providerGameCode || item.provider_game_code || item.code || '';
+
+  if(launchGameId) card.dataset.gameId = launchGameId;
+  if(launchProviderCode) card.dataset.providerCode = launchProviderCode;
+  if(launchGameCode) card.dataset.gameCode = launchGameCode;
+  if(gameName) card.dataset.gameName = gameName;
+
+  card.innerHTML=`
+    <div class="game-card-img-wrap">
+      <img loading="lazy" decoding="async" fetchpriority="low" class="provider-launch-img"
+           src="${imageUrl}"
+           alt="${gameName}"
+           data-game-id="${launchGameId}"
+           data-provider-code="${launchProviderCode}"
+           data-game-code="${launchGameCode}"
+           data-game-name="${gameName}">
+    </div>
+    <button class="play-btn provider-launch-btn"
+            type="button"
+            data-game-id="${launchGameId}"
+            data-provider-code="${launchProviderCode}"
+            data-game-code="${launchGameCode}"
+            data-game-name="${gameName}">${tr('play','PLAY')}</button>`;
+
+  const playBtn = card.querySelector('.play-btn');
+  const img = card.querySelector('.provider-launch-img');
+
+  function fallbackOpen(){
+    if(targetUrl){
+      window.location.href = targetUrl;
+    }else{
+      window.location.href = 'game-detail.html?id=' + encodeURIComponent(item.id || '');
+    }
+  }
+
+  if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.bindElement === 'function'){
+    window.NAGA_PROVIDER_LAUNCH.bindElement(card, item, { transferAmount: 0, gameName: gameName });
+    window.NAGA_PROVIDER_LAUNCH.bindElement(img, item, { transferAmount: 0, gameName: gameName });
+    window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0, gameName: gameName });
+  }else{
+    card.addEventListener('click', fallbackOpen);
+    playBtn.addEventListener('click', e=>{ e.stopPropagation(); fallbackOpen(); });
+  }
+
+  card.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      card.click();
+    }
+  });
+
+  return card;
+}
+
 function renderGames(list){
   if(!gameGrid) return;
+  disconnectGameBatchObserver();
+  const renderToken = ++gameBatchToken;
   showingProviderList = false;
-  gameGrid.innerHTML='';
   gameGrid.classList.remove('provider-grid', 'provider-first-grid');
 
   const gameList = Array.isArray(list) ? list : [];
@@ -427,108 +536,119 @@ function renderGames(list){
   const targetGrid = document.createElement('div');
   targetGrid.className = shouldShowProviderRail ? 'provider-games-list' : 'direct-games-list';
 
+  let scrollRoot = null;
+  if(shouldShowProviderRail){
+    gameGrid.classList.add('provider-with-rail');
+
+    // Reuse the existing lobby so the provider sidebar never refreshes when
+    // switching providers/subcategories. Only the right game panel is replaced.
+    let lobby = gameGrid.querySelector('.provider-lobby-shell');
+    let rail = lobby && lobby.querySelector('.provider-side-rail');
+    let panel = lobby && lobby.querySelector('.provider-games-panel');
+
+    if(!lobby || !rail || !panel){
+      gameGrid.innerHTML = '';
+      const rows = providerRowsForActiveCategory(currentGameList);
+      lobby = document.createElement('div');
+      lobby.className = 'provider-lobby-shell';
+      rail = buildProviderRail(rows);
+      lobby.appendChild(rail);
+      panel = document.createElement('div');
+      panel.className = 'provider-games-panel';
+      lobby.appendChild(panel);
+      gameGrid.appendChild(lobby);
+    }
+
+    syncProviderRailActiveState(rail);
+    panel.innerHTML = '';
+    panel.appendChild(targetGrid);
+    panel.scrollTop = 0;
+    scrollRoot = panel;
+  }else{
+    gameGrid.innerHTML = '';
+    gameGrid.classList.remove('provider-with-rail');
+    gameGrid.appendChild(targetGrid);
+  }
+
   if(!gameList.length){
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.textContent = 'No game available';
     targetGrid.appendChild(empty);
-  }else{
-    gameList.forEach(item=>{
-      const card=document.createElement('div');
-      card.className='game-card provider-launch-card';
-      card.setAttribute('role', 'button');
-      card.setAttribute('tabindex', '0');
-
-      const imageUrl = getImageUrl(item, 'assets/images/game.png', 'game');
-      const gameName = langText(item, 'name', 'Game');
-      const targetUrl = item.gameUrl || item.game_url || '';
-
-      const launchGameId = item.gameId || item.game_id || item.id || '';
-      const launchProviderCode = item.providerCode || item.provider_code || item.provider_code_name || item.vendorCode || item.vendor_code || (item.provider && (item.provider.providerCode || item.provider.provider_code || item.provider.code)) || '';
-      const launchGameCode = item.gameCode || item.game_code || item.launchCode || item.launch_code || item.providerGameCode || item.provider_game_code || item.code || '';
-
-      if(launchGameId) card.dataset.gameId = launchGameId;
-      if(launchProviderCode) card.dataset.providerCode = launchProviderCode;
-      if(launchGameCode) card.dataset.gameCode = launchGameCode;
-      if(gameName) card.dataset.gameName = gameName;
-
-      card.innerHTML=`
-        <div class="game-card-img-wrap">
-          <img class="provider-launch-img"
-               src="${imageUrl}"
-               alt="${gameName}"
-               data-game-id="${launchGameId}"
-               data-provider-code="${launchProviderCode}"
-               data-game-code="${launchGameCode}"
-               data-game-name="${gameName}">
-        </div>
-        <button class="play-btn provider-launch-btn"
-                type="button"
-                data-game-id="${launchGameId}"
-                data-provider-code="${launchProviderCode}"
-                data-game-code="${launchGameCode}"
-                data-game-name="${gameName}">${tr('play','PLAY')}</button>`;
-
-      const playBtn = card.querySelector('.play-btn');
-      const img = card.querySelector('.provider-launch-img');
-
-      function fallbackOpen(){
-        if(targetUrl){
-          window.location.href = targetUrl;
-        }else{
-          window.location.href = 'game-detail.html?id=' + encodeURIComponent(item.id || '');
-        }
-      }
-
-      if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.bindElement === 'function'){
-        window.NAGA_PROVIDER_LAUNCH.bindElement(card, item, { transferAmount: 0, gameName: gameName });
-        window.NAGA_PROVIDER_LAUNCH.bindElement(img, item, { transferAmount: 0, gameName: gameName });
-        window.NAGA_PROVIDER_LAUNCH.bindButton(playBtn, item, { transferAmount: 0, gameName: gameName });
-      }else{
-        card.addEventListener('click', fallbackOpen);
-        playBtn.addEventListener('click', e=>{ e.stopPropagation(); fallbackOpen(); });
-      }
-
-      card.addEventListener('keydown', e=>{
-        if(e.key === 'Enter' || e.key === ' '){
-          e.preventDefault();
-          card.click();
-        }
-      });
-
-      targetGrid.appendChild(card);
-    });
+    return;
   }
 
-  if(shouldShowProviderRail){
-    gameGrid.classList.add('provider-with-rail');
-    const rows = providerRowsForActiveCategory(currentGameList);
-    const lobby = document.createElement('div');
-    lobby.className = 'provider-lobby-shell';
-    lobby.appendChild(buildProviderRail(rows));
-    const panel = document.createElement('div');
-    panel.className = 'provider-games-panel';
-    panel.appendChild(targetGrid);
-    lobby.appendChild(panel);
-    gameGrid.appendChild(lobby);
-  }else{
-    gameGrid.classList.remove('provider-with-rail');
-    gameGrid.appendChild(targetGrid);
+  let renderedCount = 0;
+  const batchSize = gameRenderBatchSize();
+  const sentinel = document.createElement('div');
+  sentinel.className = 'game-load-sentinel';
+  sentinel.setAttribute('aria-hidden', 'true');
+
+  function appendNextBatch(){
+    if(renderToken !== gameBatchToken) return;
+    const endIndex = Math.min(renderedCount + batchSize, gameList.length);
+    const fragment = document.createDocumentFragment();
+    for(; renderedCount < endIndex; renderedCount++){
+      fragment.appendChild(createGameCard(gameList[renderedCount]));
+    }
+    targetGrid.insertBefore(fragment, sentinel);
+    if(renderedCount >= gameList.length){
+      disconnectGameBatchObserver();
+      sentinel.remove();
+    }
+  }
+
+  targetGrid.appendChild(sentinel);
+  appendNextBatch();
+
+  if(renderedCount < gameList.length){
+    gameBatchObserver = new IntersectionObserver(entries => {
+      if(entries.some(entry => entry.isIntersecting)) appendNextBatch();
+    }, {
+      root: scrollRoot,
+      rootMargin: '700px 0px',
+      threshold: 0.01
+    });
+    gameBatchObserver.observe(sentinel);
   }
 }
 
+const API_MEMORY_CACHE = new Map();
+const API_CACHE_TTL_MS = 2 * 60 * 1000;
+
+function apiCacheKey(url){
+  const parsed = new URL(url, window.location.href);
+  parsed.searchParams.delete('_t');
+  return parsed.toString();
+}
+
 function fetchJson(url){
-  const requestUrl = new URL(url, window.location.href);
-  requestUrl.searchParams.set('_t', Date.now().toString());
-  return fetch(requestUrl.toString(), {
-    cache: 'no-store',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
+  const key = apiCacheKey(url);
+  const now = Date.now();
+  const memoryHit = API_MEMORY_CACHE.get(key);
+  if(memoryHit && now - memoryHit.time < API_CACHE_TTL_MS){
+    return Promise.resolve(memoryHit.data);
+  }
+
+  try{
+    const stored = sessionStorage.getItem('naga_api_cache:' + key);
+    if(stored){
+      const parsed = JSON.parse(stored);
+      if(parsed && now - Number(parsed.time || 0) < API_CACHE_TTL_MS){
+        API_MEMORY_CACHE.set(key, parsed);
+        return Promise.resolve(parsed.data);
+      }
     }
-  }).then(res => {
+  }catch(e){}
+
+  return fetch(key, { cache: 'default' }).then(res => {
     if(!res.ok) throw new Error('API error: ' + url);
     return res.json();
+  }).then(data => {
+    const entry = { time: Date.now(), data: data };
+    API_MEMORY_CACHE.set(key, entry);
+    try{ sessionStorage.setItem('naga_api_cache:' + key, JSON.stringify(entry)); }catch(e){}
+    return data;
   });
 }
 
@@ -1066,3 +1186,10 @@ loadSliderBanners().then(() => {
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 })();
+
+
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('img').forEach(function(img){
+    if(!img.loading) img.loading='lazy';
+  });
+});

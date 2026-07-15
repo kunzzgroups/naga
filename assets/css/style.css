@@ -11339,3 +11339,226 @@ body.provider-lobby-active .center-content{
         max-height:none!important;
     }
 }
+
+
+.game-card{
+ content-visibility:auto;
+ contain-intrinsic-size:180px 220px;
+}
+.provider-games-list,.direct-games-list{
+ will-change:scroll-position;
+}
+
+/* ===== Progressive game rendering / infinite batch loading ===== */
+.game-load-sentinel{
+  grid-column:1 / -1;
+  width:100%;
+  height:2px;
+  pointer-events:none;
+  visibility:hidden;
+}
+.provider-games-list,
+.direct-games-list{
+  contain:layout style;
+}
+.game-card{
+  contain:layout paint style;
+}
+
+
+/* Game list loading indicator */
+.games-loading-indicator{
+  grid-column:1 / -1;
+  width:100%;
+  min-height:150px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+}
+.games-loading-spinner{
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  border:3px solid rgba(255,255,255,.18);
+  border-top-color:#35f486;
+  border-radius:50%;
+  animation:gamesLoadingSpin .65s linear infinite;
+  will-change:transform;
+}
+@keyframes gamesLoadingSpin{
+  to{transform:rotate(360deg)}
+}
+@media (max-width:768px){
+  .games-loading-indicator{min-height:120px}
+  .games-loading-spinner{width:34px;height:34px;flex-basis:34px}
+}
+@media (prefers-reduced-motion:reduce){
+  .games-loading-spinner{animation-duration:1.4s}
+}
+
+/* ===== Natural whole-site page loading ===== */
+/* Navigation is immediate. Only the newly loaded page receives a very soft
+   opacity reveal, with no translate/scale movement and no outgoing delay. */
+@view-transition{
+  navigation:auto;
+}
+::view-transition-old(root){
+  animation:none;
+}
+::view-transition-new(root){
+  animation:nagaNaturalReveal .14s ease-out both;
+}
+
+html{
+  background:#070707;
+}
+html::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:2147483646;
+  pointer-events:none;
+  background:#070707;
+  opacity:0;
+  visibility:hidden;
+}
+html.page-loading::before{
+  opacity:1;
+  visibility:visible;
+}
+html.page-loaded::before{
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .14s ease-out,visibility 0s linear .14s;
+}
+
+/* Spinner appears only when the new document really takes longer to become ready. */
+html::after{
+  content:"";
+  position:fixed;
+  top:50%;
+  left:50%;
+  z-index:2147483647;
+  width:34px;
+  height:34px;
+  margin:-17px 0 0 -17px;
+  border:3px solid rgba(255,255,255,.18);
+  border-top-color:#35f486;
+  border-radius:50%;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+}
+html.page-loading::after{
+  visibility:visible;
+  animation:nagaDelayedSpinner .65s linear .28s infinite;
+}
+
+html.page-loading body{
+  opacity:0;
+}
+html.page-loaded body{
+  opacity:1;
+  transition:opacity .14s ease-out;
+}
+html.page-leaving body{
+  opacity:1;
+  transform:none;
+}
+
+@keyframes nagaDelayedSpinner{
+  0%{opacity:0;transform:rotate(0deg)}
+  1%{opacity:1}
+  100%{opacity:1;transform:rotate(360deg)}
+}
+@keyframes nagaNaturalReveal{
+  from{opacity:.94}
+  to{opacity:1}
+}
+
+@media (prefers-reduced-motion:reduce){
+  ::view-transition-new(root){animation-duration:.01ms}
+  html.page-loaded body,
+  html.page-loaded::before{transition-duration:.01ms!important}
+}
+
+/* ===== Final lobby bottom visibility + themed scrollbar ===== */
+.provider-side-rail,
+.provider-games-panel{
+  box-sizing:border-box!important;
+  scroll-padding-bottom:36px!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:rgba(53,244,134,.72) rgba(8,14,24,.42)!important;
+}
+.provider-side-rail::-webkit-scrollbar,
+.provider-games-panel::-webkit-scrollbar{
+  display:block!important;
+  width:7px!important;
+  height:7px!important;
+}
+.provider-side-rail::-webkit-scrollbar-track,
+.provider-games-panel::-webkit-scrollbar-track{
+  background:rgba(8,14,24,.42)!important;
+  border-radius:999px!important;
+}
+.provider-side-rail::-webkit-scrollbar-thumb,
+.provider-games-panel::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,rgba(53,244,134,.92),rgba(20,160,112,.78))!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:999px!important;
+}
+.provider-side-rail::-webkit-scrollbar-thumb:hover,
+.provider-games-panel::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#58ff9c,#20c786)!important;
+}
+.provider-games-panel{
+  padding-bottom:0!important;
+}
+.provider-games-list,
+.direct-games-list{
+  box-sizing:border-box!important;
+  padding-bottom:0!important;
+}
+.provider-games-list::after,
+.direct-games-list::after{
+  content:"";
+  display:block;
+  grid-column:1 / -1;
+  width:100%;
+  height:34px;
+  pointer-events:none;
+}
+.provider-side-rail::after{
+  content:"";
+  display:block;
+  flex:0 0 20px;
+  width:100%;
+  pointer-events:none;
+}
+
+@media (max-width:768px){
+  .provider-side-rail,
+  .provider-games-panel{
+    scroll-padding-bottom:28px!important;
+    scrollbar-width:none!important;
+  }
+  .provider-side-rail::-webkit-scrollbar,
+  .provider-games-panel::-webkit-scrollbar{
+    display:none!important;
+    width:0!important;
+    height:0!important;
+  }
+  .provider-games-list::after,
+  .direct-games-list::after{height:28px;}
+  .provider-side-rail::after{flex-basis:16px;}
+}
+
+
+/* Remove header translate button on desktop and mobile */
+.top-header .lang-btn,
+.top-header .top-lang-btn {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}

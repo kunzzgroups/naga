@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
   <script>document.documentElement.classList.add('page-loading');</script>
-  <style id="page-loader-critical">html.page-loading,html.page-loading body{overflow:hidden!important}html.page-loading:before{content:"";position:fixed;inset:0;z-index:2147483646;background:#050505}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:38px;height:38px;margin:-19px 0 0 -19px;border:3px solid rgba(255,255,255,.22);border-top-color:#fff;border-radius:50%;animation:pageLoaderSpin .65s linear infinite}@keyframes pageLoaderSpin{to{transform:rotate(360deg)}} </style>
+  <style id="page-loader-critical">html{background:#070707}html.page-loading,html.page-loading body{overflow:hidden!important}html.page-loading body{opacity:0}html.page-loading:before{content:"";position:fixed;inset:0;z-index:2147483646;background:#070707}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid rgba(255,255,255,.18);border-top-color:#35f486;border-radius:50%;opacity:0;animation:pageLoaderSpin .65s linear .24s infinite}@keyframes pageLoaderSpin{0%{opacity:0;transform:rotate(0)}1%{opacity:1}100%{opacity:1;transform:rotate(360deg)}}</style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="setting_page_title">TitanXGaming - Setting</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.42" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.43" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+  <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
+  <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
+  <link rel="dns-prefetch" href="//bo.titanxgaming.com">
+  <link rel="dns-prefetch" href="//static.titanxgaming.com">
 </head>
 <body class="setting-page">
   <header class="top-header">
     <div data-layout-section="home-header"></div>
     <div class="logo-box"><img class="site-logo" src="assets/custom/images/logo.png"/ decoding="async" loading="eager" fetchpriority="high"></div>
-    <button class="lang-btn" id="langBtn" type="button" aria-label="Change language">
-      <img src="assets/images/translate-language.png" alt="Change language" decoding="async" loading="lazy">
-    </button>
   </header>
 
   <main class="setting-main">
@@ -178,7 +179,7 @@
   </div>
 
   <script src="assets/js/config.js?v=1.0.14"></script>
-  <script src="assets/js/site-shell.js?v=1.0.5"></script>
+  <script src="assets/js/site-shell.js?v=1.0.6"></script>
   <script src="assets/js/lang.js"></script>
   <script src="assets/js/member-auth.js?v=1.0.2"></script>
   <script src="assets/js/setting.js?v=1.0.3"></script>
@@ -189,6 +190,6 @@
   <script src="assets/js/firebase-config.js?v=1.0.0"></script>
   <script src="assets/js/livechat-widget.js?v=1.0.1"></script>
   <script src="assets/js/promotion-bonus.js?v=1.0.1"></script>
-  <script src="assets/js/page-loader.js?v=1.0.3"></script>
+  <script src="assets/js/page-loader.js?v=1.0.5"></script>
 </body>
 </html>
