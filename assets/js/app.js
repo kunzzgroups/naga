@@ -350,34 +350,6 @@ function providerRowsForActiveCategory(games){
   })).filter(row => row.code);
 }
 
-function enableIndependentProviderRailScroll(rail){
-  if(!rail || rail.dataset.independentScrollReady === '1') return;
-  rail.dataset.independentScrollReady = '1';
-
-  // Always start flush at the first provider after the rail is rebuilt.
-  rail.scrollTop = 0;
-  requestAnimationFrame(() => { rail.scrollTop = 0; });
-
-  // Keep mouse-wheel / trackpad movement inside the provider rail only.
-  rail.addEventListener('wheel', (event) => {
-    if(Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-    const maxScroll = Math.max(0, rail.scrollHeight - rail.clientHeight);
-    if(maxScroll <= 0) return;
-    const next = Math.max(0, Math.min(maxScroll, rail.scrollTop + event.deltaY));
-    if(next !== rail.scrollTop){
-      rail.scrollTop = next;
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  }, { passive:false });
-
-  // Let mobile use native momentum scrolling, but do not pass the gesture
-  // to the independently scrolling game panel or the page behind it.
-  rail.addEventListener('touchstart', (event) => event.stopPropagation(), { passive:true });
-  rail.addEventListener('touchmove', (event) => event.stopPropagation(), { passive:true });
-  rail.addEventListener('touchend', (event) => event.stopPropagation(), { passive:true });
-}
-
 function buildProviderRail(rows){
   const rail = document.createElement('div');
   rail.className = 'provider-side-rail';
@@ -419,7 +391,6 @@ function buildProviderRail(rows){
     });
     rail.appendChild(btn);
   });
-  enableIndependentProviderRailScroll(rail);
   return rail;
 }
 
@@ -1022,4 +993,76 @@ loadSliderBanners().then(() => {
     setTimeout(update, 300);
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+})();
+
+// Independent provider/game scrolling with a stable viewport height.
+// This removes content auto-height jumps when game images finish loading.
+(function(){
+  var resizeTimer = 0;
+  var observedShell = null;
+
+  function viewportHeight(){
+    return window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  }
+
+  function setLobbyHeight(){
+    var shell = document.querySelector('.provider-lobby-shell');
+    if(!shell){
+      document.body.classList.remove('provider-lobby-active');
+      observedShell = null;
+      return;
+    }
+
+    document.body.classList.add('provider-lobby-active');
+    var rect = shell.getBoundingClientRect();
+    var bottomGap = window.matchMedia('(max-width: 768px)').matches ? 72 : 12;
+    var available = Math.floor(viewportHeight() - rect.top - bottomGap);
+    var minimum = window.matchMedia('(max-width: 768px)').matches ? 220 : 280;
+    shell.style.setProperty('--provider-lobby-height', Math.max(minimum, available) + 'px');
+
+    if(observedShell !== shell){
+      observedShell = shell;
+      bindScrollArea(shell.querySelector('.provider-side-rail'));
+      bindScrollArea(shell.querySelector('.provider-games-panel'));
+    }
+  }
+
+  function bindScrollArea(el){
+    if(!el || el.dataset.independentScrollBound === '1') return;
+    el.dataset.independentScrollBound = '1';
+
+    // Keep wheel/trackpad input inside the hovered column.
+    el.addEventListener('wheel', function(e){
+      if(el.scrollHeight <= el.clientHeight) return;
+      var atTop = el.scrollTop <= 0;
+      var atBottom = Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight;
+      if((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)){
+        e.preventDefault();
+      }
+      e.stopPropagation();
+    }, {passive:false});
+
+    // Stop touch gestures from bubbling to the page while preserving native momentum.
+    el.addEventListener('touchstart', function(e){ e.stopPropagation(); }, {passive:true});
+    el.addEventListener('touchmove', function(e){ e.stopPropagation(); }, {passive:true});
+  }
+
+  function schedule(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){ requestAnimationFrame(setLobbyHeight); }, 40);
+  }
+
+  var observer = new MutationObserver(schedule);
+  function start(){
+    observer.observe(document.body, {childList:true, subtree:true});
+    setLobbyHeight();
+    window.addEventListener('resize', schedule, {passive:true});
+    window.addEventListener('orientationchange', schedule, {passive:true});
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', schedule, {passive:true});
+    }
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();

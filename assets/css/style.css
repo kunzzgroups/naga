@@ -11281,58 +11281,61 @@ body.setting-page .setting-wallet-image-actions button img{
   body.setting-page .setting-wallet-image-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
 }
 
-/* ===== Provider rail independent scroll + top alignment fix ===== */
+/* ===== Final fix: provider rail and game grid are two independent scroll areas ===== */
 .provider-lobby-shell{
-  align-items:stretch!important;
+    height:var(--provider-lobby-height, calc(100dvh - 210px))!important;
+    min-height:0!important;
+    max-height:none!important;
+    align-items:stretch!important;
+    overflow:hidden!important;
 }
-.provider-side-rail{
-  align-self:stretch!important;
-  justify-content:flex-start!important;
-  align-content:flex-start!important;
-  margin:0!important;
-  padding-top:0!important;
-  scroll-padding-top:0!important;
-  touch-action:pan-y!important;
-  overscroll-behavior-y:contain!important;
-  -webkit-overflow-scrolling:touch!important;
-}
-.provider-side-rail > .provider-rail-card{
-  flex:0 0 auto!important;
-  margin-top:0!important;
-  margin-bottom:0!important;
-}
-
-@media (min-width:769px){
-  .provider-side-rail{
+.provider-side-rail,
+.provider-games-panel{
     height:100%!important;
-    max-height:100%!important;
+    min-height:0!important;
+    max-height:none!important;
     overflow-y:auto!important;
     overflow-x:hidden!important;
-  }
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-y!important;
+    scroll-behavior:auto!important;
+    scrollbar-gutter:stable;
+}
+.provider-side-rail{
+    align-self:stretch!important;
+    justify-content:flex-start!important;
+    padding-top:0!important;
+    margin-top:0!important;
+}
+.provider-side-rail .provider-rail-card{
+    flex:0 0 auto!important;
+}
+.provider-games-panel{
+    align-self:stretch!important;
+}
+.provider-games-list,
+.direct-games-list{
+    align-content:start!important;
+}
+
+/* The page itself must not take over swipes while the lobby is active. */
+body.provider-lobby-active{
+    overflow:hidden!important;
+    height:100dvh!important;
+}
+body.provider-lobby-active .center-content{
+    min-height:0!important;
+    overflow:hidden!important;
 }
 
 @media (max-width:768px){
-  .provider-lobby-shell{
-    height:min(58dvh,520px)!important;
-    min-height:360px!important;
-    max-height:min(58dvh,520px)!important;
-    overflow:hidden!important;
-    align-items:stretch!important;
-  }
-  .provider-side-rail,
-  .provider-games-panel{
-    height:100%!important;
-    min-height:0!important;
-    max-height:100%!important;
-  }
-  .provider-side-rail{
-    overflow-y:auto!important;
-    overflow-x:hidden!important;
-    padding-top:0!important;
-    padding-bottom:8px!important;
-  }
-  .provider-games-panel{
-    overflow-y:auto!important;
-    overflow-x:hidden!important;
-  }
+    .provider-lobby-shell{
+        height:var(--provider-lobby-height, calc(100dvh - 170px))!important;
+    }
+    .provider-side-rail,
+    .provider-games-panel{
+        height:100%!important;
+        max-height:none!important;
+    }
 }
