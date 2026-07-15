@@ -350,6 +350,34 @@ function providerRowsForActiveCategory(games){
   })).filter(row => row.code);
 }
 
+function enableIndependentProviderRailScroll(rail){
+  if(!rail || rail.dataset.independentScrollReady === '1') return;
+  rail.dataset.independentScrollReady = '1';
+
+  // Always start flush at the first provider after the rail is rebuilt.
+  rail.scrollTop = 0;
+  requestAnimationFrame(() => { rail.scrollTop = 0; });
+
+  // Keep mouse-wheel / trackpad movement inside the provider rail only.
+  rail.addEventListener('wheel', (event) => {
+    if(Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    const maxScroll = Math.max(0, rail.scrollHeight - rail.clientHeight);
+    if(maxScroll <= 0) return;
+    const next = Math.max(0, Math.min(maxScroll, rail.scrollTop + event.deltaY));
+    if(next !== rail.scrollTop){
+      rail.scrollTop = next;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, { passive:false });
+
+  // Let mobile use native momentum scrolling, but do not pass the gesture
+  // to the independently scrolling game panel or the page behind it.
+  rail.addEventListener('touchstart', (event) => event.stopPropagation(), { passive:true });
+  rail.addEventListener('touchmove', (event) => event.stopPropagation(), { passive:true });
+  rail.addEventListener('touchend', (event) => event.stopPropagation(), { passive:true });
+}
+
 function buildProviderRail(rows){
   const rail = document.createElement('div');
   rail.className = 'provider-side-rail';
@@ -391,6 +419,7 @@ function buildProviderRail(rows){
     });
     rail.appendChild(btn);
   });
+  enableIndependentProviderRailScroll(rail);
   return rail;
 }
 

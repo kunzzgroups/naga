@@ -11280,3 +11280,59 @@ body.setting-page .setting-wallet-image-actions button img{
   body.setting-page .setting-image-action{height:36px!important;min-height:36px!important;}
   body.setting-page .setting-wallet-image-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
 }
+
+/* ===== Provider rail independent scroll + top alignment fix ===== */
+.provider-lobby-shell{
+  align-items:stretch!important;
+}
+.provider-side-rail{
+  align-self:stretch!important;
+  justify-content:flex-start!important;
+  align-content:flex-start!important;
+  margin:0!important;
+  padding-top:0!important;
+  scroll-padding-top:0!important;
+  touch-action:pan-y!important;
+  overscroll-behavior-y:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+.provider-side-rail > .provider-rail-card{
+  flex:0 0 auto!important;
+  margin-top:0!important;
+  margin-bottom:0!important;
+}
+
+@media (min-width:769px){
+  .provider-side-rail{
+    height:100%!important;
+    max-height:100%!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+}
+
+@media (max-width:768px){
+  .provider-lobby-shell{
+    height:min(58dvh,520px)!important;
+    min-height:360px!important;
+    max-height:min(58dvh,520px)!important;
+    overflow:hidden!important;
+    align-items:stretch!important;
+  }
+  .provider-side-rail,
+  .provider-games-panel{
+    height:100%!important;
+    min-height:0!important;
+    max-height:100%!important;
+  }
+  .provider-side-rail{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    padding-top:0!important;
+    padding-bottom:8px!important;
+  }
+  .provider-games-panel{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+}
