@@ -11562,3 +11562,32 @@ html.page-leaving body{
     visibility: hidden !important;
     pointer-events: none !important;
 }
+
+/* ===== v1.0.45: index.html mobile viewport lock ===== */
+@media (max-width:768px){
+  html:has(body.home-page){
+    height:100%;
+    height:100dvh;
+    overflow:hidden!important;
+    overscroll-behavior:none;
+  }
+  body.home-page{
+    width:100%;
+    height:100%;
+    height:100dvh!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    overscroll-behavior:none;
+    touch-action:none;
+  }
+  body.home-page .main-layout{
+    min-height:0!important;
+    overflow:hidden!important;
+  }
+  body.home-page .provider-side-rail,
+  body.home-page .provider-games-panel{
+    touch-action:pan-y!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+}
