@@ -109,9 +109,9 @@ body{
     height:100%;
 }
 
-.center-content {
+/* .center-content {
     background: rgba(0, 0, 0, .12)
-}
+} */
 
 .side-slider {
     width: 100%;
@@ -7090,7 +7090,7 @@ html, body{max-width:100%; overflow-x:hidden;}
     .center-content{
         display:flex!important;
         flex-direction:column!important;
-        padding-bottom:12px!important;
+        /* padding-bottom:12px!important; */
     }
     .category-slider,
     .sub-tab-row{
