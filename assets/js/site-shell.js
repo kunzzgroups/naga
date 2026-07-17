@@ -211,14 +211,14 @@
           <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>MYR 0.00</span></div></div>
         </div>
         <div class="mobile-menu-list">
-          <a href="index.html"><img src="assets/custom/images/home.png" alt=""><span data-i18n="side_home">Home</span> <b>›</b></a>
-          <a href="downline.html"><img src="assets/custom/images/downline.png" alt=""><span data-i18n="side_downline">Downline</span> <b>›</b></a>
-          <a href="vip.html"><span class="menu-emoji">👑</span><span data-i18n="side_vip">VIP</span> <b>›</b></a>
-          <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt=""><span data-i18n="side_bonus">Bonus</span> <b>›</b></a>
-          <a href="#"><span class="menu-emoji">🎡</span><span data-i18n="side_spin">Spin</span> <b>›</b></a>
-          <a href="policies.html"><span class="menu-emoji">🛡️</span><span data-i18n="side_compliance_policy">Compliance Policy</span> <b>›</b></a>
-          <a href="chat.html"><img src="assets/custom/images/livechat.png" alt=""><span data-i18n="side_live_chat">Live Chat</span> <b>›</b></a>
-          <button type="button" class="mobile-menu-list-logout" data-member-logout><span class="menu-emoji">🚪</span><span data-i18n="side_logout">Logout</span> <b>›</b></button>
+          <a href="index.html"><i class="fa-solid fa-house mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_home">Home</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <a href="downline.html"><i class="fa-solid fa-users mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_downline">Downline</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <a href="vip.html"><i class="fa-solid fa-crown mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_vip">VIP</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <a href="bonus.html"><i class="fa-solid fa-gift mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_bonus">Bonus</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <a href="spin.html"><i class="fa-solid fa-dharmachakra mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_spin">Spin</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <a href="policies.html"><i class="fa-solid fa-shield-halved mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_compliance_policy">Compliance Policy</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <a href="chat.html"><i class="fa-solid fa-headset mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_live_chat">Live Chat</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <button type="button" class="mobile-menu-list-logout" data-member-logout><i class="fa-solid fa-right-from-bracket mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_logout">Logout</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></button>
         </div>
         <div class="mobile-menu-lang" id="sideLangBtn"><span>🌐 简体中文</span><span>CN ›</span></div>
         <div class="mobile-menu-version"><span data-i18n="side_version">Version:</span> 1.1.0</div>
