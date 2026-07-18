@@ -160,7 +160,7 @@
 
     const guest = document.createElement('div');
     guest.className = 'top-auth-actions';
-    guest.innerHTML = '<a class="top-login-btn" href="login.html" data-i18n="login">LOGIN</a><a class="top-register-btn" href="register.html"><span data-i18n="register">REGISTER</span> <span class="gift-dot">🎁</span></a>';
+    guest.innerHTML = '<a class="top-login-btn" href="login.html" data-i18n="login">LOGIN</a><a class="top-register-btn" href="register.html"><span data-i18n="register">REGISTER</span></a>';
 
     const member = document.createElement('div');
     member.className = 'top-member-actions';
