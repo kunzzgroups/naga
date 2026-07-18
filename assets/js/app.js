@@ -168,14 +168,20 @@ function isDirectGameCategory(){
   return activeCategoryDisplayMode() === 'DIRECT_GAME';
 }
 
+function providerTypesOf(provider){
+  const raw = provider?.providerTypes || provider?.provider_types || provider?.providerType || provider?.provider_type || provider?.type || '';
+  const values = Array.isArray(raw) ? raw : String(raw).split(/[,|]/);
+  return [...new Set(values.map(value => normalizeKey(value)).filter(Boolean))];
+}
+
 function providerTypeOf(provider){
-  return normalizeKey(provider?.providerType || provider?.provider_type || provider?.type || '');
+  return providerTypesOf(provider)[0] || '';
 }
 
 function providersForActiveCategory(){
   const key = activeCategoryTypeKey();
   if(!key) return providers;
-  return providers.filter(p => providerTypeOf(p) === key);
+  return providers.filter(p => providerTypesOf(p).includes(key));
 }
 
 function pickDefaultCategoryId(list){
@@ -333,13 +339,30 @@ function providerImageOf(provider){
   return resolveUploadImage(value, 'provider', '');
 }
 
+function frontendGameFallbackImageOf(game){
+  const provider = providerForCode(providerCodeOf(game));
+  const configured = provider?.frontendGameFallbackImageUrl || provider?.frontend_game_fallback_image_url || '';
+  return resolveUploadImage(configured, 'game', 'assets/images/game.png');
+}
+
+function bindGameImageFallback(img, game){
+  if(!img) return;
+  const fallbackUrl = frontendGameFallbackImageOf(game);
+  img.dataset.fallbackSrc = fallbackUrl;
+  img.addEventListener('error', function handleBrokenGameImage(){
+    if(this.dataset.fallbackApplied === '1') return;
+    this.dataset.fallbackApplied = '1';
+    this.src = fallbackUrl;
+  }, { once: false });
+}
+
 
 
 function categoryIdForProviderCode(providerCode){
   const provider = providerForCode(providerCode);
-  const providerType = providerTypeOf(provider);
-  if(providerType){
-    const matched = categories.find(cat => categoryTypeKey(cat) === providerType);
+  const providerTypes = providerTypesOf(provider);
+  if(providerTypes.length){
+    const matched = categories.find(cat => providerTypes.includes(categoryTypeKey(cat)));
     if(matched && matched.id != null) return matched.id;
   }
   const slot = categories.find(cat => categoryTypeKey(cat) === 'SLOT');
@@ -464,7 +487,7 @@ function createGameCard(item){
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
 
-  const imageUrl = getImageUrl(item, 'assets/images/game.png', 'game');
+  const imageUrl = getImageUrl(item, frontendGameFallbackImageOf(item), 'game');
   const gameName = langText(item, 'name', 'Game');
   const targetUrl = item.gameUrl || item.game_url || '';
 
@@ -496,6 +519,7 @@ function createGameCard(item){
 
   const playBtn = card.querySelector('.play-btn');
   const img = card.querySelector('.provider-launch-img');
+  bindGameImageFallback(img, item);
 
   function fallbackOpen(){
     if(targetUrl){

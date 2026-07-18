@@ -1,68 +1,107 @@
 (function () {
-  const BASE_PATH = '/assets/custom/sections/';
-  const VERSION = window.NAGA_CUSTOM_VERSION || Date.now();
+  'use strict';
 
-  function isEmptyText(text) {
-    return !text || !text.trim();
-  }
+  const GLOBAL_CSS_SECTION = 'home';
+  const loadedCss = new Set();
+  const executedJs = new Set();
+  const sectionPromises = new Map();
 
-  async function safeFetchText(url) {
-    try {
-      const res = await fetch(url + '?v=' + VERSION, { cache: 'no-store' });
-
-      if (!res.ok) return null;
-
-      const contentType = res.headers.get('content-type') || '';
-      const text = await res.text();
-
-      if (isEmptyText(text)) return null;
-
-      // prevent loading returned index.html / error html as css/js/html section
-      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-        return null;
-      }
-
-      return text;
-    } catch (e) {
-      return null;
+  function endpoint() {
+    if (window.NAGA_API && window.NAGA_API.layoutSection) {
+      return window.NAGA_API.layoutSection;
     }
+    const base = window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl;
+    return (base || 'https://bo.titanxgaming.com') + '/api/customize/section';
   }
 
-  async function loadHtml(sectionKey, targetSelector) {
-    const target = document.querySelector(targetSelector);
-    if (!target) return;
+  async function fetchSection(sectionKey) {
+    if (sectionPromises.has(sectionKey)) return sectionPromises.get(sectionKey);
 
-    const html = await safeFetchText(BASE_PATH + sectionKey + '.html');
-    if (!html) return;
+    const promise = fetch(endpoint() + '?key=' + encodeURIComponent(sectionKey) + '&v=' + Date.now(), {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' }
+    })
+      .then(async function (response) {
+        const json = await response.json().catch(function () { return {}; });
+        if (!response.ok || !json || json.status === 'error') {
+          throw new Error((json && json.message) || 'Unable to load layout section: ' + sectionKey);
+        }
+        return json.data || {};
+      })
+      .catch(function (error) {
+        console.warn('[Layout Section]', error.message || error);
+        return {};
+      });
 
-    target.innerHTML = html;
+    sectionPromises.set(sectionKey, promise);
+    return promise;
   }
 
-  async function loadCss(sectionKey) {
-    const css = await safeFetchText(BASE_PATH + sectionKey + '.css');
-    if (!css) return;
+  function applyCss(sectionKey, css) {
+    if (!css || !String(css).trim()) return;
 
-    const style = document.createElement('style');
-    style.setAttribute('data-custom-section-css', sectionKey);
-    style.textContent = css;
-    document.head.appendChild(style);
+    let style = document.querySelector('style[data-layout-section-css="' + sectionKey + '"]');
+    if (!style) {
+      style = document.createElement('style');
+      style.setAttribute('data-layout-section-css', sectionKey);
+      // Append to the end of <head>, after style.css, so BO CSS acts as an override.
+      document.head.appendChild(style);
+    }
+    style.textContent = String(css);
+    loadedCss.add(sectionKey);
   }
 
-  async function loadJs(sectionKey) {
-    const js = await safeFetchText(BASE_PATH + sectionKey + '.js');
-    if (!js) return;
+  function applyHtml(target, html) {
+    if (!target || !html || !String(html).trim()) return;
+    target.innerHTML = String(html);
+  }
 
+  function applyJs(sectionKey, js) {
+    if (!js || !String(js).trim() || executedJs.has(sectionKey)) return;
     const script = document.createElement('script');
-    script.setAttribute('data-custom-section-js', sectionKey);
-    script.textContent = js;
+    script.setAttribute('data-layout-section-js', sectionKey);
+    script.textContent = String(js) + '\n//# sourceURL=layout-section-' + sectionKey + '.js';
     document.body.appendChild(script);
+    executedJs.add(sectionKey);
+  }
+
+  async function loadSection(sectionKey, targets) {
+    if (!sectionKey) return;
+    const data = await fetchSection(sectionKey);
+    applyCss(sectionKey, data.css);
+    (targets || []).forEach(function (target) { applyHtml(target, data.html); });
+    applyJs(sectionKey, data.js);
+  }
+
+  async function initialize() {
+    // CSS Styling in BO uses key "home" and applies to every Naga frontend page.
+    await loadSection(GLOBAL_CSS_SECTION, []);
+
+    const groupedTargets = new Map();
+    document.querySelectorAll('[data-layout-section]').forEach(function (target) {
+      const key = (target.getAttribute('data-layout-section') || '').trim();
+      if (!key) return;
+      if (!groupedTargets.has(key)) groupedTargets.set(key, []);
+      groupedTargets.get(key).push(target);
+    });
+
+    await Promise.all(Array.from(groupedTargets.entries()).map(function (entry) {
+      return loadSection(entry[0], entry[1]);
+    }));
+
+    document.dispatchEvent(new CustomEvent('naga:layout-sections-loaded'));
   }
 
   window.loadCustomSection = async function (sectionKey, targetSelector) {
-    if (!sectionKey || !targetSelector) return;
-
-    await loadHtml(sectionKey, targetSelector);
-    await loadCss(sectionKey);
-    await loadJs(sectionKey);
+    const targets = targetSelector ? Array.from(document.querySelectorAll(targetSelector)) : [];
+    sectionPromises.delete(sectionKey); // manual reload always requests latest BO content
+    await loadSection(sectionKey, targets);
   };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  } else {
+    initialize();
+  }
 })();
