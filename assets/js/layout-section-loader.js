@@ -101,9 +101,29 @@
     applyJs(sectionKey, data.js);
 
     if (htmlChanged && (sectionKey === 'frontend-header' || sectionKey === 'frontend-sidebar')) {
+      // First let the shell reconnect login state, wallet and menu behavior.
+      // The shell/i18n rehydration may rewrite text carrying data-i18n attributes,
+      // so apply the BO-saved HTML once more afterwards. This makes the saved
+      // layout the final source of truth (for example a custom LOGIN22 label).
       if (window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.rehydrate === 'function') {
         window.NAGA_SITE_SHELL.rehydrate();
       }
+
+      (targets || targetsFor(sectionKey)).forEach(function (target) {
+        applyHtml(target, data.html, sectionKey);
+      });
+
+      // Reconnect state-only behavior without running translation over the
+      // freshly restored custom wording.
+      if (window.NAGA_SITE_SHELL) {
+        if (typeof window.NAGA_SITE_SHELL.refreshHeaderAuth === 'function') {
+          window.NAGA_SITE_SHELL.refreshHeaderAuth();
+        }
+        if (typeof window.NAGA_SITE_SHELL.refreshBalance === 'function') {
+          window.NAGA_SITE_SHELL.refreshBalance();
+        }
+      }
+
       document.dispatchEvent(new CustomEvent('naga:site-shell-customized', { detail: { sectionKey: sectionKey } }));
     }
     return data;
