@@ -27,11 +27,7 @@
       showSystem('Live chat is not configured. Please setup Firebase config first.');
       return;
     }
-    member = getMember();
-    if(!isLoggedIn()){
-      renderLoginRequired();
-      return;
-    }
+    member = getChatIdentity();
     conversationId = getConversationId(member);
     startChat();
   }
@@ -46,7 +42,7 @@
 
   function bindInputs(){
     if(attachBtn && fileInput){
-      attachBtn.addEventListener('click', function(){ if(!isLoggedIn()){ renderLoginRequired(); return; } fileInput.click(); });
+      attachBtn.addEventListener('click', function(){ fileInput.click(); });
       fileInput.addEventListener('change', function(){
         addPendingFiles(Array.from(fileInput.files || []));
         fileInput.value = '';
@@ -106,6 +102,7 @@
       memberId: member.id || member.memberId || '',
       memberName: memberName(member),
       memberUsername: member.username || member.mobile || '',
+      guest: !!member.isGuest,
       status: 'open',
       lastMessage: 'New chat opened',
       updatedAt: now,
@@ -114,7 +111,6 @@
   }
 
   async function submitChat(){
-    if(!isLoggedIn()){ renderLoginRequired(); return; }
     if(!input || !db || !conversationId || chatLocked) return;
     const text = input.value.trim();
     if(editingMessageId){
@@ -178,6 +174,7 @@
       status: 'open',
       memberName: memberName(member),
       memberUsername: member.username || member.mobile || '',
+      guest: !!member.isGuest,
       adminUnreadCount: firebase.firestore.FieldValue.increment(1)
     }, {merge:true});
   }
@@ -219,7 +216,7 @@
     const bubble = document.createElement('article');
     bubble.className = 'chat-bubble ' + (isMe ? 'user' : 'admin') + (hasLongContent(msg) ? ' medium' : '');
     let html = '';
-    if(isMe && messageId && isLoggedIn()){
+    if(isMe && messageId){
       html += '<button class="chat-msg-more" type="button" aria-label="Message actions" title="Message actions">⋮</button>';
       html += '<div class="chat-msg-menu" hidden>';
       if(msg.text && !msg.recalled) html += '<button type="button" data-chat-action="edit">Edit Message</button>';
@@ -249,7 +246,7 @@
       html += '</div>';
     }
     bubble.innerHTML = html;
-    if(isMe && messageId && isLoggedIn()) bindMessageActions(bubble, messageId, msg);
+    if(isMe && messageId) bindMessageActions(bubble, messageId, msg);
     messages.appendChild(bubble);
   }
 
@@ -348,25 +345,38 @@
   }
 
   function isLoggedIn(){
-    member = getMember();
+    const current = getMember();
     const token = localStorage.getItem('member_token') || '';
-    return !!token && !!(member.id || member.memberId || member.username || member.mobile);
+    return !!token && !!(current.id || current.memberId || current.username || current.mobile);
+  }
+
+  function getGuestNumber(){
+    let guestNo = localStorage.getItem('livechat_guest_no') || '';
+    if(!/^GUEST\d{8}$/.test(guestNo)){
+      guestNo = 'GUEST' + String(Math.floor(10000000 + Math.random() * 90000000));
+      localStorage.setItem('livechat_guest_no', guestNo);
+    }
+    return guestNo;
+  }
+
+  function getChatIdentity(){
+    const current = getMember();
+    if(isLoggedIn()) return current;
+    const guestNo = getGuestNumber();
+    return { id: guestNo, username: guestNo, name: 'Guest ' + guestNo.slice(5), isGuest: true };
   }
 
   function getConversationId(member){
-    const id = member.id || member.memberId || member.username || member.mobile || localStorage.getItem('livechat_guest_id');
-    if(id) return 'member_' + String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
-    const guest = 'guest_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
-    localStorage.setItem('livechat_guest_id', guest);
-    return guest;
+    const id = member.id || member.memberId || member.username || member.mobile || getGuestNumber();
+    const prefix = member && member.isGuest ? 'guest_' : 'member_';
+    return prefix + String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
   }
 
   function memberName(member){
-    return (member && (member.fullName || member.full_name || member.name || member.username || member.mobile)) || 'Member';
+    return (member && (member.fullName || member.full_name || member.name || member.username || member.mobile)) || 'Guest';
   }
 
   function handlePasteFiles(e){
-    if(!isLoggedIn()){ renderLoginRequired(); return; }
     const clipboard = e.clipboardData || window.clipboardData;
     if(!clipboard) return;
     const files = [];

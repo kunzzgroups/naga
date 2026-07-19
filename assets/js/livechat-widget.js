@@ -13,8 +13,7 @@
 
   function init(){
     if(!initFirebase()) return;
-    member = getMember();
-    if(!isLoggedIn()) return;
+    member = getChatIdentity();
     conversationId = getConversationId(member);
     // injectWidget();
     bindWidget();
@@ -99,6 +98,7 @@
       memberId: member.id || member.memberId || '',
       memberName: memberName(member),
       memberUsername: member.username || member.mobile || '',
+      guest: !!member.isGuest,
       status: 'open',
       updatedAt: now,
       createdAt: now
@@ -191,6 +191,7 @@
         status:'open',
         memberName: memberName(member),
         memberUsername: member.username || member.mobile || '',
+        guest: !!member.isGuest,
         adminUnreadCount: firebase.firestore.FieldValue.increment(1)
       }, {merge:true});
     }catch(e){ alert(e.message || 'Send failed.'); }
@@ -243,9 +244,29 @@
   }
 
   function getMember(){ try{ return JSON.parse(localStorage.getItem('member_info') || '{}') || {}; }catch(e){ return {}; } }
-  function isLoggedIn(){ return !!localStorage.getItem('member_token') && !!(member.id || member.memberId || member.username || member.mobile); }
-  function getConversationId(member){ return 'member_' + String(member.id || member.memberId || member.username || member.mobile || 'guest').replace(/[^a-zA-Z0-9_-]/g, '_'); }
-  function memberName(member){ return (member && (member.fullName || member.full_name || member.name || member.username || member.mobile)) || 'Member'; }
+  function isLoggedIn(){
+    const current = getMember();
+    return !!localStorage.getItem('member_token') && !!(current.id || current.memberId || current.username || current.mobile);
+  }
+  function getGuestNumber(){
+    let guestNo = localStorage.getItem('livechat_guest_no') || '';
+    if(!/^GUEST\d{8}$/.test(guestNo)){
+      guestNo = 'GUEST' + String(Math.floor(10000000 + Math.random() * 90000000));
+      localStorage.setItem('livechat_guest_no', guestNo);
+    }
+    return guestNo;
+  }
+  function getChatIdentity(){
+    const current = getMember();
+    if(isLoggedIn()) return current;
+    const guestNo = getGuestNumber();
+    return {id:guestNo, username:guestNo, name:'Guest ' + guestNo.slice(5), isGuest:true};
+  }
+  function getConversationId(member){
+    const prefix = member && member.isGuest ? 'guest_' : 'member_';
+    return prefix + String(member.id || member.memberId || member.username || member.mobile || getGuestNumber()).replace(/[^a-zA-Z0-9_-]/g, '_');
+  }
+  function memberName(member){ return (member && (member.fullName || member.full_name || member.name || member.username || member.mobile)) || 'Guest'; }
   function safeFileName(name){ return String(name || 'attachment').replace(/[^a-zA-Z0-9._-]/g, '_'); }
   function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]; }); }
 })();

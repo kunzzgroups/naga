@@ -991,36 +991,55 @@ function normalizeSliderResponse(response){
 let sliderBannerCache = [];
 
 function renderSliderBanners(slider, banners){
-  const timer = slider.querySelector('.slider-timer') || document.createElement('div');
-  const timerSpan = timer.querySelector('span') || document.createElement('span');
-  const dots = slider.querySelector('.dots') || document.createElement('div');
+  if(!slider || !Array.isArray(banners) || !banners.length) return;
 
-  timer.className = 'slider-timer';
+  // Build the complete slider off-DOM, then swap once. This prevents the
+  // visible slider from becoming empty for a frame while API banners replace
+  // the fallback banners.
+  const fragment = document.createDocumentFragment();
+  const track = document.createElement('div');
+  const dots = document.createElement('div');
+  const timer = document.createElement('div');
+  const timerSpan = document.createElement('span');
+
+  track.className = 'slider-track';
   dots.className = 'dots';
-  if(!timerSpan.parentElement) timer.appendChild(timerSpan);
-
-  slider.innerHTML = '';
+  timer.className = 'slider-timer';
+  timer.appendChild(timerSpan);
 
   banners.forEach((item, index) => {
     const img = document.createElement('img');
     img.className = 'slide' + (index === 0 ? ' active' : '');
     img.src = getImageUrl(item, '', 'slider');
     img.alt = langText(item, 'title', 'Slider Banner');
+    img.decoding = 'async';
+    img.loading = index === 0 ? 'eager' : 'lazy';
+    if(index === 0) img.fetchPriority = 'high';
     if(item.linkUrl || item.link_url){
       img.dataset.linkUrl = item.linkUrl || item.link_url;
     }
-    slider.appendChild(img);
-  });
+    track.appendChild(img);
 
-  dots.innerHTML = '';
-  banners.forEach((_, index) => {
     const dot = document.createElement('span');
     if(index === 0) dot.className = 'active';
     dots.appendChild(dot);
   });
 
-  slider.appendChild(dots);
-  slider.appendChild(timer);
+  fragment.appendChild(track);
+  fragment.appendChild(dots);
+  fragment.appendChild(timer);
+  slider.replaceChildren(fragment);
+  slider.classList.add('slider-ready');
+}
+
+function preloadSliderBanners(banners){
+  return Promise.all(banners.map(item => new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => resolve(true);
+    image.onerror = () => resolve(false);
+    image.src = getImageUrl(item, '', 'slider');
+    if(image.decode) image.decode().then(() => resolve(true)).catch(() => {});
+  })));
 }
 
 function loadSliderBanners(){
@@ -1029,7 +1048,7 @@ function loadSliderBanners(){
       if(!res.ok) throw new Error('Slider API error');
       return res.json();
     })
-    .then(data => {
+    .then(async data => {
       const banners = normalizeSliderResponse(data)
         .filter(item => Number(item.status || 1) === 1)
         .filter(item => item.imageUrl || item.image_url || item.image)
@@ -1037,9 +1056,12 @@ function loadSliderBanners(){
 
       if(!banners.length) return;
 
-      sliderBannerCache = banners;
+      const preloadResults = await preloadSliderBanners(banners);
+      const readyBanners = banners.filter((_, index) => preloadResults[index] !== false);
+      if(!readyBanners.length) return;
+      sliderBannerCache = readyBanners;
       document.querySelectorAll('.side-slider').forEach(slider => {
-        renderSliderBanners(slider, banners);
+        renderSliderBanners(slider, readyBanners);
       });
     })
     .catch(err => {

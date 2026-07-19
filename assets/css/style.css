@@ -5,6 +5,7 @@
 }
 
 body{
+    --page-background-overlay: rgba(0, 0, 0, .38);
     color:#fff;
     font-family:Arial,sans-serif;
     background-image:url('../custom/images/background.png');
@@ -13,8 +14,10 @@ body{
     background-size:cover;
     background-attachment:fixed;
     min-height:100vh;
-    background-color:#050505;
+    background-color:var(--page-background-overlay);
+    background-blend-mode:multiply;
 }
+
 
 .top-header {
     height: 69px;
@@ -119,8 +122,18 @@ body{
     position: relative;
     overflow: hidden;
     margin-bottom: 17px;
-    background: #000;
+    background: transparent;
     cursor: pointer
+}
+
+/* Keep the banner transparent while API images are loading/replacing the defaults. */
+.side-slider,
+.side-slider::before,
+.side-slider::after{
+    box-shadow:none !important;
+}
+.side-slider .slide{
+    background:transparent;
 }
 
 .slider-track {
@@ -1031,9 +1044,9 @@ body{
     100%{left:120%; opacity:0}
 }
 
-.side-slider .slide.active{
+/* .side-slider .slide.active{
     animation:nagaSlidePop .45s ease both;
-}
+} */
 
 .social{
     animation:nagaPulseScale 1.9s ease-in-out infinite;
@@ -11704,4 +11717,28 @@ html.page-leaving body{
     padding-top:15px!important;
     padding-bottom:7px!important;
   }
+}
+
+/* ===== v1.0.49: eliminate banner refresh flash ===== */
+.side-slider{
+  background-color:transparent !important;
+  background-image:none !important;
+  filter:none !important;
+  isolation:isolate;
+}
+.side-slider .slider-track{
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.side-slider .slide{
+  display:block;
+  background:transparent !important;
+  box-shadow:none !important;
+  filter:none !important;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  transform:translateZ(0);
+}
+.side-slider:not(.slider-ready){
+  visibility:hidden;
 }
