@@ -149,6 +149,7 @@
     const header = document.querySelector('.top-header');
     if(!header || header.dataset.shellReady === '1') return;
     header.dataset.shellReady = '1';
+    header.setAttribute('data-layout-section', 'frontend-header');
 
     const logoBox = header.querySelector('.logo-box');
     if(logoBox) logoBox.classList.add('mobile-style-logo');
@@ -224,6 +225,8 @@
         <div class="mobile-menu-version"><span data-i18n="side_version">Version:</span> 1.1.0</div>
       </aside>`;
     document.body.appendChild(overlay);
+    const panel = overlay.querySelector('.mobile-menu-panel');
+    if(panel) panel.setAttribute('data-layout-section', 'frontend-sidebar');
     updateSideLangLabel();
     if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
   }
@@ -292,6 +295,20 @@
     document.addEventListener('i18n:changed', updateSideLangLabel);
   }
 
+  function rehydrateShell(){
+    const header = document.querySelector('.top-header');
+    if(header){
+      header.setAttribute('data-layout-section', 'frontend-header');
+      header.dataset.shellReady = '1';
+    }
+    const panel = document.querySelector('#mobileSideMenu .mobile-menu-panel');
+    if(panel) panel.setAttribute('data-layout-section', 'frontend-sidebar');
+    refreshHeaderAuth();
+    updateSideLangLabel();
+    readCachedBalance();
+    if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
+  }
+
   function init(){
     enhanceHeader();
     createSideMenu();
@@ -302,9 +319,10 @@
     });
     refreshHeaderAuth();
     scheduleBalanceRefresh();
+    document.dispatchEvent(new CustomEvent('naga:site-shell-ready'));
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
-  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout };
+  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell };
 })();
