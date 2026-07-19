@@ -8,14 +8,16 @@ body{
     --page-background-overlay: rgba(238, 213, 213, 0.38);
     color:#fff;
     font-family:Arial,sans-serif;
-    background-image:url('../custom/images/background.png');
+    background-image:
+        linear-gradient(var(--page-background-overlay), var(--page-background-overlay)),
+        url('../custom/images/background.png');
     background-repeat:no-repeat;
     background-position:center top;
     background-size:cover;
     background-attachment:fixed;
     min-height:100vh;
-    background-color:var(--page-background-overlay);
-    background-blend-mode:multiply;
+    background-color:#000;
+    background-blend-mode:normal;
 }
 
 
@@ -8501,7 +8503,7 @@ body.policy-page{
   margin:0;
   color:#fff;
   font-family:Arial, Helvetica, sans-serif;
-  background-image:url('../custom/images/background.png');
+  background-image:linear-gradient(var(--page-background-overlay),var(--page-background-overlay)),url('../custom/images/background.png');
   background-repeat:no-repeat;
   background-position:center top;
   background-size:cover;
@@ -8772,7 +8774,7 @@ body.policy-page .policy-tab-shell{
 body.policy-page{
   position:relative!important;
   background-color:#090f18!important;
-  background-image:url('../custom/images/background.png')!important;
+  background-image:linear-gradient(var(--page-background-overlay),var(--page-background-overlay)),url('../custom/images/background.png')!important;
   background-repeat:no-repeat!important;
   background-position:center top!important;
   background-size:cover!important;
@@ -8810,7 +8812,7 @@ body.policy-page .naga-scroll-top-btn{
   html:not(.page-loading),
   html:not(.page-loading) body.policy-page{
     background-color:#090f18!important;
-    background-image:url('../custom/images/background.png')!important;
+    background-image:linear-gradient(var(--page-background-overlay),var(--page-background-overlay)),url('../custom/images/background.png')!important;
     background-repeat:no-repeat!important;
     background-position:center top!important;
     background-size:cover!important;

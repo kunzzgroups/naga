@@ -5,7 +5,7 @@
   //   GET /api/admin/language/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = '1.0.29';
+  var CUSTOM_ASSET_VERSION = '1.0.30';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
@@ -252,7 +252,7 @@
       'body.password-setting-page,',
       'body.transaction-password-setting-page,',
       'body.mobile-setting-page {',
-      '  background-image: url("' + bgUrl + '") !important;',
+      '  background-image: linear-gradient(var(--page-background-overlay), var(--page-background-overlay)), url("' + bgUrl + '") !important;',
       '  background-repeat: no-repeat !important;',
       '  background-position: center top !important;',
       '  background-size: cover !important;',
