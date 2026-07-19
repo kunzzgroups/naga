@@ -5,7 +5,7 @@
   //   GET /api/admin/language/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = '1.0.28';
+  var CUSTOM_ASSET_VERSION = '1.0.29';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
@@ -101,6 +101,15 @@
   function resolveImageValue(value){
     value = String(value || '').trim();
     if(!value) return '';
+
+    // Older BO versions stored frontend assets as ../naga/assets/... .
+    // On the deployed frontend this resolves to /naga/assets/... and returns 404,
+    // which previously replaced the valid CSS background with a broken URL.
+    value = value
+      .replace(/^\.\.\/naga\/assets\//i, 'assets/')
+      .replace(/^\.\/naga\/assets\//i, 'assets/')
+      .replace(/^\/naga\/assets\//i, 'assets/');
+
     if(isFullUrl(value)) return value;
     // Dynamic translation image upload normally saves a filename from UploadService.
     // Use uploads/media as safe default for translated images.
@@ -220,11 +229,15 @@
     var translated = resolveImageValue(getTranslatedValue(data, 'pageBackgroundUrl'));
     var bgUrl = addCacheBuster(translated || fallback);
 
-    document.querySelectorAll('style[data-custom-asset-cache]').forEach(function(el){ el.remove(); });
+    // Do not overwrite a working CSS background until the requested image is
+    // confirmed loadable. A missing/stale BO URL should never leave the page black.
+    var probe = new Image();
+    probe.onload = function(){
+      document.querySelectorAll('style[data-custom-asset-cache]').forEach(function(el){ el.remove(); });
 
-    var style = document.createElement('style');
-    style.setAttribute('data-custom-asset-cache', CUSTOM_ASSET_VERSION);
-    style.textContent = [
+      var style = document.createElement('style');
+      style.setAttribute('data-custom-asset-cache', CUSTOM_ASSET_VERSION);
+      style.textContent = [
       'body,',
       'body.bonus-page,',
       'body.chat-page,',
@@ -245,8 +258,14 @@
       '  background-size: cover !important;',
       '  background-attachment: fixed !important;',
       '}'
-    ].join('\n');
-    document.head.appendChild(style);
+      ].join('\n');
+      document.head.appendChild(style);
+    };
+    probe.onerror = function(){
+      // Keep style.css background as the safe fallback.
+      console.warn('[custom-assets] Background image could not be loaded:', bgUrl);
+    };
+    probe.src = bgUrl;
   }
 
   function run(){
