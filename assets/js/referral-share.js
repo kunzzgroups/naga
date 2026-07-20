@@ -1,8 +1,8 @@
 (function(){
   'use strict';
 
-  if (window.__NAGA_REFERRAL_SHARE_V108__) return;
-  window.__NAGA_REFERRAL_SHARE_V108__ = true;
+  if (window.__NAGA_REFERRAL_SHARE_V109__) return;
+  window.__NAGA_REFERRAL_SHARE_V109__ = true;
 
   const API_BASE = ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '').replace(/\/+$/, '');
   const copyOverlay = document.getElementById('copyOverlay');
@@ -141,17 +141,87 @@
     }
     return member;
   }
+  function loadBlobImage(blob){
+    return new Promise(function(resolve, reject){
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(blob);
+      img.onload = function(){ URL.revokeObjectURL(objectUrl); resolve(img); };
+      img.onerror = function(){ URL.revokeObjectURL(objectUrl); reject(new Error('Unable to render QR image')); };
+      img.src = objectUrl;
+    });
+  }
+  function wrapCanvasText(ctx, text, maxWidth){
+    const words = String(text || '').split(/\s+/);
+    const lines = [];
+    let line = '';
+    words.forEach(function(word){
+      const test = line ? line + ' ' + word : word;
+      if(line && ctx.measureText(test).width > maxWidth){ lines.push(line); line = word; }
+      else line = test;
+    });
+    if(line) lines.push(line);
+    return lines;
+  }
+  async function createReferralShareCard(qrBlob){
+    const qrImage = await loadBlobImage(qrBlob);
+    const canvas = document.createElement('canvas');
+    canvas.width = 720;
+    canvas.height = 920;
+    const ctx = canvas.getContext('2d');
+    if(!ctx) return qrBlob;
+
+    const gradient = ctx.createLinearGradient(0, 0, 720, 920);
+    gradient.addColorStop(0, '#09111f');
+    gradient.addColorStop(1, '#17243a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 720, 920);
+
+    ctx.strokeStyle = '#ffd900';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(18, 18, 684, 884);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd900';
+    ctx.font = '700 42px Arial, sans-serif';
+    ctx.fillText('TitanXGaming Referral', 360, 82);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '600 28px Arial, sans-serif';
+    ctx.fillText('Referral Code: ' + currentCode, 360, 128);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(115, 168, 490, 490);
+    ctx.drawImage(qrImage, 135, 188, 450, 450);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '600 27px Arial, sans-serif';
+    ctx.fillText('Scan this QR code to register as my downline', 360, 714);
+
+    ctx.font = '500 22px Arial, sans-serif';
+    const lines = wrapCanvasText(ctx, currentLink, 620);
+    lines.slice(0, 3).forEach(function(line, index){
+      ctx.fillText(line, 360, 766 + (index * 32));
+    });
+
+    ctx.fillStyle = '#ffd900';
+    ctx.font = '700 24px Arial, sans-serif';
+    ctx.fillText('Join me on TitanXGaming', 360, 875);
+
+    const cardBlob = await new Promise(function(resolve){ canvas.toBlob(resolve, 'image/png', 1); });
+    return cardBlob && cardBlob.size ? cardBlob : qrBlob;
+  }
   async function prepareQr(){
     if(!currentLink || !window.File) return null;
     try {
       const res = await fetch(qrUrl(currentLink), {mode:'cors', cache:'no-store'});
       if(!res.ok) return null;
-      const blob = await res.blob();
-      if(!blob || !blob.size) return null;
-      qrFileCache = new File([blob], 'titanx-referral-' + currentCode + '.png', {type:'image/png'});
+      const qrBlob = await res.blob();
+      if(!qrBlob || !qrBlob.size) return null;
+      const shareBlob = await createReferralShareCard(qrBlob);
+      qrFileCache = new File([shareBlob], 'titanx-referral-' + currentCode + '.png', {type:'image/png'});
       return qrFileCache;
     } catch(e){
-      console.warn('Referral QR preload unavailable:', e && e.message);
+      console.warn('Referral QR share-card preload unavailable:', e && e.message);
       return null;
     }
   }
@@ -206,29 +276,16 @@
   function nativeShareNow(){
     if(!currentLink || !navigator.share) return Promise.reject(new Error('Native sharing unavailable'));
 
-    const shareText = 'Join me on TitanXGaming using my referral link:\n' + currentLink;
+    // Keep the message on one line. Do not also pass `url` with a file because
+    // iOS chat apps may render the same link twice. The attached image itself
+    // contains the QR code, referral code and registration link.
+    const shareText = 'Join me on TitanXGaming: ' + currentLink;
     const basePayload = {
       title: 'TitanXGaming Referral',
-      text: shareText,
-      url: currentLink
+      text: shareText
     };
 
-    // Send the QR image and referral message/link together to supported chat apps.
-    // Checking the complete payload is important because some browsers support
-    // file sharing but reject a files-only payload or silently drop the text.
     if(qrFileCache && navigator.canShare){
-      const fullPayload = {
-        title: basePayload.title,
-        text: basePayload.text,
-        url: basePayload.url,
-        files: [qrFileCache]
-      };
-      try {
-        if(navigator.canShare(fullPayload)) return navigator.share(fullPayload);
-      } catch(e){}
-
-      // Some mobile browsers reject the url field when files are attached.
-      // Keep the URL inside text so the chat still receives both QR and link.
       const fileAndTextPayload = {
         title: basePayload.title,
         text: basePayload.text,
