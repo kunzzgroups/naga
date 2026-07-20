@@ -238,6 +238,10 @@
     });
     applyJs(sectionKey, data.js);
 
+    document.dispatchEvent(new CustomEvent('naga:layout-section-applied', {
+      detail: { sectionKey: sectionKey, htmlChanged: htmlChanged, data: data }
+    }));
+
     if (htmlChanged && (sectionKey === 'frontend-header' || sectionKey === 'frontend-sidebar')) {
       // First let the shell reconnect login state, wallet and menu behavior.
       // The shell/i18n rehydration may rewrite text carrying data-i18n attributes,

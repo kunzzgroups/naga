@@ -1,21 +1,14 @@
 (function(){
-  const API_BASE = window.NAGA_CONFIG?.api?.baseUrl || 'http://localhost:8080';
-  const loginTabButtons = document.querySelectorAll('.login-tab');
+  'use strict';
 
-  loginTabButtons.forEach(function(tab){
-    tab.addEventListener('click', function(){
-      document.querySelectorAll('.login-tab').forEach(function(t){ t.classList.remove('active'); });
-      document.querySelectorAll('.login-form-panel').forEach(function(f){ f.classList.remove('active'); });
-      tab.classList.add('active');
-      document.getElementById(tab.dataset.loginTab + 'Form').classList.add('active');
-    });
-  });
+  const API_BASE = window.NAGA_CONFIG?.api?.baseUrl || 'http://localhost:8080';
 
   function formInput(form, index){
     return form ? form.querySelectorAll('input')[index] : null;
   }
 
   function showMessage(form, message, type){
+    if(!form) return;
     let box = form.querySelector('.auth-message');
     if(!box){
       box = document.createElement('div');
@@ -42,10 +35,28 @@
     localStorage.setItem('member_info', JSON.stringify(json.data || {}));
   }
 
-  const loginForm = document.getElementById('loginForm');
-  const loginBtn = loginForm ? loginForm.querySelector('.submit-login') : null;
-  if(loginBtn){
-    loginBtn.type = 'submit';
+  function bindTabs(scope){
+    (scope || document).querySelectorAll('.login-tab').forEach(function(tab){
+      if(tab.dataset.nagaLoginTabBound === '1') return;
+      tab.dataset.nagaLoginTabBound = '1';
+      tab.addEventListener('click', function(){
+        const card = tab.closest('.login-card') || document;
+        card.querySelectorAll('.login-tab').forEach(function(t){ t.classList.remove('active'); });
+        card.querySelectorAll('.login-form-panel').forEach(function(f){ f.classList.remove('active'); });
+        tab.classList.add('active');
+        const target = card.querySelector('#' + tab.dataset.loginTab + 'Form');
+        if(target) target.classList.add('active');
+      });
+    });
+  }
+
+  function bindLoginForm(scope){
+    const loginForm = (scope || document).querySelector('#loginForm');
+    if(!loginForm || loginForm.dataset.nagaAuthBound === '1') return;
+    loginForm.dataset.nagaAuthBound = '1';
+    const loginBtn = loginForm.querySelector('.submit-login');
+    if(loginBtn) loginBtn.type = 'submit';
+
     loginForm.addEventListener('submit', async function(e){
       e.preventDefault();
       const username = (formInput(loginForm,0)?.value || '').trim();
@@ -54,7 +65,7 @@
         showMessage(loginForm, 'Please enter username and password.', 'error');
         return;
       }
-      loginBtn.disabled = true;
+      if(loginBtn) loginBtn.disabled = true;
       showMessage(loginForm, 'Logging in...', '');
       try{
         const json = await postJson(API_BASE + '/api/auth/member/login', {username, password});
@@ -65,16 +76,21 @@
       }catch(err){
         showMessage(loginForm, err.message || 'Login failed.', 'error');
       }finally{
-        loginBtn.disabled = false;
+        if(loginBtn) loginBtn.disabled = false;
       }
     });
   }
 
-  const registerForm = document.getElementById('registerForm');
-  if(registerForm){ const ref = new URLSearchParams(window.location.search).get('ref'); if(ref && formInput(registerForm,3)) formInput(registerForm,3).value = ref; }
-  const registerBtn = registerForm ? registerForm.querySelector('.submit-login') : null;
-  if(registerBtn){
-    registerBtn.type = 'submit';
+  function bindRegisterForm(scope){
+    const registerForm = (scope || document).querySelector('#registerForm');
+    if(!registerForm || registerForm.dataset.nagaAuthBound === '1') return;
+    registerForm.dataset.nagaAuthBound = '1';
+
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if(ref && formInput(registerForm,3)) formInput(registerForm,3).value = ref;
+
+    const registerBtn = registerForm.querySelector('.submit-login');
+    if(registerBtn) registerBtn.type = 'submit';
     registerForm.addEventListener('submit', async function(e){
       e.preventDefault();
       const fullName = (formInput(registerForm,0)?.value || '').trim();
@@ -85,7 +101,7 @@
         showMessage(registerForm, 'Mobile and password minimum 6 characters are required.', 'error');
         return;
       }
-      registerBtn.disabled = true;
+      if(registerBtn) registerBtn.disabled = true;
       showMessage(registerForm, 'Registering...', '');
       try{
         const json = await postJson(API_BASE + '/api/auth/member/register', {
@@ -102,8 +118,31 @@
       }catch(err){
         showMessage(registerForm, err.message || 'Register failed.', 'error');
       }finally{
-        registerBtn.disabled = false;
+        if(registerBtn) registerBtn.disabled = false;
       }
     });
   }
+
+  function initializeAuthUi(scope){
+    bindTabs(scope || document);
+    bindLoginForm(scope || document);
+    bindRegisterForm(scope || document);
+  }
+
+  initializeAuthUi(document);
+
+  // BO Layout Section HTML is fetched asynchronously. Rebind the original
+  // login/register behaviour after login-page or register-page replaces DOM.
+  document.addEventListener('naga:layout-sections-loaded', function(){
+    initializeAuthUi(document);
+  });
+
+  document.addEventListener('naga:layout-section-applied', function(event){
+    const key = event && event.detail && event.detail.sectionKey;
+    if(key === 'login-page' || key === 'register-page') initializeAuthUi(document);
+  });
+
+  window.NAGA_AUTH_PAGE = {
+    rehydrate: function(){ initializeAuthUi(document); }
+  };
 })();

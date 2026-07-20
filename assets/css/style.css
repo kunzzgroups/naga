@@ -12072,3 +12072,15 @@ html.home-bonus-disabled [data-home-bonus-display],
 body.home-bonus-disabled [data-home-bonus-display] {
   display: none !important;
 }
+
+/* BO Layout Section targets for complete Login and Register page content. */
+body.login-page .auth-page-layout-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+body.login-page .auth-page-layout-section > .login-card {
+  width: 100%;
+}
