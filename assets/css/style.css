@@ -11850,8 +11850,8 @@ body.setting-page .setting-menu{
     display:flex!important;
     align-items:center!important;
     justify-content:flex-end!important;
-    gap:0!important;
-    column-gap:0!important;
+    gap:20px!important;
+    column-gap:20px!important;
   }
   .top-auth-actions .top-login-btn.auth-image-link,
   .top-auth-actions .top-register-btn.auth-image-link{
@@ -11927,8 +11927,8 @@ body.setting-page .setting-wallet-referral-actions > button img{
 /* ===== v1.0.62: iPhone guest auth images with no visual gap ===== */
 @media (max-width:480px){
   .top-header-actions > .top-auth-actions{
-    gap:0!important;
-    column-gap:0!important;
+    gap:20px!important;
+    column-gap:20px!important;
     margin:0!important;
   }
   .top-header-actions > .top-auth-actions > .top-login-btn.auth-image-link,
