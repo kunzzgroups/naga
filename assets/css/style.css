@@ -11877,8 +11877,8 @@ body.setting-page .setting-menu{
     padding-right:18px!important;
   }
   body.setting-page .setting-single-column-layout{
-    width:min(528px, calc(100vw - 36px))!important;
-    max-width:528px!important;
+    width:min(620px, calc(100vw - 36px))!important;
+    max-width:620px!important;
     margin-left:auto!important;
     margin-right:auto!important;
   }
@@ -11886,6 +11886,39 @@ body.setting-page .setting-menu{
   body.setting-page .setting-single-column-layout > .setting-merged-profile,
   body.setting-page .setting-single-column-layout > .setting-card{
     width:100%!important;
-    max-width:528px!important;
+    max-width:620px!important;
+  }
+}
+
+
+/* ===== v1.0.61: logged-in iPhone header + aligned referral action row ===== */
+body.member-logged-in .top-auth-actions{display:none!important;}
+body.member-logged-in .top-member-actions{display:flex!important;}
+body.setting-page .setting-wallet-referral-actions{
+  margin-top:8px!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+body.setting-page .setting-wallet-image-actions > button{
+  width:100%!important;
+  min-width:0!important;
+}
+body.setting-page .setting-wallet-referral-actions > button img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+}
+@media(max-width:480px){
+  body.member-logged-in .top-auth-actions{display:none!important;}
+  body.member-logged-in .top-member-actions{display:flex!important;}
+  body.setting-page .setting-wallet-image-actions,
+  body.setting-page .setting-wallet-referral-actions{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+  body.setting-page .setting-wallet-image-actions button,
+  body.setting-page .setting-wallet-referral-actions button{
+    height:38px!important;
+    min-height:38px!important;
   }
 }

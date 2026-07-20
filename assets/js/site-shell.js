@@ -171,12 +171,24 @@
     actions.appendChild(member);
     header.appendChild(actions);
     refreshHeaderAuth();
+    watchHeaderAuthReplacement();
     if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
   }
 
   function refreshHeaderAuth(){
     var logged = isLoggedIn();
     document.body.classList.toggle('member-logged-in', logged);
+
+    // Apply visibility directly as well as through CSS. The BO layout loader can
+    // replace the header after initial render, especially on iPhone Safari.
+    document.querySelectorAll('.top-auth-actions').forEach(function(el){
+      el.style.setProperty('display', logged ? 'none' : 'flex', 'important');
+      el.setAttribute('aria-hidden', logged ? 'true' : 'false');
+    });
+    document.querySelectorAll('.top-member-actions').forEach(function(el){
+      el.style.setProperty('display', logged ? 'flex' : 'none', 'important');
+      el.setAttribute('aria-hidden', logged ? 'false' : 'true');
+    });
 
     document.querySelectorAll('.mobile-menu-member').forEach(function(el){
       el.style.display = logged ? 'flex' : 'none';
@@ -192,6 +204,26 @@
         el.textContent = '';
       });
     }
+  }
+
+  function watchHeaderAuthReplacement(){
+    var header = document.querySelector('.top-header');
+    if(!header || header.dataset.authWatchReady === '1') return;
+    header.dataset.authWatchReady = '1';
+    var queued = false;
+    new MutationObserver(function(){
+      if(queued) return;
+      queued = true;
+      requestAnimationFrame(function(){
+        queued = false;
+        refreshHeaderAuth();
+      });
+    }).observe(header, {childList:true, subtree:true});
+    window.addEventListener('pageshow', refreshHeaderAuth);
+    window.addEventListener('focus', refreshHeaderAuth);
+    window.addEventListener('storage', function(e){
+      if(!e || e.key === 'member_token' || e.key === 'member_info') refreshHeaderAuth();
+    });
   }
 
   function createSideMenu(){

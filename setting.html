@@ -6,7 +6,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="setting_page_title">TitanXGaming - Setting</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.59" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.61" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -36,6 +36,11 @@
           <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="Deposit" decoding="async" loading="lazy"></button>
           <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="Withdraw" decoding="async" loading="lazy"></button>
           <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="Refresh" decoding="async" loading="lazy"></button>
+        </div>
+        <div class="setting-wallet-actions setting-wallet-image-actions setting-wallet-referral-actions">
+          <button type="button" class="share-trigger" data-referral-share aria-label="Share referral link"><img src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy"></button>
+          <button type="button" class="copy-trigger" data-referral-copy aria-label="Copy referral link"><img src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy"></button>
+          <button type="button" aria-label="Downline" onclick="location.href='downline.html'"><img src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy"></button>
         </div>
         <div class="setting-wallet-limits">
           <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>MYR 10.00</b></p>
@@ -119,11 +124,11 @@
 
   <script src="assets/js/config.js?v=1.0.15"></script>
   <script src="assets/js/layout-section-loader.js?v=1.1.4"></script>
-  <script src="assets/js/site-shell.js?v=1.0.12"></script>
+  <script src="assets/js/site-shell.js?v=1.0.13"></script>
   <script src="assets/js/lang.js"></script>
   <script src="assets/js/member-auth.js?v=1.0.2"></script>
   <script src="assets/js/setting.js?v=1.0.5"></script>
-  <script src="assets/js/referral-share.js?v=1.0.9"></script>
+  <script src="assets/js/referral-share.js?v=1.0.8"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.16"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
