@@ -11747,3 +11747,48 @@ html.page-leaving body{
 .side-slider:not(.slider-ready){
   visibility:hidden;
 }
+
+/* ===== BO Layout Section: image-based Login / Register controls ===== */
+.top-auth-actions .auth-image-link,
+.mobile-menu-auth .auth-image-link{
+  padding:0 !important;
+  overflow:hidden;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  line-height:0;
+}
+.top-auth-actions .header-auth-image{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.mobile-menu-auth .sidebar-auth-image{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.top-auth-actions .top-login-btn.auth-image-link,
+.top-auth-actions .top-register-btn.auth-image-link{
+  min-width:104px;
+  height:40px;
+}
+.mobile-menu-auth .mobile-login-btn.auth-image-link,
+.mobile-menu-auth .mobile-register-btn.auth-image-link{
+  width:104px;
+  height:36px;
+}
+@media (max-width:420px){
+  .top-auth-actions .top-login-btn.auth-image-link,
+  .top-auth-actions .top-register-btn.auth-image-link{
+    min-width:78px !important;
+    height:36px;
+  }
+  .mobile-menu-auth .mobile-login-btn.auth-image-link,
+  .mobile-menu-auth .mobile-register-btn.auth-image-link{
+    width:96px;
+    height:34px;
+  }
+}
