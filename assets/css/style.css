@@ -11951,8 +11951,8 @@ body.setting-page .setting-wallet-referral-actions > button img{
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0;
-  column-gap: 0;
+  gap: 14px;
+  column-gap: 14px;
   margin: 0;
 }
 
