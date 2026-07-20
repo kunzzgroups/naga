@@ -12048,3 +12048,20 @@ html.transaction-scroll-page body.withdraw-page .bottom-nav{
         padding-bottom:calc(var(--mobile-bottom-nav-height,70px) + 28px)!important;
     }
 }
+
+
+/* ===== Fix: settings section collapse toggle ===== */
+body.setting-page .setting-toggle i{
+  pointer-events:none!important;
+  transform:rotate(180deg)!important;
+}
+body.setting-page .setting-card.open .setting-toggle i{
+  transform:rotate(0deg)!important;
+}
+body.setting-page .setting-menu{
+  display:none!important;
+}
+body.setting-page .setting-card.open .setting-menu{
+  display:grid!important;
+  animation:settingDrop .24s ease-out;
+}
