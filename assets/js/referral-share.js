@@ -1,19 +1,24 @@
 (function(){
   'use strict';
 
-  if (window.__NAGA_REFERRAL_SHARE_V105__) return;
-  window.__NAGA_REFERRAL_SHARE_V105__ = true;
+  if (window.__NAGA_REFERRAL_SHARE_V106__) return;
+  window.__NAGA_REFERRAL_SHARE_V106__ = true;
 
-  const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '';
+  const API_BASE = ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '').replace(/\/+$/, '');
   const copyOverlay = document.getElementById('copyOverlay');
   const copyText = document.getElementById('copyText');
   const copyTitle = copyOverlay ? copyOverlay.querySelector('h2') : null;
+  const copyOk = copyOverlay ? copyOverlay.querySelector('.copy-ok') : null;
+
   let currentCode = '';
   let currentLink = '';
   let qrFileCache = null;
   let preloadPromise = null;
+  let lastTrigger = null;
 
-  function token(){ return localStorage.getItem('member_token') || ''; }
+  function token(){
+    return localStorage.getItem('member_token') || localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+  }
   function storedMember(){
     try { return JSON.parse(localStorage.getItem('member_info') || '{}') || {}; }
     catch(e){ return {}; }
@@ -25,16 +30,31 @@
     }
     return '';
   }
-  function codeFrom(member){
-    if(!member || typeof member !== 'object') return '';
-    return firstText(
+  function codeFrom(member, depth){
+    if(!member || typeof member !== 'object' || (depth || 0) > 5) return '';
+    const direct = firstText(
       member.referralCode, member.referral_code,
       member.referrerCode, member.referrer_code,
       member.inviteCode, member.invite_code,
-      member.data && codeFrom(member.data),
-      member.member && codeFrom(member.member),
-      member.profile && codeFrom(member.profile)
+      member.refCode, member.ref_code
     );
+    if(direct) return direct;
+    const keys = Object.keys(member);
+    for(let i=0;i<keys.length;i++){
+      const key = keys[i];
+      if(/(referral|referrer|invite|ref).*code/i.test(key)){
+        const value = member[key];
+        if(value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+      }
+    }
+    for(let i=0;i<keys.length;i++){
+      const value = member[keys[i]];
+      if(value && typeof value === 'object'){
+        const nested = codeFrom(value, (depth || 0) + 1);
+        if(nested) return nested;
+      }
+    }
+    return '';
   }
   function linkFrom(code){
     if(!code) return '';
@@ -45,31 +65,63 @@
   function qrUrl(link){
     return link ? 'https://quickchart.io/qr?size=420&margin=2&format=png&text=' + encodeURIComponent(link) : '';
   }
+  function setButtonsReady(ready){
+    document.querySelectorAll('.share-trigger,.copy-trigger').forEach(function(btn){
+      btn.disabled = !ready;
+      btn.setAttribute('aria-disabled', ready ? 'false' : 'true');
+    });
+  }
   function showCopyResult(success, message){
     if(!copyOverlay) return;
     if(copyTitle) copyTitle.textContent = success ? 'Copied' : 'Copy Link';
-    if(copyText) copyText.textContent = message || currentLink || '-';
+    if(copyText) copyText.textContent = message || currentLink || 'Referral link is unavailable.';
+    copyOverlay.removeAttribute('inert');
     copyOverlay.classList.add('show');
     copyOverlay.setAttribute('aria-hidden','false');
     document.body.classList.add('modal-open');
+    window.setTimeout(function(){ if(copyOk) copyOk.focus({preventScroll:true}); }, 0);
   }
   function hideCopyResult(){
     if(!copyOverlay) return;
+    const active = document.activeElement;
+    if(active && copyOverlay.contains(active)) active.blur();
+    copyOverlay.setAttribute('inert','');
     copyOverlay.classList.remove('show');
     copyOverlay.setAttribute('aria-hidden','true');
     document.body.classList.remove('modal-open');
+    const target = lastTrigger && document.contains(lastTrigger) ? lastTrigger : document.body;
+    window.setTimeout(function(){
+      try {
+        if(target === document.body && !target.hasAttribute('tabindex')) target.setAttribute('tabindex','-1');
+        target.focus({preventScroll:true});
+      } catch(e){}
+    }, 0);
   }
   function update(code){
-    currentCode = String(code || '').trim();
+    const normalized = String(code || '').trim();
+    if(!normalized) return;
+    currentCode = normalized;
     currentLink = linkFrom(currentCode);
     qrFileCache = null;
-    if(currentCode) localStorage.setItem('member_referral_code', currentCode);
-    if(currentLink) localStorage.setItem('member_referral_link', currentLink);
-    document.querySelectorAll('.share-head strong,[data-referral-code]').forEach(el => { el.textContent = currentCode || '-'; });
-    if(copyText) copyText.textContent = currentLink || '-';
+    localStorage.setItem('member_referral_code', currentCode);
+    localStorage.setItem('member_referral_link', currentLink);
+    document.querySelectorAll('.share-head strong,[data-referral-code]').forEach(el => { el.textContent = currentCode; });
+    if(copyText) copyText.textContent = currentLink;
+    setButtonsReady(true);
   }
   function cachedCode(){
-    return codeFrom(storedMember()) || String(localStorage.getItem('member_referral_code') || '').trim();
+    const fromMember = codeFrom(storedMember());
+    const fromCache = String(localStorage.getItem('member_referral_code') || '').trim();
+    const fromLink = String(localStorage.getItem('member_referral_link') || '').trim();
+    let fromCachedLink = '';
+    if(fromLink){
+      try { fromCachedLink = new URL(fromLink, window.location.href).searchParams.get('ref') || ''; } catch(e){}
+    }
+    const fromDom = firstText.apply(null, Array.from(document.querySelectorAll('[data-referral-code],.share-head strong')).map(function(el){
+      const value = String(el.textContent || '').trim();
+      return value !== '-' ? value : '';
+    }));
+    return firstText(fromMember, fromCache, fromCachedLink, fromDom);
   }
   async function fetchMember(){
     const accessToken = token();
@@ -78,18 +130,21 @@
       method:'GET',
       headers:{'Authorization':'Bearer ' + accessToken, 'Accept':'application/json'},
       cache:'no-store',
-      credentials:'omit'
+      credentials:'include'
     });
     const json = await res.json().catch(() => ({}));
     if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load referral code');
     const member = json.data || json.member || json.profile || json;
-    if(member && typeof member === 'object') localStorage.setItem('member_info', JSON.stringify(member));
+    if(member && typeof member === 'object'){
+      const merged = Object.assign({}, storedMember(), member);
+      localStorage.setItem('member_info', JSON.stringify(merged));
+    }
     return member;
   }
   async function prepareQr(){
     if(!currentLink || !window.File) return null;
     try {
-      const res = await fetch(qrUrl(currentLink), {mode:'cors', cache:'force-cache'});
+      const res = await fetch(qrUrl(currentLink), {mode:'cors', cache:'no-store'});
       if(!res.ok) return null;
       const blob = await res.blob();
       if(!blob || !blob.size) return null;
@@ -116,14 +171,16 @@
       }
       if(currentLink) await prepareQr();
       return currentLink;
-    })();
+    })().finally(function(){ preloadPromise = null; });
     return preloadPromise;
   }
 
   function legacyCopy(text){
+    if(!text) return false;
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly','');
+    ta.setAttribute('aria-hidden','true');
     ta.style.position = 'fixed';
     ta.style.top = '0';
     ta.style.left = '-9999px';
@@ -139,79 +196,72 @@
   }
   function copyNow(text){
     if(!text) return Promise.resolve(false);
+    // First use the synchronous fallback while the original click activation is alive.
+    if(legacyCopy(text)) return Promise.resolve(true);
     if(navigator.clipboard && window.isSecureContext){
-      return navigator.clipboard.writeText(text).then(() => true).catch(() => legacyCopy(text));
+      return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
     }
-    return Promise.resolve(legacyCopy(text));
+    return Promise.resolve(false);
   }
-  async function shareNow(){
-    if(!currentLink || !navigator.share) return false;
-    const payload = {
+  function nativeShareNow(){
+    if(!currentLink || !navigator.share) return Promise.reject(new Error('Native sharing unavailable'));
+    if(qrFileCache && navigator.canShare){
+      try {
+        const filePayload = {files:[qrFileCache]};
+        if(navigator.canShare(filePayload)) return navigator.share(filePayload);
+      } catch(e){}
+    }
+    return navigator.share({
       title:'TitanXGaming',
       text:'Join me on TitanXGaming\n' + currentLink,
       url:currentLink
-    };
-    if(qrFileCache && navigator.canShare){
-      try {
-        if(navigator.canShare({files:[qrFileCache]})) payload.files = [qrFileCache];
-      } catch(e){}
-    }
-    await navigator.share(payload);
-    return true;
+    });
   }
   function loginRedirect(){
     location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
   }
 
-  update(cachedCode());
+  if(copyOverlay) copyOverlay.setAttribute('inert','');
+  setButtonsReady(false);
+  const initialCode = cachedCode();
+  if(initialCode) update(initialCode);
   preload(false);
 
-  document.addEventListener('pointerdown', function(e){
-    if(e.target && e.target.closest && e.target.closest('.share-trigger,.copy-trigger')) preload(false);
-  }, true);
-
-  document.addEventListener('click', async function(e){
+  document.addEventListener('click', function(e){
     const shareButton = e.target && e.target.closest ? e.target.closest('.share-trigger') : null;
     const copyButton = e.target && e.target.closest ? e.target.closest('.copy-trigger') : null;
     if(!shareButton && !copyButton) return;
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
+    lastTrigger = shareButton || copyButton;
 
     if(!token()) { loginRedirect(); return; }
 
-    // Do not wait for the network on a normal click. Waiting causes browsers to
-    // revoke clipboard/share permission on live servers. Data is preloaded above.
+    const syncCode = cachedCode();
+    if(syncCode) update(syncCode);
     if(!currentLink){
-      await preload(true);
-      if(!currentLink){
-        showCopyResult(false, 'Referral code is not available. Please refresh the page and try again.');
-        return;
-      }
+      showCopyResult(false, 'Referral link is still loading. Please close this message and click again.');
+      preload(true);
+      return;
     }
 
     if(copyButton){
-      const ok = await copyNow(currentLink);
-      if(ok) showCopyResult(true, currentLink);
-      else {
-        // Always expose the actual link for manual copying; never show a false success.
-        showCopyResult(false, currentLink);
-        try { window.prompt('Copy this referral link:', currentLink); } catch(err){}
-      }
+      copyNow(currentLink).then(function(ok){
+        showCopyResult(ok, currentLink);
+      });
       return;
     }
 
     if(navigator.share){
-      try {
-        await shareNow();
-        return;
-      } catch(err){
+      nativeShareNow().catch(function(err){
         if(err && err.name === 'AbortError') return;
         console.warn('Native referral sharing failed:', err && err.message);
-      }
+        showCopyResult(false, currentLink);
+      });
+      return;
     }
 
-    const copied = await copyNow(currentLink);
-    showCopyResult(copied, currentLink);
+    showCopyResult(false, currentLink);
   }, true);
 
   document.addEventListener('click', function(e){
@@ -221,4 +271,5 @@
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') hideCopyResult(); });
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) preload(true); });
   window.addEventListener('pageshow', function(){ preload(true); });
+  window.addEventListener('storage', function(e){ if(e.key === 'member_info' || e.key === 'member_referral_code') preload(true); });
 })();
