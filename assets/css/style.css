@@ -11792,3 +11792,100 @@ html.page-leaving body{
     height:34px;
   }
 }
+
+/* ===== v1.0.59: iPhone auth spacing + simplified setting page ===== */
+body.setting-page .setting-single-column-layout{
+  width:min(1180px, calc(100vw - 32px))!important;
+  max-width:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:14px!important;
+  margin:0 auto!important;
+}
+body.setting-page .setting-single-column-layout > .setting-wallet-card,
+body.setting-page .setting-single-column-layout > .setting-merged-profile,
+body.setting-page .setting-single-column-layout > .setting-card{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+}
+body.setting-page .setting-merged-profile{
+  padding:18px 20px!important;
+}
+body.setting-page .setting-profile-mini-merged{
+  position:relative!important;
+  padding:0 62px 16px 0!important;
+  margin-bottom:16px!important;
+  border-bottom:1px solid rgba(255,255,255,.10)!important;
+}
+body.setting-page .setting-profile-mini-merged .profile-badge{
+  position:absolute!important;
+  top:0!important;
+  right:0!important;
+}
+body.setting-page .setting-merged-profile-heading{
+  margin-bottom:8px!important;
+}
+body.setting-page .setting-menu{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+@media (max-width:900px){
+  body.setting-page .setting-single-column-layout{
+    width:100%!important;
+    max-width:430px!important;
+    gap:12px!important;
+  }
+  body.setting-page .setting-merged-profile{
+    padding:17px 16px!important;
+  }
+  body.setting-page .setting-profile-mini-merged{
+    padding-right:54px!important;
+  }
+  body.setting-page .setting-menu{
+    grid-template-columns:1fr!important;
+  }
+}
+@media (max-width:480px){
+  .top-auth-actions{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:0!important;
+    column-gap:0!important;
+  }
+  .top-auth-actions .top-login-btn.auth-image-link,
+  .top-auth-actions .top-register-btn.auth-image-link{
+    margin:0!important;
+    padding:0!important;
+    min-width:0!important;
+    width:auto!important;
+    height:36px!important;
+    flex:0 0 auto!important;
+  }
+  .top-auth-actions .header-auth-image{
+    width:auto!important;
+    max-width:88px!important;
+    height:36px!important;
+    margin:0!important;
+  }
+}
+
+/* ===== v1.0.60: restore compact desktop width for simplified Setting page ===== */
+@media (min-width:901px){
+  body.setting-page .setting-main{
+    padding-left:18px!important;
+    padding-right:18px!important;
+  }
+  body.setting-page .setting-single-column-layout{
+    width:min(528px, calc(100vw - 36px))!important;
+    max-width:528px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  body.setting-page .setting-single-column-layout > .setting-wallet-card,
+  body.setting-page .setting-single-column-layout > .setting-merged-profile,
+  body.setting-page .setting-single-column-layout > .setting-card{
+    width:100%!important;
+    max-width:528px!important;
+  }
+}

@@ -6,7 +6,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="setting_page_title">TitanXGaming - Setting</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.58" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.59" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -20,109 +20,67 @@
   </header>
 
   <main class="setting-main">
-    <section class="setting-shell setting-dashboard-shell">
-      <section class="setting-dashboard-grid">
-        <article class="setting-quick-card game-glass-card">
-          <div class="setting-panel-head">
-            <span>Quick Actions</span>
-          </div>
-          <div class="setting-quick-grid setting-referral-actions">
-            <button type="button" class="setting-image-action share-trigger" aria-label="Share">
-              <img src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy">
-            </button>
-            <a class="setting-image-action" href="downline.html" aria-label="Downline">
-              <img src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy">
-            </a>
-            <button type="button" class="setting-image-action copy-trigger" aria-label="Copy Link">
-              <img src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy">
-            </button>
-          </div>
-        </article>
-
-        <article class="setting-profile-summary game-glass-card">
-          <div class="setting-panel-head">
-            <span>Profile</span>
-            <em>VIP</em>
-          </div>
-          <div class="setting-profile-mini">
-            <div class="setting-profile-avatar">W</div>
-            <div>
-              <h2>Wang Zai</h2>
-              <p><i class="fa-solid fa-mobile-screen-button"></i> 0112345678</p>
-              <p><i class="fa-solid fa-location-dot"></i> Malaysia</p>
-            </div>
-          </div>
-          <a class="setting-view-profile" href="#profileDetails">View Profile <i class="fa-solid fa-arrow-right"></i></a>
-        </article>
-
-        <article class="setting-wallet-card game-glass-card">
-          <div class="setting-panel-head account-title">
-            <span>Account Overview</span>
-          </div>
-          <div class="setting-wallet-hero">
-            <div>
-              <p>Total Balance</p>
-              <h2 data-main-wallet-balance>MYR 44.99</h2>
-            </div>
-            <div class="setting-wallet-glow"><i class="fa-solid fa-wallet"></i></div>
-          </div>
-          <div class="setting-wallet-actions setting-wallet-image-actions">
-            <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="Deposit" decoding="async" loading="lazy"></button>
-            <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="Withdraw" decoding="async" loading="lazy"></button>
-            <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="Refresh" decoding="async" loading="lazy"></button>
-          </div>
-          <div class="setting-wallet-limits">
-            <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>MYR 10.00</b></p>
-            <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b>MYR 50.00</b></p>
-          </div>
-          <div data-member-auth-area class="setting-wallet-auth setting-auth-hidden"></div>
-        </article>
-      </section>
-
-      <section class="setting-detail-grid">
-        <article class="profile-card game-glass-card" id="profileDetails">
-          <div class="card-heading">
-            <div>
-              <h1 data-i18n="profile">Profile</h1>
-              <p data-i18n="account_information">Account information</p>
-            </div>
-            <span class="profile-badge" data-i18n="vip">VIP</span>
-          </div>
-          <div class="profile-list" id="memberProfileList">
-            <div class="profile-row"><span data-i18n="loading">Loading</span><strong>...</strong></div>
-          </div>
-        </article>
-
-        <article class="setting-card game-glass-card">
-          <button class="setting-toggle" id="settingToggle" type="button" aria-expanded="false">
-            <span data-i18n="setting_title">Setting</span>
-            <i>▲</i>
-          </button>
-          <div class="setting-menu" id="settingMenu">
-            <a href="history.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-clock-rotate-left"></i></span><span data-i18n="setting_history">History</span><em>›</em></a>
-            <a href="mobile-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-mobile"></i></span><span data-i18n="mobile_number">Mobile Number</span><em>›</em></a>
-            <a href="password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-lock"></i></span><span data-i18n="password">Password</span><em>›</em></a>
-            <a href="transaction-password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-key"></i></span><span>Transaction Password</span><em>›</em></a>
-            <a href="policies.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-shield-halved"></i></span><span>Compliance Policy</span><em>›</em></a>
-            <a href="vip.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-crown"></i></span><span>VIP</span><em>›</em></a>
-            <button class="setting-item" id="settingLangBtn" type="button"><span class="setting-ico"><i class="fa-solid fa-language"></i></span><span data-i18n="language">Language</span><em>›</em></button>
-            <a href="login.html" class="setting-item logout"><span class="setting-ico"><i class="fa-solid fa-right-from-bracket"></i></span><span data-i18n="logout">Logout</span><em>›</em></a>
-          </div>
-        </article>
-      </section>
-
-      <section class="setting-bonus-panel game-glass-card">
-        <div class="setting-bonus-head">
+    <section class="setting-shell setting-dashboard-shell setting-single-column-layout">
+      <article class="setting-wallet-card game-glass-card">
+        <div class="setting-panel-head account-title">
+          <span>Account Overview</span>
+        </div>
+        <div class="setting-wallet-hero">
           <div>
+            <p>Total Balance</p>
+            <h2 data-main-wallet-balance>MYR 44.99</h2>
           </div>
-          <a href="bonus.html">View All <i class="fa-solid fa-arrow-right"></i></a>
+          <div class="setting-wallet-glow"><i class="fa-solid fa-wallet"></i></div>
         </div>
-        <div class="bonus-container setting-bonus-container">
-          <div id="dynamicPromotionBox" data-promotion-box>
-            <div class="bonus-loading">Loading bonus...</div>
+        <div class="setting-wallet-actions setting-wallet-image-actions">
+          <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="Deposit" decoding="async" loading="lazy"></button>
+          <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="Withdraw" decoding="async" loading="lazy"></button>
+          <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="Refresh" decoding="async" loading="lazy"></button>
+        </div>
+        <div class="setting-wallet-limits">
+          <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>MYR 10.00</b></p>
+          <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b>MYR 50.00</b></p>
+        </div>
+        <div data-member-auth-area class="setting-wallet-auth setting-auth-hidden"></div>
+      </article>
+
+      <article class="profile-card game-glass-card setting-merged-profile" id="profileDetails">
+        <div class="setting-profile-mini setting-profile-mini-merged">
+          <div class="setting-profile-avatar">W</div>
+          <div class="setting-profile-summary-text">
+            <h2>Wang Zai</h2>
+            <p><i class="fa-solid fa-mobile-screen-button"></i> 0112345678</p>
+            <p><i class="fa-solid fa-location-dot"></i> Malaysia</p>
+          </div>
+          <span class="profile-badge" data-i18n="vip">VIP</span>
+        </div>
+        <div class="card-heading setting-merged-profile-heading">
+          <div>
+            <h1 data-i18n="profile">Profile</h1>
+            <p data-i18n="account_information">Account information</p>
           </div>
         </div>
-      </section>
+        <div class="profile-list" id="memberProfileList">
+          <div class="profile-row"><span data-i18n="loading">Loading</span><strong>...</strong></div>
+        </div>
+      </article>
+
+      <article class="setting-card game-glass-card">
+        <button class="setting-toggle" id="settingToggle" type="button" aria-expanded="false">
+          <span data-i18n="setting_title">Setting</span>
+          <i>▲</i>
+        </button>
+        <div class="setting-menu" id="settingMenu">
+          <a href="history.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-clock-rotate-left"></i></span><span data-i18n="setting_history">History</span><em>›</em></a>
+          <a href="mobile-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-mobile"></i></span><span data-i18n="mobile_number">Mobile Number</span><em>›</em></a>
+          <a href="password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-lock"></i></span><span data-i18n="password">Password</span><em>›</em></a>
+          <a href="transaction-password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-key"></i></span><span>Transaction Password</span><em>›</em></a>
+          <a href="policies.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-shield-halved"></i></span><span>Compliance Policy</span><em>›</em></a>
+          <a href="vip.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-crown"></i></span><span>VIP</span><em>›</em></a>
+          <button class="setting-item" id="settingLangBtn" type="button"><span class="setting-ico"><i class="fa-solid fa-language"></i></span><span data-i18n="language">Language</span><em>›</em></button>
+          <a href="login.html" class="setting-item logout"><span class="setting-ico"><i class="fa-solid fa-right-from-bracket"></i></span><span data-i18n="logout">Logout</span><em>›</em></a>
+        </div>
+      </article>
     </section>
   </main>
 
@@ -165,7 +123,7 @@
   <script src="assets/js/lang.js"></script>
   <script src="assets/js/member-auth.js?v=1.0.2"></script>
   <script src="assets/js/setting.js?v=1.0.5"></script>
-  <script src="assets/js/referral-share.js?v=1.0.7"></script>
+  <script src="assets/js/referral-share.js?v=1.0.9"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.16"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>

@@ -1,8 +1,8 @@
 (function(){
   'use strict';
 
-  if (window.__NAGA_REFERRAL_SHARE_V107__) return;
-  window.__NAGA_REFERRAL_SHARE_V107__ = true;
+  if (window.__NAGA_REFERRAL_SHARE_V108__) return;
+  window.__NAGA_REFERRAL_SHARE_V108__ = true;
 
   const API_BASE = ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '').replace(/\/+$/, '');
   const copyOverlay = document.getElementById('copyOverlay');
@@ -205,17 +205,41 @@
   }
   function nativeShareNow(){
     if(!currentLink || !navigator.share) return Promise.reject(new Error('Native sharing unavailable'));
+
+    const shareText = 'Join me on TitanXGaming using my referral link:\n' + currentLink;
+    const basePayload = {
+      title: 'TitanXGaming Referral',
+      text: shareText,
+      url: currentLink
+    };
+
+    // Send the QR image and referral message/link together to supported chat apps.
+    // Checking the complete payload is important because some browsers support
+    // file sharing but reject a files-only payload or silently drop the text.
     if(qrFileCache && navigator.canShare){
+      const fullPayload = {
+        title: basePayload.title,
+        text: basePayload.text,
+        url: basePayload.url,
+        files: [qrFileCache]
+      };
       try {
-        const filePayload = {files:[qrFileCache]};
-        if(navigator.canShare(filePayload)) return navigator.share(filePayload);
+        if(navigator.canShare(fullPayload)) return navigator.share(fullPayload);
+      } catch(e){}
+
+      // Some mobile browsers reject the url field when files are attached.
+      // Keep the URL inside text so the chat still receives both QR and link.
+      const fileAndTextPayload = {
+        title: basePayload.title,
+        text: basePayload.text,
+        files: [qrFileCache]
+      };
+      try {
+        if(navigator.canShare(fileAndTextPayload)) return navigator.share(fileAndTextPayload);
       } catch(e){}
     }
-    return navigator.share({
-      title:'TitanXGaming',
-      text:'Join me on TitanXGaming\n' + currentLink,
-      url:currentLink
-    });
+
+    return navigator.share(basePayload);
   }
   function loginRedirect(){
     location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
