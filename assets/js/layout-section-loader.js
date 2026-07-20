@@ -47,10 +47,95 @@
     return request;
   }
 
+  function ensureHomeLayoutSafetyCss() {
+    let safetyStyle = document.getElementById('naga-home-layout-safety');
+    if (!safetyStyle) {
+      safetyStyle = document.createElement('style');
+      safetyStyle.id = 'naga-home-layout-safety';
+    }
+
+    safetyStyle.textContent = `
+      /* Keep BO Layout Section styling inside the available desktop viewport. */
+      @media (min-width: 901px) {
+        body.home-page .main-layout {
+          width: 100% !important;
+          max-width: 100vw !important;
+          grid-template-columns: clamp(285px, 22vw, 360px) minmax(0, 1fr) clamp(320px, 23vw, 390px) !important;
+          overflow: hidden !important;
+        }
+
+        body.home-page .left-sidebar,
+        body.home-page .center-content,
+        body.home-page .right-panel {
+          min-width: 0 !important;
+          max-width: 100% !important;
+        }
+
+        body.home-page .right-panel {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+          overflow: hidden !important;
+        }
+
+        body.home-page .right-content-box {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 350px !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          flex: 0 1 350px !important;
+        }
+
+        body.home-page .right-content-box .balance-box {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 350px !important;
+          grid-template-columns: minmax(0, 1fr) minmax(108px, 132px) !important;
+          gap: 10px !important;
+        }
+
+        body.home-page .right-content-box .money-btns {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 132px !important;
+        }
+
+        body.home-page .right-content-box .money-btns button,
+        body.home-page .right-content-box .money-btns button img {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 132px !important;
+        }
+      }
+
+      @media (min-width: 901px) and (max-width: 1280px) {
+        body.home-page .main-layout {
+          grid-template-columns: 285px minmax(0, 1fr) 320px !important;
+        }
+
+        body.home-page .right-panel {
+          padding-left: 10px !important;
+          padding-right: 10px !important;
+        }
+
+        body.home-page .right-content-box .balance-box {
+          padding-left: 12px !important;
+          padding-right: 12px !important;
+          grid-template-columns: minmax(0, 1fr) minmax(104px, 120px) !important;
+          gap: 8px !important;
+        }
+      }
+    `;
+
+    // Re-append it so these geometry guards remain after BO-provided custom CSS.
+    document.head.appendChild(safetyStyle);
+  }
+
   function applyCss(sectionKey, css) {
     let style = document.querySelector('style[data-layout-section-css="' + sectionKey + '"]');
     if (!css.trim()) {
       if (style) style.remove();
+      if (sectionKey === GLOBAL_CSS_SECTION) ensureHomeLayoutSafetyCss();
       return;
     }
     if (!style) {
@@ -59,6 +144,7 @@
       document.head.appendChild(style);
     }
     style.textContent = css;
+    if (sectionKey === GLOBAL_CSS_SECTION) ensureHomeLayoutSafetyCss();
   }
 
 
