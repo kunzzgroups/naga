@@ -24,8 +24,8 @@
   function num(v){ const n = Number(v || 0); return Number.isFinite(n) ? n : 0; }
   function money(v){ return 'MYR ' + num(v).toFixed(2); }
   function formatDate(v){ if(!v) return '-'; const d = new Date(String(v).replace(' ', 'T')); if(isNaN(d)) return esc(v); return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
-  function txClass(type){ type=String(type||'').toUpperCase(); if(type.includes('DEPOSIT')||type==='TRANSFER_IN'||type==='BONUS') return 'deposit'; if(type.includes('WITHDRAW')||type==='TRANSFER_OUT') return 'withdraw'; return ''; }
-  function txName(type){ return String(type||'TRANSACTION').replace(/_/g,' '); }
+  function txClass(type){ type=String(type||'').toUpperCase(); if(type.includes('DEPOSIT')||type==='TRANSFER_IN'||type==='BONUS'||type==='REFERRAL_REWARD') return 'deposit'; if(type.includes('WITHDRAW')||type==='TRANSFER_OUT') return 'withdraw'; return ''; }
+  function txName(type){ type=String(type||'TRANSACTION').toUpperCase(); if(type==='REFERRAL_REWARD') return 'REFERRAL REWARD'; return type.replace(/_/g,' '); }
   function statusName(s){ s=String(s||'SUCCESS').toUpperCase(); if(s==='SUCCESS'||s==='APPROVED'||s==='COMPLETED') return 'completed'; if(s==='REJECTED'||s==='FAILED') return 'failed'; if(s==='PENDING') return 'pending'; return s.toLowerCase(); }
 
   async function fetchJson(url){

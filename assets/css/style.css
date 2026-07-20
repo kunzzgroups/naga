@@ -11990,3 +11990,61 @@ body.setting-page .setting-wallet-referral-actions > button img{
 body.member-logged-in .top-auth-actions {
   display: none !important;
 }
+
+
+/* ===== v1.0.64: deposit / withdraw full-page scrolling =====
+   These transaction pages can be taller than the viewport. Override the
+   lobby-only viewport lock so every field and action remains reachable while
+   keeping the bottom navigation fixed. */
+html.transaction-scroll-page{
+    width:100%!important;
+    height:auto!important;
+    min-height:100%!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+}
+html.transaction-scroll-page body.deposit-page,
+html.transaction-scroll-page body.withdraw-page{
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:100vh!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:visible!important;
+    padding-bottom:57px!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+}
+html.transaction-scroll-page body.deposit-page .deposit-main,
+html.transaction-scroll-page body.withdraw-page .withdraw-main{
+    width:100%!important;
+    height:auto!important;
+    min-height:calc(100vh - 69px - 57px)!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:100px!important;
+}
+html.transaction-scroll-page body.deposit-page .bottom-nav,
+html.transaction-scroll-page body.withdraw-page .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    z-index:1000!important;
+}
+@media(max-width:768px){
+    html.transaction-scroll-page body.deposit-page,
+    html.transaction-scroll-page body.withdraw-page{
+        padding-bottom:var(--mobile-bottom-nav-height,70px)!important;
+        background-attachment:scroll!important;
+    }
+    html.transaction-scroll-page body.deposit-page .deposit-main,
+    html.transaction-scroll-page body.withdraw-page .withdraw-main{
+        min-height:calc(100dvh - 69px - var(--mobile-bottom-nav-height,70px))!important;
+        padding-bottom:calc(var(--mobile-bottom-nav-height,70px) + 28px)!important;
+    }
+}
