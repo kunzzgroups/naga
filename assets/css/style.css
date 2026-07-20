@@ -12065,3 +12065,10 @@ body.setting-page .setting-card.open .setting-menu{
   display:grid!important;
   animation:settingDrop .24s ease-out;
 }
+
+
+/* BO-controlled homepage bonus display */
+html.home-bonus-disabled [data-home-bonus-display],
+body.home-bonus-disabled [data-home-bonus-display] {
+  display: none !important;
+}

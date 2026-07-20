@@ -152,6 +152,7 @@
   }
 
   async function load(){
+    if(window.NAGA_HOME_BONUS_ENABLED === false) return;
     const boxes = Array.from(document.querySelectorAll('#dynamicPromotionBox, [data-promotion-box]'));
     if(!boxes.length || !api().playerPromotionList) return;
     try{
@@ -196,5 +197,6 @@
   const overlay = document.getElementById('bonusDetailOverlay');
   if(overlay) overlay.addEventListener('click', e => { if(e.target === overlay) closeDetail(); });
 
+  document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(); });
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
 })();

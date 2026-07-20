@@ -111,6 +111,7 @@ async function fetchJson(url){
 }
 
 async function loadBonusData(){
+  if(window.NAGA_HOME_BONUS_ENABLED === false) return;
   if(!bonusContainer) return;
 
   try{
@@ -247,3 +248,6 @@ document.addEventListener('keydown', e => {
 
 document.addEventListener('DOMContentLoaded', loadBonusData);
 document.addEventListener('i18n:changed', loadBonusData);
+document.addEventListener('naga:home-bonus-display', function(event){
+  if(event.detail && event.detail.enabled) loadBonusData();
+});
