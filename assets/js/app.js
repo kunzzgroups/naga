@@ -1075,41 +1075,102 @@ loadSliderBanners().then(() => {
 
 // Share + copy modal
 (function(){
-  const shareOverlay=document.getElementById('shareOverlay');
-  const copyOverlay=document.getElementById('copyOverlay');
-  const copyText=document.getElementById('copyText');
-  try{ const member=JSON.parse(localStorage.getItem('member_info')||'{}'); const code=member.referralCode||member.referrerCode||'RF1A850A95'; document.querySelectorAll('.share-head strong').forEach(el=>el.textContent=code); if(copyText) copyText.textContent=location.origin + '/register.html?ref=' + code; }catch(e){}
+  const shareOverlay = document.getElementById('shareOverlay');
+  const copyOverlay = document.getElementById('copyOverlay');
+  const copyText = document.getElementById('copyText');
+  const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '';
 
+  function token(){ return localStorage.getItem('member_token') || ''; }
+  function readStoredMember(){
+    try { return JSON.parse(localStorage.getItem('member_info') || '{}') || {}; }
+    catch(e){ return {}; }
+  }
+  function extractCode(member){
+    return String(member && (member.referralCode || member.referral_code || member.inviteCode) || '').trim();
+  }
+  function referralLink(code){
+    return code ? (location.origin + '/register.html?ref=' + encodeURIComponent(code)) : '';
+  }
+  function updateShareContent(code){
+    const safeCode = code || '-';
+    const link = referralLink(code);
+    document.querySelectorAll('.share-head strong,[data-referral-code]').forEach(el => { el.textContent = safeCode; });
+    if(copyText) copyText.textContent = link || '-';
+    document.querySelectorAll('[data-share-channel]').forEach(a => {
+      const channel = a.getAttribute('data-share-channel');
+      const text = 'Join me on TitanXGaming: ' + link;
+      let href = '#';
+      if(link){
+        if(channel === 'whatsapp') href = 'https://wa.me/?text=' + encodeURIComponent(text);
+        if(channel === 'telegram') href = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Join me on TitanXGaming');
+        if(channel === 'line') href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(link);
+        if(channel === 'viber') href = 'viber://forward?text=' + encodeURIComponent(text);
+        if(channel === 'messenger') href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link);
+      }
+      a.setAttribute('href', href);
+      if(link){ a.setAttribute('target','_blank'); a.setAttribute('rel','noopener'); }
+    });
+  }
+  async function loadCurrentReferralCode(){
+    if(!token()) return '';
+    const res = await fetch(API_BASE + '/api/auth/member/me', {
+      headers:{Authorization:'Bearer ' + token()}, cache:'no-store'
+    });
+    const json = await res.json().catch(() => ({}));
+    if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load referral code');
+    const member = json.data || {};
+    localStorage.setItem('member_info', JSON.stringify(member));
+    return extractCode(member);
+  }
+  async function resolveReferralCode(){
+    try {
+      const code = await loadCurrentReferralCode();
+      updateShareContent(code);
+      return code;
+    } catch(e){
+      const code = extractCode(readStoredMember());
+      updateShareContent(code);
+      return code;
+    }
+  }
   function show(el){ if(el){ el.classList.add('show'); el.setAttribute('aria-hidden','false'); } }
   function hide(el){ if(el){ el.classList.remove('show'); el.setAttribute('aria-hidden','true'); } }
 
-  document.querySelectorAll('.share-trigger').forEach(btn=>{
-    btn.addEventListener('click',()=>show(shareOverlay));
+  updateShareContent(extractCode(readStoredMember()));
+
+  document.querySelectorAll('.share-trigger').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.preventDefault();
+      const code = await resolveReferralCode();
+      if(!code){ location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html'); return; }
+      const link = referralLink(code);
+      if(navigator.share){
+        navigator.share({title:'TitanXGaming', text:'Join me on TitanXGaming', url:link}).catch(() => show(shareOverlay));
+      }else show(shareOverlay);
+    });
   });
 
-  document.querySelectorAll('.copy-trigger').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const member=JSON.parse(localStorage.getItem('member_info')||'{}');
-      const code=member.referralCode||member.referrerCode||'RF1A850A95';
-      const text=location.origin + '/register.html?ref=' + code;
-      if(copyText) copyText.textContent=text;
-      if(navigator.clipboard){ navigator.clipboard.writeText(text).catch(()=>{}); }
+  document.querySelectorAll('.copy-trigger').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.preventDefault();
+      const code = await resolveReferralCode();
+      if(!code){ location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html'); return; }
+      const text = referralLink(code);
+      if(copyText) copyText.textContent = text;
+      try {
+        if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+        else {
+          const ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.left='-9999px';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+        }
+      } catch(e){}
       show(copyOverlay);
     });
   });
 
-  document.querySelectorAll('.modal-x,.copy-ok').forEach(btn=>{
-    btn.addEventListener('click',()=>{ hide(shareOverlay); hide(copyOverlay); });
-  });
-
-  [shareOverlay,copyOverlay].forEach(overlay=>{
-    if(!overlay) return;
-    overlay.addEventListener('click',e=>{ if(e.target===overlay) hide(overlay); });
-  });
-
-  document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){ hide(shareOverlay); hide(copyOverlay); }
-  });
+  document.querySelectorAll('.modal-x,.copy-ok').forEach(btn => btn.addEventListener('click', () => { hide(shareOverlay); hide(copyOverlay); }));
+  [shareOverlay,copyOverlay].forEach(overlay => { if(overlay) overlay.addEventListener('click',e => { if(e.target===overlay) hide(overlay); }); });
+  document.addEventListener('keydown',e => { if(e.key==='Escape'){ hide(shareOverlay); hide(copyOverlay); } });
 })();
 
 // Final scroll container and back-to-top behaviour
