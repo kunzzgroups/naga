@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="assets/custom/images/favicon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/custom/images/favicon2.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/custom/images/favicon3.png">
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.57" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.58" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -167,28 +167,14 @@
   </nav>
 
 
-  <div class="referral-dialog-overlay" id="referralDialog" aria-hidden="true" inert>
-    <div class="referral-dialog-modal" role="dialog" aria-modal="true" aria-labelledby="referralDialogTitle">
-      <button type="button" class="referral-dialog-close" aria-label="Close">×</button>
-      <h3 id="referralDialogTitle">Share Referral Link</h3>
-      <div class="referral-dialog-code">Referral Code: <strong id="referralDialogCode">-</strong></div>
-      <div class="referral-dialog-qr"><img id="referralDialogQr" alt="Referral QR code"></div>
-      <p class="referral-dialog-help">Scan the QR code or share the registration link below.</p>
-      <div class="referral-dialog-link-row">
-        <input id="referralDialogLink" type="text" readonly value="Loading referral link..." aria-label="Referral registration link">
-        <button type="button" id="referralDialogCopy">COPY</button>
-      </div>
-      <div class="referral-dialog-status" id="referralDialogStatus" role="status" aria-live="polite"></div>
-      <div class="referral-dialog-socials">
-        <a id="referralShareWhatsapp" href="#" target="_blank" rel="noopener">WhatsApp</a>
-        <a id="referralShareTelegram" href="#" target="_blank" rel="noopener">Telegram</a>
-        <a id="referralShareFacebook" href="#" target="_blank" rel="noopener">Facebook</a>
-        <a id="referralShareMessenger" href="#" target="_blank" rel="noopener">Messenger</a>
-      </div>
-      <a class="referral-dialog-download" id="referralQrDownload" href="#" target="_blank" rel="noopener">Open / Save QR Code</a>
+  <div class="copy-overlay" id="copyOverlay" aria-hidden="true">
+    <div class="copy-modal" role="dialog" aria-modal="true" aria-label="Copied link">
+      <div class="copy-check">✓</div>
+      <h3 data-i18n="copied">Copied</h3>
+      <p id="copyText">-</p>
+      <button type="button" class="copy-ok" data-i18n="ok">OK</button>
     </div>
   </div>
-
 
   <div class="bonus-detail-overlay" id="bonusDetailOverlay" aria-hidden="true">
     <div class="bonus-detail-modal" role="dialog" aria-modal="true" aria-label="Bonus details">
@@ -259,7 +245,7 @@
   <script src="assets/js/config.js?v=1.0.15"></script>
   <script src="assets/js/provider-launch.js?v=1.0.4"></script>
   <script src="assets/js/app.js?v=1.0.23"></script>
-  <script src="assets/js/referral-dialog-live.js?v=20260720-2"></script>
+  <script src="assets/js/referral-share.js?v=1.0.7"></script>
   <script src="assets/js/bonus.js?v=1.0.8"></script>
   <script src="assets/js/promotion-bonus.js?v=1.0.6"></script>
   <script src="assets/js/layout-section-loader.js?v=1.1.4"></script>

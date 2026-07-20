@@ -11792,30 +11792,3 @@ html.page-leaving body{
     height:34px;
   }
 }
-
-/* Reliable live referral dialog: does not depend on Web Share API. */
-.referral-dialog-overlay{position:fixed;inset:0;z-index:12000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.76);backdrop-filter:blur(3px)}
-.referral-dialog-overlay.show{display:flex}
-.referral-dialog-modal{position:relative;width:min(430px,calc(100vw - 28px));max-height:calc(100vh - 36px);overflow:auto;padding:24px 22px;background:linear-gradient(180deg,#080808,#000);border:1px solid #ffd200;border-radius:10px;color:#fff;box-shadow:0 18px 60px rgba(0,0,0,.75)}
-.referral-dialog-close{position:absolute;right:10px;top:9px;width:34px;height:34px;border:0;border-radius:50%;background:#222;color:#fff;font-size:23px;cursor:pointer}
-.referral-dialog-modal h3{margin:0 42px 8px 0;color:#ffe400;font-size:19px}
-.referral-dialog-code{padding-bottom:12px;border-bottom:1px solid rgba(255,210,0,.65);font-size:13px}.referral-dialog-code strong{color:#fff}
-.referral-dialog-qr{width:190px;height:190px;margin:16px auto 10px;padding:10px;border-radius:10px;background:#fff}.referral-dialog-qr img{display:block;width:100%;height:100%;object-fit:contain}
-.referral-dialog-help{text-align:center;color:#d5d5d5;font-size:13px;line-height:1.4}
-.referral-dialog-link-row{display:flex;gap:8px;margin-top:14px}.referral-dialog-link-row input{min-width:0;flex:1;height:42px;padding:0 11px;border:1px solid #596171;border-radius:7px;background:#111722;color:#fff;font-size:12px}.referral-dialog-link-row button{height:42px;padding:0 15px;border:1px solid #ffd200;border-radius:7px;background:#151515;color:#ffe400;font-weight:800;cursor:pointer}
-.referral-dialog-status{min-height:34px;padding-top:8px;color:#ffb4a9;font-size:12px;line-height:1.35;word-break:break-all}.referral-dialog-status.success{color:#9bea84}
-.referral-dialog-socials{display:grid;grid-template-columns:1fr 1fr;gap:9px}.referral-dialog-socials a,.referral-dialog-download{display:flex;align-items:center;justify-content:center;min-height:42px;border:1px solid #384151;border-radius:7px;background:#17202e;color:#fff;text-decoration:none;font-weight:700}.referral-dialog-socials a:hover,.referral-dialog-download:hover{border-color:#ffd200;color:#ffe400}
-.referral-dialog-download{margin-top:10px;background:#101010}
-@media(max-width:600px){.referral-dialog-modal{padding:20px 16px}.referral-dialog-qr{width:170px;height:170px}.referral-dialog-socials{grid-template-columns:1fr}.referral-dialog-link-row{flex-direction:column}.referral-dialog-link-row button{width:100%}}
-
-/* Referral copy-link compact result modal */
-.referral-copy-result-overlay{position:fixed;inset:0;z-index:12020;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.76);backdrop-filter:blur(3px)}
-.referral-copy-result-overlay.show{display:flex}
-.referral-copy-result-modal{width:min(460px,calc(100vw - 30px));padding:40px 28px 30px;text-align:center;background:linear-gradient(180deg,#080808,#000);border:1px solid #ffd200;border-radius:10px;color:#fff;box-shadow:0 18px 60px rgba(0,0,0,.75)}
-.referral-copy-result-check{display:flex;align-items:center;justify-content:center;width:74px;height:74px;margin:0 auto 18px;border:4px solid #9af27f;border-radius:50%;color:#9af27f;font-size:56px;line-height:1;font-weight:300}
-.referral-copy-result-check.failed{border-color:#ffd200;color:#ffd200;font-size:44px;font-weight:700}
-.referral-copy-result-modal h3{margin:0 0 14px;font-size:30px;color:#f4f4f4}
-.referral-copy-result-link{color:#989898;font-size:16px;line-height:1.45;word-break:break-all}
-.referral-copy-result-link.failed{color:#ffd9a0}
-.referral-copy-result-ok{min-width:64px;height:40px;margin-top:25px;padding:0 18px;border:1px solid #ffd200;border-radius:7px;background:#111;color:#fff;cursor:pointer;box-shadow:0 0 14px rgba(255,210,0,.2)}
-@media(max-width:600px){.referral-copy-result-modal{padding:34px 20px 25px}.referral-copy-result-modal h3{font-size:27px}.referral-copy-result-link{font-size:14px}}
