@@ -405,7 +405,7 @@ function buildProviderRail(rows){
   allBtn.type = 'button';
   allBtn.className = 'provider-rail-card provider-rail-all' + (isAllProviderCode(activeProviderCode) ? ' active' : '');
   allBtn.dataset.providerCode = ALL_PROVIDER_CODE;
-  allBtn.innerHTML = '<div class="provider-rail-all-icon">All</div><span>All</span>';
+  allBtn.innerHTML = '<div class="provider-rail-all-icon">All</div>';
   allBtn.addEventListener('click', () => {
     if(isAllProviderCode(activeProviderCode)) return;
     activeProviderCode = ALL_PROVIDER_CODE;
@@ -425,8 +425,8 @@ function buildProviderRail(rows){
     const name = providerNameOf(row.provider);
     const imageUrl = providerImageOf(row.provider);
     btn.innerHTML = imageUrl
-      ? `<img src="${imageUrl}" alt="${name}" loading="lazy"><span>${name}</span>`
-      : `<div class="provider-rail-initial">${providerInitials(name)}</div><span>${name}</span>`;
+      ? `<img src="${imageUrl}" alt="${name}" loading="lazy">`
+      : `<div class="provider-rail-initial">${providerInitials(name)}</div>`;
     btn.addEventListener('click', () => {
       if(String(activeProviderCode) === String(row.code)) return;
       activeProviderCode = row.code;

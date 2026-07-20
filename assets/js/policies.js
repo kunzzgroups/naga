@@ -1,40 +1,10 @@
 (function(){
-  const tabs = Array.from(document.querySelectorAll('.policy-tab'));
-  const panels = Array.from(document.querySelectorAll('.policy-panel'));
-  const tabWrap = document.getElementById('policyTabs');
-
-  function centerTab(tab){
-    if(!tab || !tabWrap) return;
-    const left = tab.offsetLeft - (tabWrap.clientWidth / 2) + (tab.clientWidth / 2);
-    tabWrap.scrollTo({left: Math.max(0, left), behavior: 'smooth'});
-  }
-
-  function show(tab){
-    tabs.forEach(t => t.classList.toggle('active', t === tab));
-    panels.forEach(p => p.classList.toggle('active', p.id === tab.dataset.target));
-    centerTab(tab);
-    window.scrollTo({top: 0, behavior: 'smooth'});
-  }
-
-  function ensureScrollTop(){
-    let btn = document.getElementById('nagaScrollTopBtn');
-    if(!btn){
-      btn = document.createElement('button');
-      btn.id = 'nagaScrollTopBtn';
-      btn.className = 'naga-scroll-top-btn';
-      btn.type = 'button';
-      btn.setAttribute('aria-label', 'Back to top');
-      btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
-      document.body.appendChild(btn);
-    }
-    const update = () => btn.classList.toggle('show', (window.pageYOffset || document.documentElement.scrollTop || 0) > 160);
-    btn.addEventListener('click', () => window.scrollTo({top: 0, behavior: 'smooth'}));
-    window.addEventListener('scroll', update, {passive:true});
-    window.addEventListener('resize', update, {passive:true});
-    update();
-  }
-
-  tabs.forEach(tab => tab.addEventListener('click', () => show(tab)));
-  window.addEventListener('load', () => centerTab(document.querySelector('.policy-tab.active')));
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureScrollTop); else ensureScrollTop();
+  const tabsWrap=document.getElementById('policyTabs'), content=document.querySelector('.policy-content');
+  const fallback={tabs:tabsWrap.innerHTML,content:content.innerHTML};
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function bind(){ const tabs=Array.from(document.querySelectorAll('.policy-tab')),panels=Array.from(document.querySelectorAll('.policy-panel')); function center(t){if(!t||!tabsWrap)return;tabsWrap.scrollTo({left:Math.max(0,t.offsetLeft-tabsWrap.clientWidth/2+t.clientWidth/2),behavior:'smooth'})} function show(t){tabs.forEach(x=>x.classList.toggle('active',x===t));panels.forEach(p=>p.classList.toggle('active',p.id===t.dataset.target));center(t);window.scrollTo({top:0,behavior:'smooth'})} tabs.forEach(t=>t.addEventListener('click',()=>show(t))); setTimeout(()=>center(document.querySelector('.policy-tab.active')),0); }
+  function render(items){ if(!items.length)return; tabsWrap.innerHTML=items.map((x,i)=>`<button class="policy-tab ${i===0?'active':''}" type="button" role="tab" data-target="policy-${esc(x.policyKey)}">${esc(x.tabLabel)}</button>`).join(''); content.innerHTML=items.map((x,i)=>`<article class="policy-panel ${i===0?'active':''}" id="policy-${esc(x.policyKey)}"><h2>${esc(x.title)}</h2>${x.lastUpdated?`<p class="policy-muted">Last updated: ${esc(x.lastUpdated)}</p>`:''}<div class="policy-managed-content">${x.contentHtml||''}</div></article>`).join(''); }
+  async function load(){ try{const base=window.NAGA_CONFIG.api.baseUrl.replace(/\/$/,'');const urls=[(window.NAGA_API&&NAGA_API.compliancePolicyList),base+'/api/compliance-policies',base+'/api/compliance-policy/list'].filter(Boolean);let lastError;for(const u of [...new Set(urls)]){try{const r=await fetch(u,{cache:'no-store'}),j=await r.json();if(!r.ok||j.status==='error'||!Array.isArray(j.data))throw new Error(j.message||'Request failed');render(j.data);lastError=null;break}catch(err){lastError=err}}if(lastError)throw lastError}catch(e){tabsWrap.innerHTML=fallback.tabs;content.innerHTML=fallback.content} bind(); }
+  function scrollTop(){let b=document.getElementById('nagaScrollTopBtn');if(!b){b=document.createElement('button');b.id='nagaScrollTopBtn';b.className='naga-scroll-top-btn';b.type='button';b.setAttribute('aria-label','Back to top');b.innerHTML='<i class="fa-solid fa-arrow-up"></i>';document.body.appendChild(b)}const u=()=>b.classList.toggle('show',(window.pageYOffset||0)>160);b.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});window.addEventListener('scroll',u,{passive:true});u()}
+  document.addEventListener('DOMContentLoaded',()=>{load();scrollTop()});
 })();

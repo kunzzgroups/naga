@@ -6462,7 +6462,7 @@ body.member-logged-in .top-member-actions{display:flex;}
 .provider-side-rail::-webkit-scrollbar{display:none;}
 .provider-rail-card{
     width:100%;
-    min-height:78px;
+    min-height:68px;
     border:1px solid rgba(255,255,255,.08);
     border-radius:9px;
     background:linear-gradient(145deg, rgba(43,43,53,.95), rgba(29,29,38,.96));
@@ -6481,8 +6481,8 @@ body.member-logged-in .top-member-actions{display:flex;}
     box-shadow:0 0 0 1px rgba(77,255,123,.55), 0 0 14px rgba(77,255,123,.22), inset 0 1px rgba(255,255,255,.08);
 }
 .provider-rail-card img{
-    width:86%;
-    max-height:44px;
+    width:100%;
+    max-height:68px;
     object-fit:contain;
     display:block;
 }
@@ -6624,14 +6624,14 @@ body.member-logged-in .top-member-actions{display:flex;}
     .provider-lobby-shell{grid-template-columns:100px minmax(0,1fr);gap:12px;}
     .provider-side-rail{max-height:calc(100vh - 215px);gap:11px;}
     .provider-rail-card{min-height:72px;border-radius:9px;padding:8px 5px;}
-    .provider-rail-card img{width:88%;max-height:42px;}
+    .provider-rail-card img{width:100%;max-height:68px;}
     .provider-games-list,.direct-games-list{grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px 10px;}
     .provider-games-list .game-card,.direct-games-list .game-card{max-width:none;}
 }
 
 @media (max-width:430px){
     .provider-lobby-shell{grid-template-columns:92px minmax(0,1fr);gap:10px;}
-    .provider-rail-card{min-height:64px;}
+    .provider-rail-card{min-height:68px;}
     .provider-rail-card img{max-height:36px;}
     .provider-rail-card span{font-size:9px;}
     .provider-games-list,.direct-games-list{gap:10px 9px;}
@@ -6713,7 +6713,7 @@ body.member-logged-in .top-member-actions{display:flex;}
         padding-top:0!important;
     }
     .provider-rail-card{
-        min-height:78px!important;
+        min-height:68px!important;
         border-radius:10px!important;
         background:linear-gradient(145deg, rgba(47,48,58,.96), rgba(31,31,40,.96))!important;
     }
@@ -6721,7 +6721,7 @@ body.member-logged-in .top-member-actions{display:flex;}
         border-color:#43ff78!important;
         background:linear-gradient(145deg,rgba(37,70,53,.98),rgba(30,34,43,.98))!important;
     }
-    .provider-rail-card img{max-height:42px!important;width:84%!important;}
+    .provider-rail-card img{max-height:68px!important;width:100%!important;}
     .provider-rail-card span{font-size:10px!important;color:rgba(255,255,255,.72)!important;}
     .sub-tab-row{
         display:flex;

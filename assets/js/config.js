@@ -41,5 +41,6 @@ window.NAGA_API = {
 
   siteCustomizeTranslation: window.NAGA_CONFIG.api.baseUrl + '/api/admin/language/translation',
   // BO Layout Section CSS/HTML/JS. CSS saved under the `home` key is loaded globally.
-  layoutSection: window.NAGA_CONFIG.api.baseUrl + '/api/customize/section'
+  layoutSection: window.NAGA_CONFIG.api.baseUrl + '/api/customize/section',
+  compliancePolicyList: window.NAGA_CONFIG.api.baseUrl + '/api/compliance-policies'
 };
