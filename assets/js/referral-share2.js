@@ -1,8 +1,8 @@
 (function(){
   'use strict';
 
-  if (window.__NAGA_REFERRAL_SHARE_V107__) return;
-  window.__NAGA_REFERRAL_SHARE_V107__ = true;
+  if (window.__NAGA_REFERRAL_SHARE_V106__) return;
+  window.__NAGA_REFERRAL_SHARE_V106__ = true;
 
   const API_BASE = ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '').replace(/\/+$/, '');
   const copyOverlay = document.getElementById('copyOverlay');
@@ -130,7 +130,7 @@
       method:'GET',
       headers:{'Authorization':'Bearer ' + accessToken, 'Accept':'application/json'},
       cache:'no-store',
-      credentials:'omit'
+      credentials:'include'
     });
     const json = await res.json().catch(() => ({}));
     if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load referral code');
