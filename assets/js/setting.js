@@ -57,60 +57,10 @@
   });
 
 
-  function initReferralShareCopy(){
-    const shareOverlay = document.getElementById('shareOverlay');
-    const copyOverlay = document.getElementById('copyOverlay');
-    const copyText = document.getElementById('copyText');
-
-    function storedMember(){ try{return JSON.parse(localStorage.getItem('member_info')||'{}')||{};}catch(e){return {};} }
-    function codeFrom(member){ return String(member && (member.referralCode || member.referral_code || member.inviteCode) || '').trim(); }
-    function linkFrom(code){ return code ? location.origin + '/register.html?ref=' + encodeURIComponent(code) : ''; }
-    function update(code){
-      const link=linkFrom(code);
-      document.querySelectorAll('.share-head strong,[data-referral-code]').forEach(el=>{el.textContent=code||'-';});
-      if(copyText) copyText.textContent=link||'-';
-      document.querySelectorAll('[data-share-channel]').forEach(a=>{
-        const channel=a.getAttribute('data-share-channel'); const text='Join me on TitanXGaming: '+link; let href='#';
-        if(link){
-          if(channel==='whatsapp') href='https://wa.me/?text='+encodeURIComponent(text);
-          if(channel==='telegram') href='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Join me on TitanXGaming');
-          if(channel==='line') href='https://social-plugins.line.me/lineit/share?url='+encodeURIComponent(link);
-          if(channel==='viber') href='viber://forward?text='+encodeURIComponent(text);
-          if(channel==='messenger') href='https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(link);
-        }
-        a.href=href; if(link){a.target='_blank';a.rel='noopener';}
-      });
-    }
-    async function freshCode(){
-      const res=await fetch(API_BASE+'/api/auth/member/me',{headers:{Authorization:'Bearer '+token()},cache:'no-store'});
-      const json=await res.json().catch(()=>({}));
-      if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load referral code');
-      const member=json.data||{}; localStorage.setItem('member_info',JSON.stringify(member)); render(member); return codeFrom(member);
-    }
-    async function resolveCode(){ try{const c=await freshCode();update(c);return c;}catch(e){const c=codeFrom(storedMember());update(c);return c;} }
-    function show(el){if(!el)return;el.classList.add('show');el.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');}
-    function hide(el){if(!el)return;el.classList.remove('show');el.setAttribute('aria-hidden','true');if(!document.querySelector('.share-overlay.show,.copy-overlay.show'))document.body.classList.remove('modal-open');}
-
-    update(codeFrom(storedMember()));
-    document.querySelectorAll('.share-trigger').forEach(btn=>btn.addEventListener('click',async e=>{
-      e.preventDefault(); const code=await resolveCode(); if(!code)return; const link=linkFrom(code);
-      if(navigator.share) navigator.share({title:'TitanXGaming',text:'Join me on TitanXGaming',url:link}).catch(()=>show(shareOverlay)); else show(shareOverlay);
-    }));
-    document.querySelectorAll('.copy-trigger').forEach(btn=>btn.addEventListener('click',async e=>{
-      e.preventDefault(); const code=await resolveCode(); if(!code)return; const link=linkFrom(code);
-      try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(link);else{const ta=document.createElement('textarea');ta.value=link;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}}catch(err){}
-      show(copyOverlay);
-    }));
-    document.querySelectorAll('.modal-x,.copy-ok').forEach(btn=>btn.addEventListener('click',()=>{hide(shareOverlay);hide(copyOverlay);}));
-    [shareOverlay,copyOverlay].forEach(o=>{if(o)o.addEventListener('click',e=>{if(e.target===o)hide(o);});});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){hide(shareOverlay);hide(copyOverlay);}});
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
     const list=document.getElementById('memberProfileList');
     if(list) list.innerHTML=row('loading', '...', 'Loading');
     if(!requireLogin()) return;
-    initReferralShareCopy();
     loadProfile().catch(e => { if(list) list.innerHTML=row('error', e.message || t('load_failed', 'Load failed'), 'Error'); });
   });
 })();
