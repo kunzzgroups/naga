@@ -4,6 +4,8 @@
   const GLOBAL_CSS_SECTION = 'home';
   const sectionPromises = new Map();
   const executedJs = new Set();
+  const authoritativeSections = new Map();
+  const sectionObservers = new Map();
 
   function endpoint() {
     if (window.NAGA_API && window.NAGA_API.layoutSection) return window.NAGA_API.layoutSection;
@@ -198,11 +200,42 @@
     return template.innerHTML;
   }
 
+  function isAuthoritativePageSection(sectionKey) {
+    return sectionKey === 'login-page' || sectionKey === 'register-page';
+  }
+
+  function keepSectionAuthoritative(target, sectionKey, html) {
+    if (!target || !isAuthoritativePageSection(sectionKey) || !html.trim()) return;
+    authoritativeSections.set(sectionKey, html);
+    target.setAttribute('data-layout-authoritative', sectionKey);
+
+    const previous = sectionObservers.get(target);
+    if (previous) previous.disconnect();
+
+    let restoring = false;
+    const observer = new MutationObserver(function () {
+      if (restoring) return;
+      const expected = authoritativeSections.get(sectionKey);
+      if (!expected || target.innerHTML === expected) return;
+      restoring = true;
+      target.innerHTML = expected;
+      target.setAttribute('data-layout-custom-applied', sectionKey);
+      document.dispatchEvent(new CustomEvent('naga:layout-section-restored', {
+        detail: { sectionKey: sectionKey }
+      }));
+      Promise.resolve().then(function () { restoring = false; });
+    });
+
+    observer.observe(target, { childList: true, subtree: true, characterData: true });
+    sectionObservers.set(target, observer);
+  }
+
   function applyHtml(target, html, sectionKey) {
     html = normalizeAuthImageHtml(html, sectionKey);
     if (!target || !html.trim()) return false;
     if (target.innerHTML !== html) target.innerHTML = html;
     target.setAttribute('data-layout-custom-applied', sectionKey);
+    keepSectionAuthoritative(target, sectionKey, html);
     return true;
   }
 
@@ -304,6 +337,15 @@
   window.addEventListener('load', function () {
     setTimeout(function () { loadShellSections(true); }, 100);
     setTimeout(function () { loadShellSections(true); }, 600);
+
+    // Login/register page scripts, translations or cached restoration must never
+    // replace the BO Layout Section after it has been applied. Refresh those
+    // sections after all late scripts finish, then keep them authoritative.
+    ['login-page', 'register-page'].forEach(function (sectionKey) {
+      if (!targetsFor(sectionKey).length) return;
+      setTimeout(function () { loadSection(sectionKey, targetsFor(sectionKey), true); }, 120);
+      setTimeout(function () { loadSection(sectionKey, targetsFor(sectionKey), true); }, 700);
+    });
   });
 
   window.loadCustomSection = async function (sectionKey, targetSelector) {

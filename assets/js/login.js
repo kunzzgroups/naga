@@ -142,6 +142,12 @@
     if(key === 'login-page' || key === 'register-page') initializeAuthUi(document);
   });
 
+
+  document.addEventListener('naga:layout-section-restored', function(event){
+    const key = event && event.detail && event.detail.sectionKey;
+    if(key === 'login-page' || key === 'register-page') initializeAuthUi(document);
+  });
+
   window.NAGA_AUTH_PAGE = {
     rehydrate: function(){ initializeAuthUi(document); }
   };
