@@ -6474,7 +6474,7 @@ body.member-logged-in .top-member-actions{display:flex;}
     justify-content:center;
     flex-direction:column;
     gap:6px;
-    padding:8px;
+    /* padding:8px; */
 }
 .provider-rail-card.active{
     border-color:#4dff7b;
@@ -6623,7 +6623,10 @@ body.member-logged-in .top-member-actions{display:flex;}
     .sub-tab-row button{height:36px;font-size:14px;min-width:88px;flex:1 0 auto;}
     .provider-lobby-shell{grid-template-columns:100px minmax(0,1fr);gap:12px;}
     .provider-side-rail{max-height:calc(100vh - 215px);gap:11px;}
-    .provider-rail-card{min-height:72px;border-radius:9px;padding:8px 5px;}
+    .provider-rail-card{
+        min-height:72px;border-radius:9px;
+        /* padding:8px 5px; */
+    }
     .provider-rail-card img{width:100%;max-height:68px;}
     .provider-games-list,.direct-games-list{grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px 10px;}
     .provider-games-list .game-card,.direct-games-list .game-card{max-width:none;}
