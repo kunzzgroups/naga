@@ -2,10 +2,8 @@
   'use strict';
 
   const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '';
-  const shareOverlay = document.getElementById('shareOverlay');
   const copyOverlay = document.getElementById('copyOverlay');
   const copyText = document.getElementById('copyText');
-  const qrImages = Array.from(document.querySelectorAll('.qr-img'));
   let currentCode = '';
   let currentLink = '';
   let qrBlobCache = null;
@@ -26,7 +24,7 @@
     return code ? base + 'register.html?ref=' + encodeURIComponent(code) : '';
   }
   function qrUrl(link){
-    return link ? 'https://quickchart.io/qr?size=420&margin=2&text=' + encodeURIComponent(link) : 'assets/images/qr-dummy.png';
+    return link ? 'https://quickchart.io/qr?size=420&margin=2&text=' + encodeURIComponent(link) : '';
   }
   function show(el){
     if(!el) return;
@@ -46,11 +44,6 @@
     qrBlobCache = null;
     document.querySelectorAll('.share-head strong,[data-referral-code]').forEach(el => { el.textContent = currentCode || '-'; });
     if(copyText) copyText.textContent = currentLink || '-';
-    qrImages.forEach(img => {
-      img.src = qrUrl(currentLink);
-      img.alt = currentCode ? 'Referral QR code ' + currentCode : 'QR Code';
-      img.loading = 'eager';
-    });
     document.querySelectorAll('[data-share-channel]').forEach(a => {
       const channel = a.getAttribute('data-share-channel');
       const text = 'Join me on TitanXGaming: ' + currentLink;
@@ -105,10 +98,39 @@
     }
   }
   async function nativeShare(){
-    const data = {title:'TitanXGaming', text:'Join me on TitanXGaming\n' + currentLink, url:currentLink};
+    const baseData = {title:'TitanXGaming', text:'Join me on TitanXGaming\n' + currentLink, url:currentLink};
     const qrFile = await getQrFile();
-    if(qrFile && navigator.canShare && navigator.canShare({files:[qrFile]})) data.files = [qrFile];
-    await navigator.share(data);
+    if(qrFile && navigator.canShare && navigator.canShare({files:[qrFile]})){
+      try {
+        await navigator.share({...baseData, files:[qrFile]});
+        return;
+      } catch(err){
+        if(err && err.name === 'AbortError') throw err;
+        console.warn('Sharing with QR attachment failed; retrying link-only share:', err && err.message);
+      }
+    }
+    await navigator.share(baseData);
+  }
+
+  async function copyReferralLink(){
+    if(!currentLink) return false;
+    try {
+      if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(currentLink);
+      else {
+        const ta = document.createElement('textarea');
+        ta.value = currentLink;
+        ta.setAttribute('readonly','');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      return true;
+    } catch(e){
+      return false;
+    }
   }
 
   update(codeFrom(storedMember()));
@@ -120,15 +142,18 @@
       location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
       return;
     }
-    if(!code){
-      show(shareOverlay);
-      return;
-    }
+    if(!code) return;
     if(navigator.share){
       try { await nativeShare(); }
-      catch(err){ if(err && err.name !== 'AbortError') show(shareOverlay); }
+      catch(err){
+        if(err && err.name !== 'AbortError'){
+          await copyReferralLink();
+          show(copyOverlay);
+        }
+      }
     } else {
-      show(shareOverlay);
+      await copyReferralLink();
+      show(copyOverlay);
     }
   }));
 
@@ -139,19 +164,12 @@
       location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
       return;
     }
-    if(!code){ show(copyOverlay || shareOverlay); return; }
-    try {
-      if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(currentLink);
-      else {
-        const ta = document.createElement('textarea'); ta.value = currentLink; ta.setAttribute('readonly','');
-        ta.style.position = 'fixed'; ta.style.left = '-9999px'; document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); ta.remove();
-      }
-    } catch(e){}
+    if(!code) return;
+    await copyReferralLink();
     show(copyOverlay);
   }));
 
-  document.querySelectorAll('.modal-x,.copy-ok').forEach(btn => btn.addEventListener('click', () => { hide(shareOverlay); hide(copyOverlay); }));
-  [shareOverlay,copyOverlay].forEach(o => { if(o) o.addEventListener('click', e => { if(e.target === o) hide(o); }); });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ hide(shareOverlay); hide(copyOverlay); } });
+  document.querySelectorAll('.copy-ok').forEach(btn => btn.addEventListener('click', () => hide(copyOverlay)));
+  if(copyOverlay) copyOverlay.addEventListener('click', e => { if(e.target === copyOverlay) hide(copyOverlay); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') hide(copyOverlay); });
 })();
