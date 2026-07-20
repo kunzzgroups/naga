@@ -1,175 +1,256 @@
 (function(){
   'use strict';
 
+  // Prevent duplicate listeners when this file is injected/reloaded by a live layout.
+  if (window.__NAGA_REFERRAL_SHARE_V104__) return;
+  window.__NAGA_REFERRAL_SHARE_V104__ = true;
+
   const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '';
-  const copyOverlay = document.getElementById('copyOverlay');
-  const copyText = document.getElementById('copyText');
   let currentCode = '';
   let currentLink = '';
-  let qrBlobCache = null;
+  let qrFileCache = null;
+  let refreshPromise = null;
 
-  function token(){ return localStorage.getItem('member_token') || ''; }
-  function storedMember(){
-    try { return JSON.parse(localStorage.getItem('member_info') || '{}') || {}; }
-    catch(e){ return {}; }
+  function token(){
+    return localStorage.getItem('member_token') || sessionStorage.getItem('member_token') || '';
   }
+
+  function storedMember(){
+    const keys = ['member_info', 'member', 'user_info'];
+    for (const key of keys) {
+      try {
+        const value = JSON.parse(localStorage.getItem(key) || '{}');
+        if (value && typeof value === 'object' && Object.keys(value).length) return value;
+      } catch(e){}
+    }
+    return {};
+  }
+
   function codeFrom(member){
-    return String(member && (
-      member.referralCode || member.referral_code || member.referrerCode ||
-      member.referrer_code || member.inviteCode || member.invite_code
+    const source = member && (member.data || member.member || member.user || member);
+    return String(source && (
+      source.referralCode || source.referral_code || source.referrerCode ||
+      source.referrer_code || source.inviteCode || source.invite_code
     ) || '').trim();
   }
+
   function linkFrom(code){
-    const base = location.origin + location.pathname.replace(/[^/]*$/, '');
-    return code ? base + 'register.html?ref=' + encodeURIComponent(code) : '';
+    const directory = location.origin + location.pathname.replace(/[^/]*$/, '');
+    return code ? directory + 'register.html?ref=' + encodeURIComponent(code) : '';
   }
+
   function qrUrl(link){
     return link ? 'https://quickchart.io/qr?size=420&margin=2&text=' + encodeURIComponent(link) : '';
   }
-  function show(el){
-    if(!el) return;
-    el.classList.add('show');
-    el.setAttribute('aria-hidden','false');
+
+  function getCopyOverlay(){ return document.getElementById('copyOverlay'); }
+  function getCopyText(){ return document.getElementById('copyText'); }
+
+  function showCopyResult(success){
+    const overlay = getCopyOverlay();
+    const text = getCopyText();
+    if (text) text.textContent = success ? (currentLink || '-') : 'Copy failed. Please copy this link: ' + (currentLink || '-');
+    if (!overlay) return;
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
   }
-  function hide(el){
-    if(!el) return;
-    el.classList.remove('show');
-    el.setAttribute('aria-hidden','true');
-    if(!document.querySelector('.share-overlay.show,.copy-overlay.show')) document.body.classList.remove('modal-open');
+
+  function hideCopyResult(){
+    const overlay = getCopyOverlay();
+    if (!overlay) return;
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
   }
+
   function update(code){
-    currentCode = code || '';
+    const normalized = String(code || '').trim();
+    if (normalized !== currentCode) qrFileCache = null;
+    currentCode = normalized;
     currentLink = linkFrom(currentCode);
-    qrBlobCache = null;
-    document.querySelectorAll('.share-head strong,[data-referral-code]').forEach(el => { el.textContent = currentCode || '-'; });
-    if(copyText) copyText.textContent = currentLink || '-';
-    document.querySelectorAll('[data-share-channel]').forEach(a => {
-      const channel = a.getAttribute('data-share-channel');
-      const text = 'Join me on TitanXGaming: ' + currentLink;
-      let href = '#';
-      if(currentLink){
-        if(channel === 'whatsapp') href = 'https://wa.me/?text=' + encodeURIComponent(text);
-        if(channel === 'telegram') href = 'https://t.me/share/url?url=' + encodeURIComponent(currentLink) + '&text=' + encodeURIComponent('Join me on TitanXGaming');
-        if(channel === 'line') href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(currentLink);
-        if(channel === 'viber') href = 'viber://forward?text=' + encodeURIComponent(text);
-        if(channel === 'messenger') href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(currentLink);
-      }
-      a.href = href;
-      if(currentLink){ a.target = '_blank'; a.rel = 'noopener'; }
-      else { a.removeAttribute('target'); a.removeAttribute('rel'); }
+
+    document.querySelectorAll('.share-head strong,[data-referral-code]').forEach(function(el){
+      el.textContent = currentCode || '-';
     });
+    const copyText = getCopyText();
+    if (copyText) copyText.textContent = currentLink || '-';
+
+    if (currentLink && !qrFileCache) prepareQrFile();
   }
+
   async function fetchMember(){
-    if(!token()) return null;
-    const res = await fetch(API_BASE + '/api/auth/member/me', {
-      headers:{Authorization:'Bearer ' + token()}, cache:'no-store'
+    const authToken = token();
+    if (!authToken) return null;
+    const response = await fetch(API_BASE + '/api/auth/member/me', {
+      headers: {Authorization: 'Bearer ' + authToken},
+      cache: 'no-store',
+      credentials: 'same-origin'
     });
-    const json = await res.json().catch(() => ({}));
-    if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load referral code');
-    const member = json.data || json.member || {};
-    if(Object.keys(member).length) localStorage.setItem('member_info', JSON.stringify(member));
+    const json = await response.json().catch(function(){ return {}; });
+    if (!response.ok || json.status === 'error') throw new Error(json.message || 'Unable to load referral code');
+    const member = json.data || json.member || json.user || {};
+    if (member && Object.keys(member).length) localStorage.setItem('member_info', JSON.stringify(member));
     return member;
   }
-  async function resolveCode(){
-    let code = codeFrom(storedMember());
-    if(token()){
-      try {
-        const member = await fetchMember();
-        code = codeFrom(member) || code;
-      } catch(e) {
-        console.warn('Using stored referral details:', e.message);
+
+  function refreshReferralData(){
+    if (refreshPromise) return refreshPromise;
+    refreshPromise = (async function(){
+      let code = codeFrom(storedMember()) || currentCode;
+      if (code) update(code);
+      if (token()) {
+        try {
+          const member = await fetchMember();
+          code = codeFrom(member) || code;
+          if (code) update(code);
+        } catch(error) {
+          console.warn('[Referral] API refresh failed; cached member data remains active:', error.message);
+        }
       }
-    }
-    update(code);
-    return code;
+      return currentCode;
+    })().finally(function(){ refreshPromise = null; });
+    return refreshPromise;
   }
-  async function getQrFile(){
-    if(!currentLink) return null;
-    if(qrBlobCache) return new File([qrBlobCache], 'titanx-referral-' + currentCode + '.png', {type:'image/png'});
+
+  async function prepareQrFile(){
+    if (!currentLink || qrFileCache) return qrFileCache;
+    const codeAtStart = currentCode;
+    const linkAtStart = currentLink;
     try {
-      const res = await fetch(qrUrl(currentLink), {mode:'cors', cache:'no-store'});
-      if(!res.ok) throw new Error('QR download failed');
-      qrBlobCache = await res.blob();
-      return new File([qrBlobCache], 'titanx-referral-' + currentCode + '.png', {type:qrBlobCache.type || 'image/png'});
-    } catch(e) {
-      console.warn('QR image attachment is unavailable:', e.message);
+      const response = await fetch(qrUrl(linkAtStart), {mode: 'cors', cache: 'force-cache'});
+      if (!response.ok) throw new Error('QR request failed');
+      const blob = await response.blob();
+      if (codeAtStart !== currentCode || linkAtStart !== currentLink) return null;
+      qrFileCache = new File([blob], 'titanx-referral-' + codeAtStart + '.png', {type: blob.type || 'image/png'});
+      return qrFileCache;
+    } catch(error) {
+      console.warn('[Referral] QR preload unavailable; link sharing will still work:', error.message);
       return null;
     }
   }
-  async function nativeShare(){
-    const baseData = {title:'TitanXGaming', text:'Join me on TitanXGaming\n' + currentLink, url:currentLink};
-    const qrFile = await getQrFile();
-    if(qrFile && navigator.canShare && navigator.canShare({files:[qrFile]})){
+
+  // IMPORTANT: navigator.share must be called immediately inside the click gesture.
+  // Do not await API or QR network requests before this call.
+  function shareImmediately(){
+    if (!currentLink || !navigator.share) return null;
+    const data = {
+      title: 'TitanXGaming',
+      text: 'Join me on TitanXGaming\n' + currentLink,
+      url: currentLink
+    };
+    if (qrFileCache && navigator.canShare) {
       try {
-        await navigator.share({...baseData, files:[qrFile]});
-        return;
-      } catch(err){
-        if(err && err.name === 'AbortError') throw err;
-        console.warn('Sharing with QR attachment failed; retrying link-only share:', err && err.message);
-      }
+        if (navigator.canShare({files: [qrFileCache]})) data.files = [qrFileCache];
+      } catch(e){}
     }
-    await navigator.share(baseData);
+    return navigator.share(data);
   }
 
-  async function copyReferralLink(){
-    if(!currentLink) return false;
-    try {
-      if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(currentLink);
-      else {
-        const ta = document.createElement('textarea');
-        ta.value = currentLink;
-        ta.setAttribute('readonly','');
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        ta.remove();
-      }
-      return true;
-    } catch(e){
-      return false;
-    }
+  function legacyCopy(text){
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.setAttribute('aria-hidden', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '-9999px';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus({preventScroll: true});
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    let copied = false;
+    try { copied = document.execCommand('copy') === true; } catch(e){}
+    textarea.remove();
+    return copied;
   }
 
-  update(codeFrom(storedMember()));
+  // Start clipboard operation synchronously while the click permission is active.
+  function copyImmediately(){
+    if (!currentLink) return Promise.resolve(false);
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        return navigator.clipboard.writeText(currentLink).then(function(){ return true; }).catch(function(){
+          return legacyCopy(currentLink);
+        });
+      } catch(e){}
+    }
+    return Promise.resolve(legacyCopy(currentLink));
+  }
 
-  document.querySelectorAll('.share-trigger').forEach(btn => btn.addEventListener('click', async e => {
-    e.preventDefault();
-    const code = await resolveCode();
-    if(!token()){
-      location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
+  function redirectToLogin(){
+    const page = location.pathname.split('/').pop() || 'index.html';
+    location.href = 'login.html?redirect=' + encodeURIComponent(page);
+  }
+
+  function handleShareClick(event){
+    event.preventDefault();
+    event.stopPropagation();
+    if (!token()) { redirectToLogin(); return; }
+
+    // Cached data is prepared at page load. This keeps the browser user gesture alive.
+    if (!currentLink) {
+      refreshReferralData().then(function(code){
+        if (!code) showCopyResult(false);
+      });
       return;
     }
-    if(!code) return;
-    if(navigator.share){
-      try { await nativeShare(); }
-      catch(err){
-        if(err && err.name !== 'AbortError'){
-          await copyReferralLink();
-          show(copyOverlay);
-        }
+
+    if (navigator.share) {
+      let shareResult;
+      try { shareResult = shareImmediately(); }
+      catch(error) { shareResult = Promise.reject(error); }
+      if (shareResult && typeof shareResult.catch === 'function') {
+        shareResult.catch(function(error){
+          if (error && error.name === 'AbortError') return;
+          // Do not open an obsolete custom share modal. Copy the URL as a reliable fallback.
+          copyImmediately().then(showCopyResult);
+        });
       }
     } else {
-      await copyReferralLink();
-      show(copyOverlay);
+      copyImmediately().then(showCopyResult);
     }
-  }));
+    // Refresh only after share has already started; never block the user gesture.
+    refreshReferralData();
+  }
 
-  document.querySelectorAll('.copy-trigger').forEach(btn => btn.addEventListener('click', async e => {
-    e.preventDefault();
-    const code = await resolveCode();
-    if(!token()){
-      location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname.split('/').pop() || 'index.html');
+  function handleCopyClick(event){
+    event.preventDefault();
+    event.stopPropagation();
+    if (!token()) { redirectToLogin(); return; }
+
+    if (!currentLink) {
+      refreshReferralData().then(function(code){
+        if (!code) showCopyResult(false);
+      });
       return;
     }
-    if(!code) return;
-    await copyReferralLink();
-    show(copyOverlay);
-  }));
 
-  document.querySelectorAll('.copy-ok').forEach(btn => btn.addEventListener('click', () => hide(copyOverlay)));
-  if(copyOverlay) copyOverlay.addEventListener('click', e => { if(e.target === copyOverlay) hide(copyOverlay); });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') hide(copyOverlay); });
+    copyImmediately().then(showCopyResult);
+    refreshReferralData();
+  }
+
+  // Delegation survives BO layout replacement and late-rendered desktop/mobile controls.
+  document.addEventListener('click', function(event){
+    const shareButton = event.target.closest('.share-trigger');
+    if (shareButton) { handleShareClick(event); return; }
+
+    const copyButton = event.target.closest('.copy-trigger');
+    if (copyButton) { handleCopyClick(event); return; }
+
+    if (event.target.closest('.copy-ok')) { event.preventDefault(); hideCopyResult(); return; }
+    const overlay = getCopyOverlay();
+    if (overlay && event.target === overlay) hideCopyResult();
+  }, true);
+
+  document.addEventListener('keydown', function(event){
+    if (event.key === 'Escape') hideCopyResult();
+  });
+
+  // Populate from local data synchronously, then refresh API and QR in background.
+  update(codeFrom(storedMember()));
+  refreshReferralData();
+  window.addEventListener('focus', refreshReferralData);
+  window.addEventListener('pageshow', refreshReferralData);
 })();
