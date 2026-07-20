@@ -61,7 +61,59 @@
     style.textContent = css;
   }
 
+
+  function normalizeAuthImageHtml(html, sectionKey) {
+    if (!html || (sectionKey !== 'frontend-header' && sectionKey !== 'frontend-sidebar')) return html;
+
+    const template = document.createElement('template');
+    template.innerHTML = html;
+
+    const isHeader = sectionKey === 'frontend-header';
+    const items = [
+      {
+        selectors: isHeader
+          ? ['a.top-login-btn', '.top-auth-actions a[href*="login"]']
+          : ['a.mobile-login-btn', '.mobile-menu-auth a[href*="login"]'],
+        src: 'assets/custom/images/login.png',
+        alt: 'LOGIN',
+        imgClass: isHeader ? 'header-auth-image header-login-image' : 'sidebar-auth-image sidebar-login-image'
+      },
+      {
+        selectors: isHeader
+          ? ['a.top-register-btn', '.top-auth-actions a[href*="register"]']
+          : ['a.mobile-register-btn', '.mobile-menu-auth a[href*="register"]'],
+        src: 'assets/custom/images/register.png',
+        alt: 'REGISTER',
+        imgClass: isHeader ? 'header-auth-image header-register-image' : 'sidebar-auth-image sidebar-register-image'
+      }
+    ];
+
+    items.forEach(function (item) {
+      let anchor = null;
+      for (let i = 0; i < item.selectors.length && !anchor; i++) {
+        anchor = template.content.querySelector(item.selectors[i]);
+      }
+      if (!anchor) return;
+
+      anchor.classList.add('auth-image-link');
+      anchor.setAttribute('aria-label', item.alt.charAt(0) + item.alt.slice(1).toLowerCase());
+      anchor.removeAttribute('data-i18n');
+      anchor.replaceChildren();
+
+      const image = document.createElement('img');
+      image.className = item.imgClass;
+      image.src = item.src;
+      image.alt = item.alt;
+      image.decoding = 'async';
+      image.loading = 'eager';
+      anchor.appendChild(image);
+    });
+
+    return template.innerHTML;
+  }
+
   function applyHtml(target, html, sectionKey) {
+    html = normalizeAuthImageHtml(html, sectionKey);
     if (!target || !html.trim()) return false;
     if (target.innerHTML !== html) target.innerHTML = html;
     target.setAttribute('data-layout-custom-applied', sectionKey);
