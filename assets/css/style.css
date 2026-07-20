@@ -531,7 +531,7 @@ body{
 }
 
 .balance-box {
-    margin-top: 22px;
+    /* margin-top: 22px; */
     display: grid;
     grid-template-columns: 1fr 145px;
     column-gap: 18px;
