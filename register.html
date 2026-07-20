@@ -20,58 +20,7 @@
   </header>
 
   <main class="login-main">
-    <section class="login-card" data-i18n-aria-label="login_panel">
-      <div class="login-tabs">
-        <button class="login-tab active" type="button" data-login-tab="login" data-i18n="login">LOGIN</button>
-        <button class="login-tab" type="button" data-login-tab="register" data-i18n="register">REGISTER</button>
-      </div>
-
-      <form class="login-form login-form-panel" id="loginForm">
-        <label class="field-wrap">
-          <span class="field-icon"><i class="fa-solid fa-user"></i></span>
-          <input type="text" placeholder="Username" data-i18n-placeholder="username" autocomplete="username" />
-        </label>
-
-        <label class="field-wrap">
-          <span class="field-icon"><i class="fa-solid fa-lock"></i></span>
-          <input type="password" placeholder="Password" data-i18n-placeholder="password" autocomplete="current-password" />
-        </label>
-
-        <a href="#" class="forgot-link" data-i18n="forgot_password">Forgot Password?</a>
-
-        <button class="submit-login" type="button" data-i18n="login">LOGIN</button>
-      </form>
-
-      <form class="login-form login-form-panel active" id="registerForm">
-        <label class="field-wrap">
-          <span class="field-icon"><i class="fa-solid fa-user"></i></span>
-          <input type="text" placeholder="Full Name" data-i18n-placeholder="full_name" autocomplete="name" />
-        </label>
-
-        <label class="field-wrap">
-          <span class="field-icon"><i class="fa-solid fa-mobile"></i></span>
-          <input type="phone" placeholder="Mobile No." data-i18n-placeholder="mobile_no" autocomplete="tel" />
-        </label>
-
-        <label class="field-wrap">
-          <span class="field-icon"><i class="fa-solid fa-lock"></i></span>
-          <input type="password" placeholder="Password (6-20 characters)" data-i18n-placeholder="password_6_20" autocomplete="new-password" />
-        </label>
-
-        <label class="field-wrap">
-          <span class="field-icon"><i class="fa-regular fa-user"></i></span>
-          <input type="text" placeholder="Referrer Code (optional)" data-i18n-placeholder="referrer_code_optional" autocomplete="off" />
-        </label>
-
-        
-        <div class="verify-row">
-          <input type="text" placeholder="Verification Code" data-i18n-placeholder="verification_code" />
-          <button type="button" class="verify-btn" data-i18n="get_code">GET CODE</button>
-        </div>
-
-        <button class="submit-login" type="button" data-i18n="register">REGISTER</button>
-      </form>
-    </section>
+    <div data-layout-section="register-page"></div>
   </main>
 
   <nav class="bottom-nav">
@@ -90,7 +39,7 @@
   </div>
 
   <script src="assets/js/config.js?v=1.0.16"></script>
-  <script src="assets/js/layout-section-loader.js?v=1.1.5"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.6"></script>
   <script src="assets/js/site-shell.js?v=1.0.12"></script>
   <script src="assets/js/lang.js?v=1.0.8"></script>
   <script src="assets/js/login.js?v=1.0.6"></script>
