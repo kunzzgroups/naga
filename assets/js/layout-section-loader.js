@@ -204,6 +204,48 @@
     return sectionKey === 'login-page' || sectionKey === 'register-page';
   }
 
+
+  function normalizeAuthPageHtml(html, sectionKey) {
+    if (!html || !isAuthoritativePageSection(sectionKey)) return html;
+
+    const template = document.createElement('template');
+    template.innerHTML = html;
+
+    [
+      { selector: '#loginForm', id: 'loginMessage' },
+      { selector: '#registerForm', id: 'registerMessage' }
+    ].forEach(function (config) {
+      const form = template.content.querySelector(config.selector);
+      if (!form) return;
+
+      let message = form.querySelector('.auth-message');
+      if (!message) {
+        message = document.createElement('div');
+        message.className = 'auth-message';
+        const submit = form.querySelector('.submit-login, button[type="submit"]');
+        if (submit) submit.insertAdjacentElement('afterend', message);
+        else form.appendChild(message);
+      }
+      if (!message.id) message.id = config.id;
+      message.setAttribute('role', 'alert');
+      message.setAttribute('aria-live', 'polite');
+    });
+
+    return template.innerHTML;
+  }
+
+  function isAuthMessageOnlyMutation(mutation) {
+    if (!mutation) return false;
+    if (mutation.target && mutation.target.nodeType === 1 && mutation.target.closest('.auth-message')) return true;
+    if (mutation.target && mutation.target.nodeType === 3 && mutation.target.parentElement && mutation.target.parentElement.closest('.auth-message')) return true;
+    if (mutation.type !== 'childList') return false;
+    const nodes = Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || []));
+    return nodes.length > 0 && nodes.every(function (node) {
+      if (node.nodeType === 3) return node.parentElement && node.parentElement.closest('.auth-message');
+      return node.nodeType === 1 && (node.matches('.auth-message') || node.closest('.auth-message'));
+    });
+  }
+
   function keepSectionAuthoritative(target, sectionKey, html) {
     if (!target || !isAuthoritativePageSection(sectionKey) || !html.trim()) return;
     authoritativeSections.set(sectionKey, html);
@@ -213,8 +255,9 @@
     if (previous) previous.disconnect();
 
     let restoring = false;
-    const observer = new MutationObserver(function () {
+    const observer = new MutationObserver(function (mutations) {
       if (restoring) return;
+      if (mutations && mutations.length && mutations.every(isAuthMessageOnlyMutation)) return;
       const expected = authoritativeSections.get(sectionKey);
       if (!expected || target.innerHTML === expected) return;
       restoring = true;
@@ -232,6 +275,7 @@
 
   function applyHtml(target, html, sectionKey) {
     html = normalizeAuthImageHtml(html, sectionKey);
+    html = normalizeAuthPageHtml(html, sectionKey);
     if (!target || !html.trim()) return false;
     if (target.innerHTML !== html) target.innerHTML = html;
     target.setAttribute('data-layout-custom-applied', sectionKey);

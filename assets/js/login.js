@@ -13,8 +13,14 @@
     if(!box){
       box = document.createElement('div');
       box.className = 'auth-message';
-      form.appendChild(box);
+      box.id = form.id === 'registerForm' ? 'registerMessage' : 'loginMessage';
+      box.setAttribute('role', 'alert');
+      box.setAttribute('aria-live', 'polite');
+      const submit = form.querySelector('.submit-login, button[type="submit"]');
+      if(submit) submit.insertAdjacentElement('afterend', box);
+      else form.appendChild(box);
     }
+    box.hidden = !message;
     box.textContent = message || '';
     box.className = 'auth-message ' + (type || '');
   }

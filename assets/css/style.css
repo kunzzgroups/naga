@@ -12084,3 +12084,23 @@ body.home-bonus-disabled [data-home-bonus-display] {
 body.login-page .auth-page-layout-section > .login-card {
   width: 100%;
 } */
+
+
+/* Login/Register BO layout message compatibility */
+body.login-page .login-form .auth-message {
+  display:block;
+  width:100%;
+  min-height:0;
+  margin:8px 0 0;
+  padding:0 4px;
+  box-sizing:border-box;
+  font-size:12px;
+  line-height:1.4;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.login-page .login-form .auth-message:empty,
+body.login-page .login-form .auth-message[hidden] { display:none !important; }
+body.login-page .login-form .auth-message.error { color:#ff4d5e !important; }
+body.login-page .login-form .auth-message.success { color:#20c96b !important; }
