@@ -12104,3 +12104,16 @@ body.login-page .login-form .auth-message:empty,
 body.login-page .login-form .auth-message[hidden] { display:none !important; }
 body.login-page .login-form .auth-message.error { color:#ff4d5e !important; }
 body.login-page .login-form .auth-message.success { color:#20c96b !important; }
+
+
+/* Category-driven provider selection and mixed provider/game landing */
+.category-mixed-shell{display:flex;flex-direction:column;gap:18px;width:100%;min-width:0}
+.category-provider-section,.category-direct-section{min-width:0}
+.category-section-title{font-weight:800;margin:0 0 10px;color:inherit}
+.category-provider-cards{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
+.category-provider-cards::-webkit-scrollbar{display:none}
+.category-provider-card{flex:0 0 150px;min-height:150px;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:rgba(15,15,15,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:12px;color:#fff;cursor:pointer;overflow:hidden}
+.category-provider-card img{width:100%;height:105px;object-fit:contain;border-radius:12px}
+.category-provider-card .provider-letter{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);font-weight:900;font-size:26px}
+.category-provider-card span:last-child{font-weight:800;text-align:center;line-height:1.2}
+@media(max-width:768px){.category-mixed-shell{gap:14px}.category-provider-cards{gap:10px}.category-provider-card{flex-basis:128px;min-height:130px;padding:9px}.category-provider-card img{height:88px}}

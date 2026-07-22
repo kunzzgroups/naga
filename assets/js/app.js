@@ -161,11 +161,29 @@ function activeCategory(){
 function activeCategoryDisplayMode(){
   const cat = activeCategory();
   const mode = String(cat?.displayMode || cat?.display_mode || '').trim().toUpperCase();
+
+  // HOT GAME must honour its provider rules first. When two or more providers
+  // are assigned, always show the provider landing cards before any games,
+  // even if an older/stale display_mode value still says DIRECT_GAME.
+  if(categoryTypeKey(cat) === 'HOT' && categoryProviderRules(cat).length > 1){
+    return 'PROVIDER';
+  }
+
   return mode === 'DIRECT_GAME' ? 'DIRECT_GAME' : 'PROVIDER';
 }
 
 function isDirectGameCategory(){
   return activeCategoryDisplayMode() === 'DIRECT_GAME';
+}
+
+// HOT GAME uses provider cards as its first screen when more than one provider
+// is configured. After a provider is chosen, show only that provider's games;
+// do not repeat the normal left-side provider rail inside the game view.
+function isHotMultiProviderGameView(){
+  return activeCategoryTypeKey() === 'HOT'
+    && categoryProviderRules().length > 1
+    && activeProviderCode
+    && !isAllProviderCode(activeProviderCode);
 }
 
 function providerTypesOf(provider){
@@ -178,10 +196,34 @@ function providerTypeOf(provider){
   return providerTypesOf(provider)[0] || '';
 }
 
+function providerCategoryIdsOf(provider){
+  const raw = provider?.categoryIds || provider?.category_ids || '';
+  const values = Array.isArray(raw) ? raw : String(raw).split(/[,|]/);
+  return [...new Set(values.map(value => String(value).trim()).filter(Boolean))];
+}
+
+function categoryProviderRules(cat = activeCategory()){
+  try{
+    const raw = cat?.providerRules || cat?.provider_rules || '{"providers":[]}';
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(parsed?.providers) ? parsed.providers : [];
+  }catch(e){ return []; }
+}
+
+function providerRuleForCode(code){
+  const clean = String(code || '').trim().toUpperCase();
+  return categoryProviderRules().find(r => String(r.providerCode || '').trim().toUpperCase() === clean) || null;
+}
+
 function providersForActiveCategory(){
+  const activeId = String(activeCategoryId || '').trim();
+  if(!activeId) return providers;
+  const configuredCodes = categoryProviderRules().map(r => String(r.providerCode || '').trim().toUpperCase()).filter(Boolean);
+  if(configuredCodes.length) return providers.filter(p => configuredCodes.includes(providerCodeOf(p)));
+  const byIds = providers.filter(p => providerCategoryIdsOf(p).includes(activeId));
+  if(byIds.length) return byIds;
   const key = activeCategoryTypeKey();
-  if(!key) return providers;
-  return providers.filter(p => providerTypesOf(p).includes(key));
+  return key ? providers.filter(p => providerTypesOf(p).includes(key)) : providers;
 }
 
 function pickDefaultCategoryId(list){
@@ -202,7 +244,7 @@ function setGamesLoading(){
   // This preserves its scroll position and avoids the sidebar flashing/rebuilding.
   const existingLobby = gameGrid.querySelector('.provider-lobby-shell');
   const existingPanel = existingLobby && existingLobby.querySelector('.provider-games-panel');
-  const keepProviderRail = existingPanel && activeProviderCode && !isDirectGameCategory();
+  const keepProviderRail = existingPanel && activeProviderCode && !isDirectGameCategory() && !isHotMultiProviderGameView();
 
   if(keepProviderRail){
     existingPanel.innerHTML = '<div class="games-loading-indicator" role="status" aria-label="Loading games"><span class="games-loading-spinner" aria-hidden="true"></span></div>';
@@ -360,6 +402,11 @@ function bindGameImageFallback(img, game){
 
 function categoryIdForProviderCode(providerCode){
   const provider = providerForCode(providerCode);
+  const categoryIds = providerCategoryIdsOf(provider);
+  if(categoryIds.length){
+    const matched = categories.find(cat => categoryIds.includes(String(cat.id)));
+    if(matched && matched.id != null) return matched.id;
+  }
   const providerTypes = providerTypesOf(provider);
   if(providerTypes.length){
     const matched = categories.find(cat => providerTypes.includes(categoryTypeKey(cat)));
@@ -439,6 +486,67 @@ function buildProviderRail(rows){
     rail.appendChild(btn);
   });
   return rail;
+}
+
+function renderMixedCategoryLanding(games){
+  if(!gameGrid) return;
+  showingProviderList = true;
+  activeProviderCode = null;
+  currentGameList = Array.isArray(games) ? games : [];
+  gameGrid.innerHTML = '';
+  gameGrid.classList.remove('provider-with-rail', 'provider-grid');
+  gameGrid.classList.add('provider-first-grid');
+
+  const providerRows = providerRowsForActiveCategory(currentGameList);
+  const selectedCodes = new Set(providerRows.map(row => row.code));
+  const directGames = currentGameList.filter(game => !selectedCodes.has(providerCodeOf(game)));
+
+  const shell = document.createElement('div');
+  shell.className = 'category-mixed-shell';
+
+  if(providerRows.length){
+    const providerSection = document.createElement('section');
+    providerSection.className = 'category-provider-section';
+    providerSection.innerHTML = '<div class="category-section-title">Providers</div>';
+    const cards = document.createElement('div');
+    cards.className = 'category-provider-cards';
+    providerRows.forEach(row => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'category-provider-card';
+      btn.dataset.providerCode = row.code;
+      const image = providerImageOf(row.provider);
+      btn.innerHTML = image
+        ? `<img src="${image}" alt="${providerNameOf(row.provider)}"><span>${providerNameOf(row.provider)}</span>`
+        : `<span class="provider-letter">${providerInitials(providerNameOf(row.provider))}</span><span>${providerNameOf(row.provider)}</span>`;
+      btn.addEventListener('click', () => {
+        activeProviderCode = row.code;
+        activeSubCategoryId = null;
+        subCategoryAutoTriedIds = new Set();
+        setGamesLoading();
+        loadSubCategories();
+      });
+      cards.appendChild(btn);
+    });
+    providerSection.appendChild(cards);
+    shell.appendChild(providerSection);
+  }
+
+  if(directGames.length){
+    const gamesSection = document.createElement('section');
+    gamesSection.className = 'category-direct-section';
+    gamesSection.innerHTML = '<div class="category-section-title">Games</div>';
+    const list = document.createElement('div');
+    list.className = 'direct-games-list';
+    directGames.forEach(game => list.appendChild(createGameCard(game)));
+    gamesSection.appendChild(list);
+    shell.appendChild(gamesSection);
+  }
+
+  if(!providerRows.length && !directGames.length){
+    shell.innerHTML = '<div class="empty-state">No provider or game available for this category</div>';
+  }
+  gameGrid.appendChild(shell);
 }
 
 function renderProviderCards(games){
@@ -556,7 +664,7 @@ function renderGames(list){
   gameGrid.classList.remove('provider-grid', 'provider-first-grid');
 
   const gameList = Array.isArray(list) ? list : [];
-  const shouldShowProviderRail = !!activeProviderCode && !isDirectGameCategory();
+  const shouldShowProviderRail = !!activeProviderCode && !isDirectGameCategory() && !isHotMultiProviderGameView();
   const targetGrid = document.createElement('div');
   targetGrid.className = shouldShowProviderRail ? 'provider-games-list' : 'direct-games-list';
 
@@ -646,16 +754,17 @@ function apiCacheKey(url){
   return parsed.toString();
 }
 
-function fetchJson(url){
+function fetchJson(url, options = {}){
   const key = apiCacheKey(url);
+  const bypassCache = options && options.bypassCache === true;
   const now = Date.now();
   const memoryHit = API_MEMORY_CACHE.get(key);
-  if(memoryHit && now - memoryHit.time < API_CACHE_TTL_MS){
+  if(!bypassCache && memoryHit && now - memoryHit.time < API_CACHE_TTL_MS){
     return Promise.resolve(memoryHit.data);
   }
 
   try{
-    const stored = sessionStorage.getItem('naga_api_cache:' + key);
+    const stored = bypassCache ? null : sessionStorage.getItem('naga_api_cache:' + key);
     if(stored){
       const parsed = JSON.parse(stored);
       if(parsed && now - Number(parsed.time || 0) < API_CACHE_TTL_MS){
@@ -665,7 +774,7 @@ function fetchJson(url){
     }
   }catch(e){}
 
-  return fetch(key, { cache: 'default' }).then(res => {
+  return fetch(key, { cache: bypassCache ? 'no-store' : 'default' }).then(res => {
     if(!res.ok) throw new Error('API error: ' + url);
     return res.json();
   }).then(data => {
@@ -693,7 +802,13 @@ function currentLang(){
 function loadCategories(){
   if(!categoryRow || !subTabRow || !gameGrid) return Promise.resolve();
 
-  return Promise.all([fetchJson(GAME_CATEGORY_API_URL), fetchJson(GAME_PROVIDER_API_URL).catch(() => ({data: []}))])
+  // Category/provider configuration controls the whole lobby layout, so always
+  // fetch it fresh. This prevents an old session cache from treating a newly
+  // configured multi-provider HOT category as a direct game list.
+  return Promise.all([
+    fetchJson(GAME_CATEGORY_API_URL, { bypassCache: true }),
+    fetchJson(GAME_PROVIDER_API_URL, { bypassCache: true }).catch(() => ({data: []}))
+  ])
     .then(([response, providerResponse]) => {
       providers = normalizeApiList(providerResponse).filter(isActiveItem).sort(sortByOrder);
       categories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
@@ -764,8 +879,14 @@ function loadGames(){
   const sequence = ++gameLoadSequence;
   const categoryIdForRequest = activeCategoryId;
   const subCategoryIdForRequest = activeSubCategoryId;
-  const params = { categoryId: categoryIdForRequest, lang: currentLang() };
-  if(activeProviderCode && !isAllProviderCode(activeProviderCode)) params.providerCode = activeProviderCode;
+  const params = { lang: currentLang() };
+  const hasSelectedProvider = activeProviderCode && !isAllProviderCode(activeProviderCode);
+
+  // The backend resolves both directly assigned games and category provider_rules.
+  // Always include categoryId so ALL and SELECTED provider modes use the same
+  // authoritative category assignment logic on every frontend request.
+  if(categoryIdForRequest) params.categoryId = categoryIdForRequest;
+  if(hasSelectedProvider) params.providerCode = activeProviderCode;
   if(activeProviderCode && !isAllProviderCode(activeProviderCode) && subCategoryIdForRequest) params.subCategoryId = subCategoryIdForRequest;
 
   setGamesLoading();
@@ -776,7 +897,20 @@ function loadGames(){
       if(String(categoryIdForRequest || '') !== String(activeCategoryId || '')) return;
       if(String(subCategoryIdForRequest || '') !== String(activeSubCategoryId || '')) return;
       const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      if(isDirectGameCategory()){
+      const categoryProviders = providersForActiveCategory();
+      const forceDirect = categoryProviders.length <= 1;
+      if(forceDirect && categoryProviders.length === 1 && !activeProviderCode){
+        const onlyCode = providerCodeOf(categoryProviders[0]);
+        const providerUrl = buildUrl(GAME_API_URL, {categoryId: categoryIdForRequest, providerCode: onlyCode, lang: currentLang()});
+        return fetchJson(providerUrl).then(providerResponse => {
+          let providerGames = normalizeApiList(providerResponse).filter(isActiveItem).sort(sortByOrder);
+          const seen = new Set();
+          const combined = [...providerGames, ...list].filter(g => { const key=String(g.id || providerCodeOf(g)+':' +(g.gameCode||g.game_code||g.name)); if(seen.has(key)) return false; seen.add(key); return true; });
+          currentGameList = combined; activeProviderCode = null;
+          if(subTabRow){ subTabRow.innerHTML=''; subTabRow.style.display='none'; }
+          renderGames(combined);
+        });
+      }else if(isDirectGameCategory() || forceDirect){
         currentGameList = list;
         activeProviderCode = null;
         if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
@@ -786,7 +920,12 @@ function loadGames(){
           currentGameList = list;
           renderGames(list);
         }else{
-          const providerList = list.filter(item => providerCodeOf(item) === activeProviderCode);
+          let providerList = list.filter(item => providerCodeOf(item) === activeProviderCode);
+          const rule = providerRuleForCode(activeProviderCode);
+          if(rule && String(rule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
+            const allowed = new Set((rule.gameIds || []).map(String));
+            providerList = providerList.filter(item => allowed.has(String(item.id)));
+          }
           if(!providerList.length && activeSubCategoryId && subCategories.length){
             subCategoryAutoTriedIds.add(String(activeSubCategoryId));
             const nextSub = subCategories.find(sub => !subCategoryAutoTriedIds.has(String(sub.id)));
@@ -800,7 +939,14 @@ function loadGames(){
         }
       }else{
         currentGameList = list;
-        renderProviderCards(list);
+        // Only the HOT category uses the provider-card landing page.
+        // Every other multi-provider category opens directly in the normal
+        // provider rail + game grid view, matching the previous frontend layout.
+        if(activeCategoryTypeKey() === 'HOT'){
+          renderMixedCategoryLanding(list);
+        }else{
+          renderProviderCards(list);
+        }
       }
     })
     .catch(err => {
