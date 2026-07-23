@@ -12117,3 +12117,13 @@ body.login-page .login-form .auth-message.success { color:#20c96b !important; }
 .category-provider-card .provider-letter{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);font-weight:900;font-size:26px}
 .category-provider-card span:last-child{font-weight:800;text-align:center;line-height:1.2}
 @media(max-width:768px){.category-mixed-shell{gap:14px}.category-provider-cards{gap:10px}.category-provider-card{flex-basis:128px;min-height:130px;padding:9px}.category-provider-card img{height:88px}}
+
+
+/* v1.0.72: immediate home lobby placeholders while early API bootstrap runs */
+.category-row.is-initial-loading{display:flex;gap:12px;align-items:center;min-height:112px;overflow:hidden}
+.category-skeleton{display:block;flex:0 0 108px;height:108px;border-radius:18px;background:linear-gradient(90deg,rgba(255,255,255,.10),rgba(255,255,255,.28),rgba(255,255,255,.10));background-size:220% 100%;animation:nagaLobbyShimmer 1.05s linear infinite}
+.initial-game-loading{display:flex!important;align-items:flex-start;justify-content:center;min-height:260px;padding-top:72px}
+.game-loading-inline{display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.game-loading-spinner{width:22px;height:22px;border:3px solid rgba(255,255,255,.28);border-top-color:#35f486;border-radius:50%;animation:pageLoaderSpin .65s linear infinite}
+@keyframes nagaLobbyShimmer{to{background-position:-220% 0}}
+@media(max-width:768px){.category-row.is-initial-loading{min-height:86px}.category-skeleton{flex-basis:78px;height:78px;border-radius:14px}.initial-game-loading{padding-top:42px}}

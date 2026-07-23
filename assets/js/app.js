@@ -162,13 +162,9 @@ function activeCategoryDisplayMode(){
   const cat = activeCategory();
   const mode = String(cat?.displayMode || cat?.display_mode || '').trim().toUpperCase();
 
-  // HOT GAME must honour its provider rules first. When two or more providers
-  // are assigned, always show the provider landing cards before any games,
-  // even if an older/stale display_mode value still says DIRECT_GAME.
-  if(categoryTypeKey(cat) === 'HOT' && categoryProviderRules(cat).length > 1){
-    return 'PROVIDER';
-  }
-
+  // Every category follows the Frontend Display Mode saved in BO.
+  // PROVIDER_FIRST / PROVIDER uses its category-specific provider layout,
+  // while DIRECT_GAME opens the game grid directly without a provider rail.
   return mode === 'DIRECT_GAME' ? 'DIRECT_GAME' : 'PROVIDER';
 }
 
@@ -303,6 +299,8 @@ function centerActiveMobileSubCategory(){
 
 function renderCategories(){
   if(!categoryRow) return;
+  categoryRow.classList.remove('is-initial-loading');
+  categoryRow.setAttribute('aria-busy','false');
   categoryRow.innerHTML='';
 
   if(!categories.length){
@@ -433,7 +431,23 @@ function providerRowsForActiveCategory(games){
     if(code) countByProvider.set(code, (countByProvider.get(code) || 0) + 1);
   });
 
-  return providersForActiveCategory().sort((a, b) => {
+  // The category game response is the most reliable source of truth for the
+  // normal provider rail. Some providers do not expose categoryIds/providerType
+  // metadata, so relying only on provider metadata can incorrectly return an
+  // empty list. Build the rail from provider codes that actually exist in the
+  // selected category's game response, then use provider metadata for logos/name.
+  const metadataByCode = new Map(providers.map(provider => [providerCodeOf(provider), provider]));
+  const configuredByCode = new Map(providersForActiveCategory().map(provider => [providerCodeOf(provider), provider]));
+  const providerSource = [...countByProvider.keys()].map(code =>
+    configuredByCode.get(code) || metadataByCode.get(code) || {
+      providerCode: code,
+      providerName: code,
+      name: code,
+      sortOrder: 9999
+    }
+  );
+
+  return providerSource.sort((a, b) => {
     const ao = Number(a.sortOrder || a.sort_order || 0);
     const bo = Number(b.sortOrder || b.sort_order || 0);
     return (ao - bo) || providerNameOf(a).localeCompare(providerNameOf(b));
@@ -441,7 +455,7 @@ function providerRowsForActiveCategory(games){
     code: providerCodeOf(provider),
     provider,
     count: countByProvider.get(providerCodeOf(provider)) || 0
-  })).filter(row => row.code);
+  })).filter(row => row.code && row.count > 0);
 }
 
 function buildProviderRail(rows){
@@ -479,7 +493,9 @@ function buildProviderRail(rows){
       activeProviderCode = row.code;
       activeSubCategoryId = null;
       subCategoryAutoTriedIds = new Set();
-      ensureCategoryForSelectedProvider();
+      // Keep the currently selected top category when filtering by provider.
+      // Previously this helper could switch Slot/Live/Sport/Other back to Hot,
+      // which caused the normal left provider rail to disappear.
       setGamesLoading();
       loadSubCategories();
     });
@@ -589,7 +605,7 @@ function gameRenderBatchSize(){
     : GAME_RENDER_BATCH_DESKTOP;
 }
 
-function createGameCard(item){
+function createGameCard(item, renderIndex = 0){
   const card=document.createElement('div');
   card.className='game-card provider-launch-card';
   card.setAttribute('role', 'button');
@@ -610,7 +626,7 @@ function createGameCard(item){
 
   card.innerHTML=`
     <div class="game-card-img-wrap">
-      <img loading="lazy" decoding="async" fetchpriority="low" class="provider-launch-img"
+      <img loading="${renderIndex < 18 ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${renderIndex < 10 ? 'high' : 'low'}" class="provider-launch-img"
            src="${imageUrl}"
            alt="${gameName}"
            data-game-id="${launchGameId}"
@@ -658,13 +674,26 @@ function createGameCard(item){
 
 function renderGames(list){
   if(!gameGrid) return;
+  gameGrid.classList.remove('initial-game-loading');
+  gameGrid.setAttribute('aria-busy','false');
   disconnectGameBatchObserver();
   const renderToken = ++gameBatchToken;
   showingProviderList = false;
   gameGrid.classList.remove('provider-grid', 'provider-first-grid');
 
   const gameList = Array.isArray(list) ? list : [];
-  const shouldShowProviderRail = !!activeProviderCode && !isDirectGameCategory() && !isHotMultiProviderGameView();
+  const isHotCategory = activeCategoryTypeKey() === 'HOT';
+
+  // Provider First has two different layouts:
+  // - Hot Game: provider cards first, then games without the left rail.
+  // - Other categories: classic All/provider rail with games on the right.
+  // Direct Game List never shows the left provider rail.
+  if(!isHotCategory && !isDirectGameCategory() && !activeProviderCode){
+    activeProviderCode = ALL_PROVIDER_CODE;
+  }
+  const shouldShowProviderRail = !isDirectGameCategory()
+    && !isHotCategory
+    && !!activeProviderCode;
   const targetGrid = document.createElement('div');
   targetGrid.className = shouldShowProviderRail ? 'provider-games-list' : 'direct-games-list';
 
@@ -721,7 +750,7 @@ function renderGames(list){
     const endIndex = Math.min(renderedCount + batchSize, gameList.length);
     const fragment = document.createDocumentFragment();
     for(; renderedCount < endIndex; renderedCount++){
-      fragment.appendChild(createGameCard(gameList[renderedCount]));
+      fragment.appendChild(createGameCard(gameList[renderedCount], renderedCount));
     }
     targetGrid.insertBefore(fragment, sentinel);
     if(renderedCount >= gameList.length){
@@ -745,8 +774,14 @@ function renderGames(list){
   }
 }
 
+// Page-memory cache only. It is cleared automatically by every normal reload,
+// force reload, tab close or browser restart, so refreshed pages always request
+// the latest API data while category/provider switching in the same page is fast.
 const API_MEMORY_CACHE = new Map();
-const API_CACHE_TTL_MS = 2 * 60 * 1000;
+const API_IN_FLIGHT = new Map();
+const API_CACHE_TTL_MS = 5 * 60 * 1000;
+const SLOT_IMAGE_PRELOAD_HOLD = [];
+const EARLY_API_REQUESTS = window.__NAGA_EARLY_API__ || {};
 
 function apiCacheKey(url){
   const parsed = new URL(url, window.location.href);
@@ -758,31 +793,45 @@ function fetchJson(url, options = {}){
   const key = apiCacheKey(url);
   const bypassCache = options && options.bypassCache === true;
   const now = Date.now();
+
+  // The home page starts its critical category/provider/initial-game requests
+  // in <head>, before CSS and the rest of the scripts finish parsing. Reuse
+  // those promises here so first paint does not wait before networking begins.
+  if(EARLY_API_REQUESTS[key]){
+    const earlyRequest = EARLY_API_REQUESTS[key];
+    delete EARLY_API_REQUESTS[key];
+    return earlyRequest.then(data => {
+      if(!bypassCache) API_MEMORY_CACHE.set(key, { time: Date.now(), data });
+      return data;
+    });
+  }
   const memoryHit = API_MEMORY_CACHE.get(key);
   if(!bypassCache && memoryHit && now - memoryHit.time < API_CACHE_TTL_MS){
     return Promise.resolve(memoryHit.data);
   }
 
-  try{
-    const stored = bypassCache ? null : sessionStorage.getItem('naga_api_cache:' + key);
-    if(stored){
-      const parsed = JSON.parse(stored);
-      if(parsed && now - Number(parsed.time || 0) < API_CACHE_TTL_MS){
-        API_MEMORY_CACHE.set(key, parsed);
-        return Promise.resolve(parsed.data);
-      }
-    }
-  }catch(e){}
+  // Reuse an unfinished request instead of sending the same large game-list
+  // request more than once when users click categories/providers quickly.
+  if(!bypassCache && API_IN_FLIGHT.has(key)){
+    return API_IN_FLIGHT.get(key);
+  }
 
-  return fetch(key, { cache: bypassCache ? 'no-store' : 'default' }).then(res => {
+  // Always bypass the browser HTTP cache. The only reuse is the Map above,
+  // which exists for this page lifetime only and disappears on reload.
+  const request = fetch(key, { cache: 'no-store' }).then(res => {
     if(!res.ok) throw new Error('API error: ' + url);
     return res.json();
   }).then(data => {
-    const entry = { time: Date.now(), data: data };
-    API_MEMORY_CACHE.set(key, entry);
-    try{ sessionStorage.setItem('naga_api_cache:' + key, JSON.stringify(entry)); }catch(e){}
+    if(!bypassCache){
+      API_MEMORY_CACHE.set(key, { time: Date.now(), data: data });
+    }
     return data;
+  }).finally(() => {
+    if(API_IN_FLIGHT.get(key) === request) API_IN_FLIGHT.delete(key);
   });
+
+  if(!bypassCache) API_IN_FLIGHT.set(key, request);
+  return request;
 }
 
 function buildUrl(url, params){
@@ -797,6 +846,38 @@ function buildUrl(url, params){
 
 function currentLang(){
   return currentLangCode();
+}
+
+function preloadSlotGameImages(list, limit = 24){
+  if(!Array.isArray(list) || !list.length) return;
+  SLOT_IMAGE_PRELOAD_HOLD.length = 0;
+  list.slice(0, limit).forEach(item => {
+    const src = getImageUrl(item, frontendGameFallbackImageOf(item), 'game');
+    if(!src) return;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+    SLOT_IMAGE_PRELOAD_HOLD.push(img);
+  });
+}
+
+function prefetchSlotCategory(){
+  const slotCategory = categories.find(category => categoryTypeKey(category) === 'SLOT');
+  if(!slotCategory || !slotCategory.id) return;
+  const url = buildUrl(GAME_API_URL, { lang: currentLang(), categoryId: slotCategory.id });
+  fetchJson(url).then(response => {
+    const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
+    preloadSlotGameImages(list);
+  }).catch(() => {});
+}
+
+function scheduleSlotCategoryPrefetch(){
+  const run = () => prefetchSlotCategory();
+  if('requestIdleCallback' in window){
+    window.requestIdleCallback(run, { timeout: 1500 });
+  }else{
+    window.setTimeout(run, 500);
+  }
 }
 
 function loadCategories(){
@@ -816,6 +897,7 @@ function loadCategories(){
       activeSubCategoryId = null;
       renderCategories();
       setGamesLoading();
+      scheduleSlotCategoryPrefetch();
       return loadSubCategories();
     })
     .catch(err => {
@@ -841,7 +923,7 @@ function loadSubCategories(){
     return loadGames();
   }
 
-  if(!activeProviderCode || isAllProviderCode(activeProviderCode) || isDirectGameCategory()){
+  if(!activeProviderCode || isAllProviderCode(activeProviderCode) || (isDirectGameCategory() && activeCategoryTypeKey() === 'HOT')){
     subCategories = [];
     activeSubCategoryId = null;
     renderSubTabs();
@@ -898,8 +980,18 @@ function loadGames(){
       if(String(subCategoryIdForRequest || '') !== String(activeSubCategoryId || '')) return;
       const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
       const categoryProviders = providersForActiveCategory();
-      const forceDirect = categoryProviders.length <= 1;
-      if(forceDirect && categoryProviders.length === 1 && !activeProviderCode){
+      const isHotCategory = activeCategoryTypeKey() === 'HOT';
+      const forceDirect = isHotCategory && !isDirectGameCategory() && categoryProviders.length <= 1;
+
+      // Direct Game List applies to every category: show games immediately and
+      // never render the left provider rail. Hot Game with one configured
+      // provider keeps its existing automatic direct-open behaviour.
+      if(isDirectGameCategory()){
+        currentGameList = list;
+        activeProviderCode = null;
+        if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
+        renderGames(list);
+      }else if(forceDirect && categoryProviders.length === 1 && !activeProviderCode){
         const onlyCode = providerCodeOf(categoryProviders[0]);
         const providerUrl = buildUrl(GAME_API_URL, {categoryId: categoryIdForRequest, providerCode: onlyCode, lang: currentLang()});
         return fetchJson(providerUrl).then(providerResponse => {
@@ -910,11 +1002,6 @@ function loadGames(){
           if(subTabRow){ subTabRow.innerHTML=''; subTabRow.style.display='none'; }
           renderGames(combined);
         });
-      }else if(isDirectGameCategory() || forceDirect){
-        currentGameList = list;
-        activeProviderCode = null;
-        if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
-        renderGames(list);
       }else if(activeProviderCode){
         if(isAllProviderCode(activeProviderCode)){
           currentGameList = list;
@@ -939,10 +1026,9 @@ function loadGames(){
         }
       }else{
         currentGameList = list;
-        // Only the HOT category uses the provider-card landing page.
-        // Every other multi-provider category opens directly in the normal
-        // provider rail + game grid view, matching the previous frontend layout.
-        if(activeCategoryTypeKey() === 'HOT'){
+        // Provider First is category-specific: Hot Game uses the large provider
+        // landing cards, while every other category uses the classic left rail.
+        if(isHotCategory){
           renderMixedCategoryLanding(list);
         }else{
           renderProviderCards(list);
