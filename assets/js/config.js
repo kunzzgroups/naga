@@ -32,6 +32,8 @@ window.NAGA_API = {
   playerPromotionClaims: window.NAGA_CONFIG.api.baseUrl + '/api/player/promotion/my-claims',
   playerHistoryTransactions: window.NAGA_CONFIG.api.baseUrl + '/api/player/history/transactions',
   playerHistoryBets: window.NAGA_CONFIG.api.baseUrl + '/api/player/history/bets',
+  playerVip: window.NAGA_CONFIG.api.baseUrl + '/api/player/vip',
+  playerSpin2: window.NAGA_CONFIG.api.baseUrl + '/api/player/spin2',
 
   memberDeposit: window.NAGA_CONFIG.api.baseUrl + '/api/member/deposit',
   memberWithdraw: window.NAGA_CONFIG.api.baseUrl + '/api/member/withdraw',
