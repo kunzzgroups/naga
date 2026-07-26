@@ -9,6 +9,8 @@
  function startSounds(from,to,duration,total){stopSounds();if(audio.spin)audio.spin.play().catch(()=>{});const started=performance.now(),segment=360/Math.max(1,total);function frame(now){const p=Math.min(1,(now-started)/duration),e=1-Math.pow(1-p,4),angle=from+(to-from)*e,divider=Math.floor(Math.abs(angle)/segment);if(audio.lastDivider!==null&&divider!==audio.lastDivider&&audio.tick){const t=audio.tick.cloneNode();t.volume=audio.tick.volume;t.play().catch(()=>{})}audio.lastDivider=divider;if(p<1)audio.raf=requestAnimationFrame(frame);else stopSounds()}audio.raf=requestAnimationFrame(frame)}
  if(luckyOverlay){luckyOverlay.classList.remove('show');luckyOverlay.setAttribute('aria-hidden','true');}
  const token=()=>localStorage.getItem('member_token')||'';
+ function goLogin(){window.location.href='login.html?redirect='+encodeURIComponent('spin.html')}
+ function requireLogin(){if(token())return true;goLogin();return false}
  function headers(json){const h={Accept:'application/json'},t=token();if(json)h['Content-Type']='application/json';if(t)h.Authorization='Bearer '+t;return h}
  async function readJson(r){return r.json().catch(()=>({}))}
  function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -38,5 +40,5 @@
 }
 bindLuckyBoxes();
  document.querySelectorAll('[data-spin2-tab]').forEach(tab=>tab.addEventListener('click',()=>{const name=tab.dataset.spin2Tab;document.querySelectorAll('[data-spin2-tab]').forEach(x=>{x.classList.toggle('active',x===tab);x.setAttribute('aria-selected',x===tab?'true':'false')});document.querySelectorAll('[data-spin2-panel]').forEach(x=>x.classList.toggle('active',x.dataset.spin2Panel===name))}));
- btn.addEventListener('click',spin);cashoutBtn.addEventListener('click',()=>result.textContent=cashoutBtn.disabled?'Reach MYR 18.00 before cashing out.':'Cash out request is ready.');document.querySelector('.spin2-invite-btn').addEventListener('click',()=>result.textContent='Share your referral code. '+Math.max(1,Number(referral.invitesRequired||1))+' successful invite(s) gives '+Math.max(1,Number(referral.spinsGranted||1))+' spin(s).');window.addEventListener('resize',drawDetector);load();
+ btn.addEventListener('click',spin);cashoutBtn.addEventListener('click',()=>{if(!requireLogin())return;result.textContent=cashoutBtn.disabled?'Reach MYR 18.00 before cashing out.':'Cash out request is ready.'});document.querySelector('.spin2-invite-btn').addEventListener('click',()=>{if(!requireLogin())return;result.textContent='Share your referral code. '+Math.max(1,Number(referral.invitesRequired||1))+' successful invite(s) gives '+Math.max(1,Number(referral.spinsGranted||1))+' spin(s).'});window.addEventListener('resize',drawDetector);load();
 })();
