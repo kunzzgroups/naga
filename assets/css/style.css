@@ -12138,3 +12138,10 @@ body.login-page .login-form .auth-message.success { color:#20c96b !important; }
 .setting-social-image-links[hidden],.setting-social-image-links a[hidden]{display:none!important}
 .setting-social-image-links a{display:block;width:100%;text-decoration:none;border:0;background:transparent;padding:0}
 .setting-social-image-links img{display:block;width:100%;height:auto;object-fit:contain;border:0}
+
+/* v1.0.75: database/API-managed social image links */
+.dynamic-social-image-links{display:block;width:100%}
+.dynamic-social-image-links[hidden]{display:none!important}
+.dynamic-social-image-links .social-image:first-child{margin-top:12px}
+.dynamic-social-image-links .social-image img{width:100%;height:auto;object-fit:contain}
+.setting-social-image-links .social-image{margin-top:0}

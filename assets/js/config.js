@@ -40,6 +40,7 @@ window.NAGA_API = {
   memberSetTransactionPassword: window.NAGA_CONFIG.api.baseUrl + '/api/member/transaction-password',
   memberDownline: window.NAGA_CONFIG.api.baseUrl + '/api/member/downline',
   paymentMethodList: window.NAGA_CONFIG.api.baseUrl + '/api/payment-method/list',
+  socialLinkList: window.NAGA_CONFIG.api.baseUrl + '/api/social/list',
 
   siteCustomizeTranslation: window.NAGA_CONFIG.api.baseUrl + '/api/admin/language/translation',
   // BO Layout Section CSS/HTML/JS. CSS saved under the `home` key is loaded globally.

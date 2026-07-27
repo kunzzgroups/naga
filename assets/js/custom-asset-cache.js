@@ -25,8 +25,6 @@
     'share.png': 'shareUrl',
     'downline.png': 'downlineUrl',
     'copylink.png': 'copylinkUrl',
-    'facebook.png': 'facebookUrl',
-    'telegram.png': 'telegramUrl',
     'login.png': 'loginUrl',
     'login.jpg': 'loginUrl',
     'login.jpeg': 'loginUrl',
