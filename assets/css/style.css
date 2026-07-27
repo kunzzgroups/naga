@@ -12278,3 +12278,86 @@ body.home-page .provider-side-rail .provider-rail-card:last-child{
     padding-bottom:0!important;
   }
 }
+
+/* v1.0.79: hide the left provider scrollbar while preserving mouse, wheel and touch scrolling */
+body.home-page .provider-side-rail{
+  -ms-overflow-style:none!important;
+  scrollbar-width:none!important;
+}
+body.home-page .provider-side-rail::-webkit-scrollbar{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+}
+
+
+/* Hide game list scrollbar but keep scrolling */
+.game-list,
+.games-list,
+.game-grid,
+.games-grid,
+.provider-games,
+.provider-game-list,
+.game-container,
+.game-content,
+#gameList,
+#gamesList {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.game-list::-webkit-scrollbar,
+.games-list::-webkit-scrollbar,
+.game-grid::-webkit-scrollbar,
+.games-grid::-webkit-scrollbar,
+.provider-games::-webkit-scrollbar,
+.provider-game-list::-webkit-scrollbar,
+.game-container::-webkit-scrollbar,
+.game-content::-webkit-scrollbar,
+#gameList::-webkit-scrollbar,
+#gamesList::-webkit-scrollbar {
+    width:0!important;
+    height:0!important;
+    display:none;
+}
+
+/* v1.0.80: hide the right game panel scrollbar while preserving scrolling */
+body.home-page .provider-games-panel,
+body.home-page .provider-games-list,
+body.home-page .direct-games-list{
+  -ms-overflow-style:none!important;
+  scrollbar-width:none!important;
+}
+body.home-page .provider-games-panel::-webkit-scrollbar,
+body.home-page .provider-games-list::-webkit-scrollbar,
+body.home-page .direct-games-list::-webkit-scrollbar{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  background:transparent!important;
+}
+body.home-page .provider-games-panel::-webkit-scrollbar-track,
+body.home-page .provider-games-panel::-webkit-scrollbar-thumb{
+  background:transparent!important;
+  border:0!important;
+}
+
+/* v1.0.80: hide the right game panel scrollbar while preserving scrolling */
+body.home-page .provider-games-panel,
+body.home-page .provider-games-list,
+body.home-page .direct-games-list{
+  -ms-overflow-style:none!important;
+  scrollbar-width:none!important;
+}
+body.home-page .provider-games-panel::-webkit-scrollbar,
+body.home-page .provider-games-list::-webkit-scrollbar,
+body.home-page .direct-games-list::-webkit-scrollbar{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  background:transparent!important;
+}
+body.home-page .provider-games-panel::-webkit-scrollbar-track,
+body.home-page .provider-games-panel::-webkit-scrollbar-thumb{
+  background:transparent!important;
+  border:0!important;
+}
