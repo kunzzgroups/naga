@@ -1566,8 +1566,10 @@ loadSliderBanners().then(() => {
 
     document.body.classList.add('provider-lobby-active');
     var rect = shell.getBoundingClientRect();
-    var bottomGap = window.matchMedia('(max-width: 768px)').matches ? 72 : 12;
-    var available = Math.floor(viewportHeight() - rect.top - bottomGap);
+    var bottomNav = document.querySelector('.bottom-nav');
+    var navTop = bottomNav ? bottomNav.getBoundingClientRect().top : viewportHeight();
+    var viewportBottom = Math.min(viewportHeight(), navTop > 0 ? navTop : viewportHeight());
+    var available = Math.floor(viewportBottom - rect.top);
     var minimum = window.matchMedia('(max-width: 768px)').matches ? 220 : 280;
     shell.style.setProperty('--provider-lobby-height', Math.max(minimum, available) + 'px');
 
