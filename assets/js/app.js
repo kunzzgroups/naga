@@ -595,8 +595,8 @@ function renderProviderCards(games){
   renderGames(currentGameList);
 }
 
-const GAME_RENDER_BATCH_DESKTOP = 20;
-const GAME_RENDER_BATCH_MOBILE = 20;
+const GAME_RENDER_BATCH_DESKTOP = 40;
+const GAME_RENDER_BATCH_MOBILE = 40;
 let gameBatchObserver = null;
 let gameBatchToken = 0;
 
@@ -1068,7 +1068,7 @@ function filteredSubCategoriesFromCatalog(){
   });
 }
 
-function preloadSlotGameImages(list, limit = 20){
+function preloadSlotGameImages(list, limit = 40){
   if(!Array.isArray(list) || !list.length) return;
   SLOT_IMAGE_PRELOAD_HOLD.length = 0;
   list.slice(0, limit).forEach(item => {

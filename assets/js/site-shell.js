@@ -20,15 +20,13 @@
     document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){ el.textContent = text; });
   }
 
-  function readCachedBalance(){
-    try{
-      var cached = localStorage.getItem('member_main_wallet_balance');
-      if(cached !== null && cached !== ''){
-        setAllWalletText(cached);
-        return true;
-      }
-    }catch(e){}
-    return false;
+  function invalidateStoredBalance(){
+    try{ localStorage.removeItem('member_main_wallet_balance'); }catch(e){}
+  }
+
+  function noCacheUrl(url){
+    var separator = String(url).indexOf('?') >= 0 ? '&' : '?';
+    return String(url) + separator + '_wallet_ts=' + Date.now();
   }
 
   function extractBalance(json){
@@ -61,10 +59,9 @@
       setAllWalletText('MYR 0.00');
       return Promise.resolve(0);
     }
-    readCachedBalance();
-    return fetch(walletBalanceUrl(), {
+    return fetch(noCacheUrl(walletBalanceUrl()), {
       cache: 'no-store',
-      headers: { 'Authorization': 'Bearer ' + getToken(), 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      headers: { 'Authorization': 'Bearer ' + getToken(), 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
     })
     .then(function(res){ return res.json().catch(function(){ return {}; }).then(function(json){ return {res:res, json:json}; }); })
     .then(function(pair){
@@ -74,13 +71,22 @@
       setAllWalletText(balance);
       return balance;
     })
-    .catch(function(){ readCachedBalance(); return 0; });
+    .catch(function(){
+      invalidateStoredBalance();
+      setAllWalletText('MYR 0.00');
+      return 0;
+    });
   }
 
   function scheduleBalanceRefresh(){
-    readCachedBalance();
-    setTimeout(refreshShellBalance, 80);
-    window.addEventListener('load', function(){ setTimeout(refreshShellBalance, 150); });
+    // Never paint a wallet amount saved by a previous browser session.
+    // Always request the current amount from the API before showing a balance.
+    invalidateStoredBalance();
+    setAllWalletText('MYR 0.00');
+    setTimeout(refreshShellBalance, 0);
+    window.addEventListener('load', function(){ setTimeout(refreshShellBalance, 80); });
+    window.addEventListener('pageshow', function(){ refreshShellBalance(); });
+    window.addEventListener('focus', function(){ refreshShellBalance(); });
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshShellBalance(); });
   }
 
@@ -337,7 +343,9 @@
     if(panel) panel.setAttribute('data-layout-section', 'frontend-sidebar');
     refreshHeaderAuth();
     updateSideLangLabel();
-    readCachedBalance();
+    invalidateStoredBalance();
+    setAllWalletText('MYR 0.00');
+    refreshShellBalance();
     if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
   }
 

@@ -258,7 +258,15 @@
   async function fetchMainWalletBalance(){
     const token = getToken();
     if(!token){ goLogin(); return 0; }
-    const res = await fetch(WALLET_BALANCE_URL, { headers: { 'Authorization': 'Bearer ' + token } });
+    const freshUrl = String(WALLET_BALANCE_URL) + (String(WALLET_BALANCE_URL).indexOf('?') >= 0 ? '&' : '?') + '_wallet_ts=' + Date.now();
+    const res = await fetch(freshUrl, {
+      cache: 'no-store',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    });
     const json = await res.json().catch(function(){ return {}; });
     if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load main wallet balance.');
     const data = json.data || {};

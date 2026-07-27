@@ -13,7 +13,8 @@
   function getBalanceFromJson(json){ const d=(json&&json.data)||json||{}; const arr=[d.balance,d.mainWalletBalance,d.main_wallet_balance,d.walletBalance,d.wallet_balance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of arr){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return 0; }
   async function fetchMainBalance(){
     const url=(API.playerMainWalletBalance||API.playerProviderWalletBalance||(API_BASE.replace(/\/+$/,'')+'/api/player/provider/wallet-balance'));
-    const res=await fetch(url,{headers:{Authorization:'Bearer '+token()}});
+    const freshUrl=String(url)+(String(url).includes('?')?'&':'?')+'_wallet_ts='+Date.now();
+    const res=await fetch(freshUrl,{cache:'no-store',headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}});
     const json=await res.json().catch(()=>({}));
     if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load wallet balance');
     const b=getBalanceFromJson(json); setBalance(b); return b;
@@ -32,6 +33,6 @@
     if(!m.hasTransactionPassword) msg('Please set transaction password in Setting before withdraw.', false);
   }
   async function submitWithdraw(){ if(!requireLogin()) return; const val=Number(amount?.value||0); if(val<50){msg('Minimum withdraw is MYR 50.00',false);return;} submit.disabled=true; msg('Submitting withdraw request...',true); try{ const res=await fetch(API.memberWithdraw,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token()},body:JSON.stringify({amount:val,transactionPassword:txInput?.value||''})}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Withdraw failed'); msg(json.message||'Withdraw submitted, waiting BO approval.',true); amount.value=''; if(txInput) txInput.value=''; await fetchMainBalance().catch(()=>{}); }catch(e){msg(e.message||'Withdraw failed',false);} finally{submit.disabled=false;} }
-  document.querySelectorAll('.withdraw-quick button').forEach(btn=>btn.addEventListener('click',()=>{ if(!amount)return; amount.value=btn.textContent.trim()==='MAX'?String(mainBalance||localStorage.getItem('member_main_wallet_balance')||'0'):btn.textContent.trim(); amount.focus(); }));
-  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; setBalance(localStorage.getItem('member_main_wallet_balance')||0); loadMe().catch(e=>msg(e.message,false)); fetchMainBalance().catch(e=>msg(e.message,false)); submit?.addEventListener('click',submitWithdraw); });
+  document.querySelectorAll('.withdraw-quick button').forEach(btn=>btn.addEventListener('click',()=>{ if(!amount)return; amount.value=btn.textContent.trim()==='MAX'?String(mainBalance||0):btn.textContent.trim(); amount.focus(); }));
+  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); mainBalance=0; document.querySelectorAll('[data-main-wallet-balance], .withdraw-balance strong').forEach(el=>el.textContent=money(0)); loadMe().catch(e=>msg(e.message,false)); fetchMainBalance().catch(e=>msg(e.message,false)); submit?.addEventListener('click',submitWithdraw); });
 })();

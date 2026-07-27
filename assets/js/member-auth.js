@@ -114,6 +114,11 @@
     return 0;
   }
 
+  function noCacheUrl(url){
+    const separator = String(url).includes('?') ? '&' : '?';
+    return String(url) + separator + '_wallet_ts=' + Date.now();
+  }
+
   async function loadMainWalletBalance(){
     const token = getToken();
     if(!token){
@@ -121,8 +126,13 @@
       return 0;
     }
 
-    const res = await fetch(MAIN_WALLET_BALANCE_URL, {
-      headers: {'Authorization': 'Bearer ' + token}
+    const res = await fetch(noCacheUrl(MAIN_WALLET_BALANCE_URL), {
+      cache: 'no-store',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     const json = await res.json().catch(() => ({}));
 
@@ -137,11 +147,6 @@
       try{ window.NAGA_SITE_SHELL.refreshBalance(); }catch(e){}
     }
     return balance;
-  }
-
-  function renderCachedBalance(){
-    const cached = localStorage.getItem('member_main_wallet_balance');
-    if(cached !== null && cached !== '') setMainWalletBalance(cached);
   }
 
   async function loadMemberFromApi(){
@@ -176,18 +181,22 @@
     const stored = getStoredMember();
     if(stored && Object.keys(stored).length){
       renderLoggedIn(stored);
-      renderCachedBalance();
+      // Do not show the amount cached by a previous browser session.
+      setMainWalletBalance(0);
     }
 
     try{
       const latest = await loadMemberFromApi();
       if(latest){
         renderLoggedIn(latest);
-        try{ await loadMainWalletBalance(); }catch(balanceErr){ renderCachedBalance(); }
+        try{ await loadMainWalletBalance(); }catch(balanceErr){
+          localStorage.removeItem('member_main_wallet_balance');
+          setMainWalletBalance(0);
+        }
       }
       else renderLoggedOut();
     }catch(e){
-      if(stored && Object.keys(stored).length){ renderLoggedIn(stored); renderCachedBalance(); }
+      if(stored && Object.keys(stored).length){ renderLoggedIn(stored); setMainWalletBalance(0); }
       else renderLoggedOut();
     }
   }

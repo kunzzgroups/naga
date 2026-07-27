@@ -15,7 +15,7 @@
   function msg(text, ok){ let box=document.getElementById('depositMsg'); if(!box){ box=document.createElement('div'); box.id='depositMsg'; box.className='deposit-note'; document.querySelector('.deposit-actions')?.before(box); } box.style.color=ok?'#19ff5a':'#ff4040'; box.textContent=text; }
   function setBalance(v){ document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent=money(v)); localStorage.setItem('member_main_wallet_balance', String(Number(v||0))); }
   function extractBalance(json){ const d=(json&&json.data)||json||{}; const list=[d.balance,d.mainWalletBalance,d.walletBalance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of list){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return 0; }
-  async function loadBalance(){ const res=await fetch(API.playerMainWalletBalance,{headers:{Authorization:'Bearer '+token()}}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load balance'); setBalance(extractBalance(json)); }
+  async function loadBalance(){ const url=String(API.playerMainWalletBalance)+(String(API.playerMainWalletBalance).includes('?')?'&':'?')+'_wallet_ts='+Date.now(); const res=await fetch(url,{cache:'no-store',headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load balance'); setBalance(extractBalance(json)); }
 
   function selectedMethod(){ return selected || 'ONLINE_BANKING'; }
   function icon(type){ if(type==='EWALLET') return '📱'; if(type==='CARD') return '💳'; return '🏦'; }
@@ -76,5 +76,5 @@
     catch(e){ msg(e.message||'Deposit failed', false); }
     finally{ submit.disabled=false; }
   }
-  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; setBalance(localStorage.getItem('member_main_wallet_balance')||0); ensureProof(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
+  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent=money(0)); ensureProof(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
 })();
