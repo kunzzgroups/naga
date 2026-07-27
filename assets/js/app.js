@@ -26,6 +26,10 @@ let activeCategoryId = null;
 let activeSubCategoryId = null;
 let activeProviderCode = null;
 let currentGameList = [];
+let allSubCategories = [];
+let catalogGames = [];
+let gameCatalogReady = false;
+let catalogRefreshPromise = null;
 let showingProviderList = true;
 let gameLoadSequence = 0;
 let subCategoryLoadSequence = 0;
@@ -235,6 +239,10 @@ function pickDefaultSubCategoryId(list){
 
 function setGamesLoading(){
   if(!gameGrid) return;
+
+  // Once the VPBet-style local catalog is available, category/provider changes
+  // are client-side filters and should never flash the API spinner again.
+  if(gameCatalogReady) return;
 
   // Keep the provider rail mounted while only the selected provider's games reload.
   // This preserves its scroll position and avoids the sidebar flashing/rebuilding.
@@ -587,8 +595,8 @@ function renderProviderCards(games){
   renderGames(currentGameList);
 }
 
-const GAME_RENDER_BATCH_DESKTOP = 48;
-const GAME_RENDER_BATCH_MOBILE = 30;
+const GAME_RENDER_BATCH_DESKTOP = 20;
+const GAME_RENDER_BATCH_MOBILE = 20;
 let gameBatchObserver = null;
 let gameBatchToken = 0;
 
@@ -626,7 +634,7 @@ function createGameCard(item, renderIndex = 0){
 
   card.innerHTML=`
     <div class="game-card-img-wrap">
-      <img loading="${renderIndex < 18 ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${renderIndex < 10 ? 'high' : 'low'}" class="provider-launch-img"
+      <img loading="${renderIndex < 12 ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${renderIndex < 8 ? 'high' : 'low'}" class="provider-launch-img"
            src="${imageUrl}"
            alt="${gameName}"
            data-game-id="${launchGameId}"
@@ -767,21 +775,27 @@ function renderGames(list){
       if(entries.some(entry => entry.isIntersecting)) appendNextBatch();
     }, {
       root: scrollRoot,
-      rootMargin: '700px 0px',
+      rootMargin: '160px 0px',
       threshold: 0.01
     });
     gameBatchObserver.observe(sentinel);
   }
 }
 
-// Page-memory cache only. It is cleared automatically by every normal reload,
-// force reload, tab close or browser restart, so refreshed pages always request
-// the latest API data while category/provider switching in the same page is fast.
+// VPBet-style catalog architecture:
+// - fetch the complete game catalog once instead of calling the slow game API
+//   again for every category/provider/subcategory click;
+// - keep a compact sessionStorage copy so a normal refresh paints immediately;
+// - refresh stale data silently in the background (stale-while-revalidate).
 const API_MEMORY_CACHE = new Map();
 const API_IN_FLIGHT = new Map();
-const API_CACHE_TTL_MS = 5 * 60 * 1000;
+const API_CACHE_TTL_MS = 3 * 60 * 1000;
+const GAME_CATALOG_CACHE_VERSION = 'v4';
+const GAME_CATALOG_FRESH_MS = 2 * 60 * 1000;
+const GAME_CATALOG_KEY = 'naga_game_catalog_' + GAME_CATALOG_CACHE_VERSION + ':' + currentLangCode();
 const SLOT_IMAGE_PRELOAD_HOLD = [];
 const EARLY_API_REQUESTS = window.__NAGA_EARLY_API__ || {};
+const BOOTSTRAP_CATALOG = window.__NAGA_CATALOG_BOOTSTRAP__ || null;
 
 function apiCacheKey(url){
   const parsed = new URL(url, window.location.href);
@@ -789,48 +803,68 @@ function apiCacheKey(url){
   return parsed.toString();
 }
 
+function readApiSessionCache(key){
+  try{
+    const cached = JSON.parse(sessionStorage.getItem('naga_api_cache:' + key) || 'null');
+    if(cached && cached.expiresAt > Date.now() && cached.data) return cached.data;
+  }catch(e){}
+  return null;
+}
+
+function writeApiSessionCache(key, data, ttl = API_CACHE_TTL_MS){
+  try{
+    sessionStorage.setItem('naga_api_cache:' + key, JSON.stringify({
+      expiresAt: Date.now() + ttl,
+      data: data
+    }));
+  }catch(e){}
+}
+
 function fetchJson(url, options = {}){
   const key = apiCacheKey(url);
-  const bypassCache = options && options.bypassCache === true;
+  const forceRefresh = options && (options.forceRefresh === true || options.bypassCache === true);
+  const ttl = Number(options.ttl || API_CACHE_TTL_MS);
   const now = Date.now();
 
-  // The home page starts its critical category/provider/initial-game requests
-  // in <head>, before CSS and the rest of the scripts finish parsing. Reuse
-  // those promises here so first paint does not wait before networking begins.
+  const memoryHit = API_MEMORY_CACHE.get(key);
+  if(!forceRefresh && memoryHit && now - memoryHit.time < ttl){
+    return Promise.resolve(memoryHit.data);
+  }
+
+  if(!forceRefresh){
+    const sessionHit = readApiSessionCache(key);
+    if(sessionHit){
+      API_MEMORY_CACHE.set(key, { time: now, data: sessionHit });
+      return Promise.resolve(sessionHit);
+    }
+  }
+
+  // The cold-load bootstrap begins these requests in <head>. Reuse them instead
+  // of issuing duplicate game-list requests after app.js is parsed.
   if(EARLY_API_REQUESTS[key]){
     const earlyRequest = EARLY_API_REQUESTS[key];
     delete EARLY_API_REQUESTS[key];
     return earlyRequest.then(data => {
-      if(!bypassCache) API_MEMORY_CACHE.set(key, { time: Date.now(), data });
+      API_MEMORY_CACHE.set(key, { time: Date.now(), data });
+      writeApiSessionCache(key, data, ttl);
       return data;
     });
   }
-  const memoryHit = API_MEMORY_CACHE.get(key);
-  if(!bypassCache && memoryHit && now - memoryHit.time < API_CACHE_TTL_MS){
-    return Promise.resolve(memoryHit.data);
-  }
 
-  // Reuse an unfinished request instead of sending the same large game-list
-  // request more than once when users click categories/providers quickly.
-  if(!bypassCache && API_IN_FLIGHT.has(key)){
-    return API_IN_FLIGHT.get(key);
-  }
+  if(!forceRefresh && API_IN_FLIGHT.has(key)) return API_IN_FLIGHT.get(key);
 
-  // Always bypass the browser HTTP cache. The only reuse is the Map above,
-  // which exists for this page lifetime only and disappears on reload.
-  const request = fetch(key, { cache: 'no-store' }).then(res => {
+  const request = fetch(key, { cache: forceRefresh ? 'no-store' : 'default' }).then(res => {
     if(!res.ok) throw new Error('API error: ' + url);
     return res.json();
   }).then(data => {
-    if(!bypassCache){
-      API_MEMORY_CACHE.set(key, { time: Date.now(), data: data });
-    }
+    API_MEMORY_CACHE.set(key, { time: Date.now(), data: data });
+    writeApiSessionCache(key, data, ttl);
     return data;
   }).finally(() => {
     if(API_IN_FLIGHT.get(key) === request) API_IN_FLIGHT.delete(key);
   });
 
-  if(!bypassCache) API_IN_FLIGHT.set(key, request);
+  if(!forceRefresh) API_IN_FLIGHT.set(key, request);
   return request;
 }
 
@@ -848,7 +882,193 @@ function currentLang(){
   return currentLangCode();
 }
 
-function preloadSlotGameImages(list, limit = 24){
+function normalizeStoredCatalog(value){
+  if(!value || typeof value !== 'object') return null;
+  const catalog = value.catalog && typeof value.catalog === 'object' ? value.catalog : value;
+  const normalized = {
+    savedAt: Number(value.savedAt || catalog.savedAt || 0),
+    categories: Array.isArray(catalog.categories) ? catalog.categories : [],
+    providers: Array.isArray(catalog.providers) ? catalog.providers : [],
+    subCategories: Array.isArray(catalog.subCategories) ? catalog.subCategories : [],
+    games: Array.isArray(catalog.games) ? catalog.games : []
+  };
+  if(!normalized.categories.length && !normalized.games.length) return null;
+  return normalized;
+}
+
+function readGameCatalogCache(){
+  const boot = normalizeStoredCatalog(BOOTSTRAP_CATALOG);
+  if(boot) return boot;
+  try{
+    return normalizeStoredCatalog(JSON.parse(sessionStorage.getItem(GAME_CATALOG_KEY) || 'null'));
+  }catch(e){
+    return null;
+  }
+}
+
+function writeGameCatalogCache(catalog){
+  try{
+    sessionStorage.setItem(GAME_CATALOG_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      categories: catalog.categories || [],
+      providers: catalog.providers || [],
+      subCategories: catalog.subCategories || [],
+      games: catalog.games || []
+    }));
+  }catch(e){
+    // sessionStorage can be smaller on some embedded browsers. Endpoint-level
+    // caches written by fetchJson remain as a fallback.
+  }
+}
+
+function catalogList(response){
+  return normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
+}
+
+function fetchFullGameCatalog(forceRefresh = false){
+  if(catalogRefreshPromise && !forceRefresh) return catalogRefreshPromise;
+
+  const requestOptions = { forceRefresh: forceRefresh, ttl: API_CACHE_TTL_MS };
+  const urls = {
+    categories: GAME_CATEGORY_API_URL,
+    providers: GAME_PROVIDER_API_URL,
+    subCategories: buildUrl(GAME_SUB_CATEGORY_API_URL, { lang: currentLang() }),
+    games: buildUrl(GAME_API_URL, { lang: currentLang() })
+  };
+
+  const request = Promise.allSettled([
+    fetchJson(urls.categories, requestOptions),
+    fetchJson(urls.providers, requestOptions),
+    fetchJson(urls.subCategories, requestOptions),
+    fetchJson(urls.games, requestOptions)
+  ]).then(results => {
+    const existing = readGameCatalogCache() || {categories:[], providers:[], subCategories:[], games:[]};
+    const catalog = {
+      savedAt: Date.now(),
+      categories: results[0].status === 'fulfilled' ? catalogList(results[0].value) : existing.categories,
+      providers: results[1].status === 'fulfilled' ? catalogList(results[1].value) : existing.providers,
+      subCategories: results[2].status === 'fulfilled' ? catalogList(results[2].value) : existing.subCategories,
+      games: results[3].status === 'fulfilled' ? catalogList(results[3].value) : existing.games
+    };
+    if(!catalog.categories.length && !catalog.games.length){
+      throw new Error('Game catalog API returned no usable data');
+    }
+    writeGameCatalogCache(catalog);
+    return catalog;
+  }).finally(() => {
+    if(catalogRefreshPromise === request) catalogRefreshPromise = null;
+  });
+
+  catalogRefreshPromise = request;
+  return request;
+}
+
+function applyGameCatalog(catalog){
+  categories = (catalog.categories || []).filter(isActiveItem).sort(sortByOrder);
+  providers = (catalog.providers || []).filter(isActiveItem).sort(sortByOrder);
+  allSubCategories = (catalog.subCategories || []).filter(isActiveItem).sort(sortByOrder);
+  catalogGames = (catalog.games || []).filter(isActiveItem).sort(sortByOrder);
+  gameCatalogReady = categories.length > 0 || catalogGames.length > 0;
+}
+
+function scalarIds(value){
+  if(value == null || value === '') return [];
+  if(Array.isArray(value)) return value.flatMap(scalarIds);
+  if(typeof value === 'object'){
+    const candidate = value.id ?? value.categoryId ?? value.category_id ?? value.subCategoryId ?? value.sub_category_id;
+    return candidate == null ? [] : scalarIds(candidate);
+  }
+  return String(value).split(/[,|]/).map(v => String(v).trim()).filter(Boolean);
+}
+
+function idsFromFields(item, fields){
+  const ids = [];
+  fields.forEach(field => {
+    if(item && Object.prototype.hasOwnProperty.call(item, field)) ids.push(...scalarIds(item[field]));
+  });
+  return [...new Set(ids)];
+}
+
+function gameCategoryIdsOf(game){
+  return idsFromFields(game, [
+    'categoryId','category_id','gameCategoryId','game_category_id','categoryIds','category_ids','gameCategoryIds','game_category_ids','categories'
+  ]);
+}
+
+function gameSubCategoryIdsOf(game){
+  return idsFromFields(game, [
+    'subCategoryId','sub_category_id','gameSubCategoryId','game_sub_category_id','subCategoryIds','sub_category_ids','gameSubCategoryIds','game_sub_category_ids','subCategories'
+  ]);
+}
+
+function subCategoryCategoryIdsOf(sub){
+  return idsFromFields(sub, ['categoryId','category_id','gameCategoryId','game_category_id','categoryIds','category_ids','categories']);
+}
+
+function subCategoryProviderCodesOf(sub){
+  const raw = [sub?.providerCode, sub?.provider_code, sub?.providerCodes, sub?.provider_codes, sub?.providers];
+  return [...new Set(raw.flatMap(value => {
+    if(value == null) return [];
+    if(Array.isArray(value)) return value.flatMap(v => typeof v === 'object' ? [providerCodeOf(v)] : String(v).split(/[,|]/));
+    if(typeof value === 'object') return [providerCodeOf(value)];
+    return String(value).split(/[,|]/);
+  }).map(value => String(value || '').trim().toUpperCase()).filter(Boolean))];
+}
+
+function gameMatchesActiveCategory(game){
+  if(!activeCategoryId) return true;
+  const activeId = String(activeCategoryId);
+  const directIds = gameCategoryIdsOf(game);
+  if(directIds.includes(activeId)) return true;
+
+  const gameProviderCode = providerCodeOf(game);
+  const rule = providerRuleForCode(gameProviderCode);
+  if(rule){
+    const mode = String(rule.gameMode || 'ALL').toUpperCase();
+    if(mode === 'SELECTED'){
+      const allowed = new Set((rule.gameIds || []).map(String));
+      return allowed.has(String(game.id));
+    }
+    return true;
+  }
+
+  const provider = providerForCode(gameProviderCode);
+  if(providerCategoryIdsOf(provider).includes(activeId)) return true;
+
+  const catKey = activeCategoryTypeKey();
+  const gameCategoryText = normalizeKey([
+    game?.categoryCode, game?.category_code, game?.categoryName, game?.category_name,
+    game?.gameType, game?.game_type, game?.type
+  ].filter(Boolean).join(' '));
+  return !!catKey && gameCategoryText.includes(catKey);
+}
+
+function gameMatchesActiveSubCategory(game){
+  if(!activeSubCategoryId) return true;
+  const ids = gameSubCategoryIdsOf(game);
+  // Some provider feeds do not include subcategory metadata in the all-game
+  // response. Keep those games visible rather than producing a false empty list.
+  return !ids.length || ids.includes(String(activeSubCategoryId));
+}
+
+function categoryGamesFromCatalog(){
+  return catalogGames.filter(gameMatchesActiveCategory);
+}
+
+function filteredSubCategoriesFromCatalog(){
+  if(!activeCategoryId || !activeProviderCode || isAllProviderCode(activeProviderCode)) return [];
+  const categoryId = String(activeCategoryId);
+  const providerCode = String(activeProviderCode).toUpperCase();
+  return allSubCategories.filter(sub => {
+    const categoryIds = subCategoryCategoryIdsOf(sub);
+    const providerCodes = subCategoryProviderCodesOf(sub);
+    const categoryMatch = !categoryIds.length || categoryIds.includes(categoryId);
+    const providerMatch = !providerCodes.length || providerCodes.includes(providerCode);
+    return categoryMatch && providerMatch;
+  });
+}
+
+function preloadSlotGameImages(list, limit = 20){
   if(!Array.isArray(list) || !list.length) return;
   SLOT_IMAGE_PRELOAD_HOLD.length = 0;
   list.slice(0, limit).forEach(item => {
@@ -856,190 +1076,160 @@ function preloadSlotGameImages(list, limit = 24){
     if(!src) return;
     const img = new Image();
     img.decoding = 'async';
+    img.fetchPriority = 'low';
     img.src = src;
     SLOT_IMAGE_PRELOAD_HOLD.push(img);
   });
 }
 
-function prefetchSlotCategory(){
+function scheduleSlotCategoryPrefetch(){
   const slotCategory = categories.find(category => categoryTypeKey(category) === 'SLOT');
-  if(!slotCategory || !slotCategory.id) return;
-  const url = buildUrl(GAME_API_URL, { lang: currentLang(), categoryId: slotCategory.id });
-  fetchJson(url).then(response => {
-    const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-    preloadSlotGameImages(list);
-  }).catch(() => {});
+  if(!slotCategory) return;
+  const originalId = activeCategoryId;
+  activeCategoryId = slotCategory.id;
+  const slotGames = categoryGamesFromCatalog();
+  activeCategoryId = originalId;
+  const run = () => preloadSlotGameImages(slotGames);
+  if('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 1200 });
+  else window.setTimeout(run, 300);
 }
 
-function scheduleSlotCategoryPrefetch(){
-  const run = () => prefetchSlotCategory();
-  if('requestIdleCallback' in window){
-    window.requestIdleCallback(run, { timeout: 1500 });
-  }else{
-    window.setTimeout(run, 500);
+function renderCatalogState(){
+  const list = categoryGamesFromCatalog();
+  const categoryProviders = providersForActiveCategory();
+  const isHotCategory = activeCategoryTypeKey() === 'HOT';
+  const forceDirect = isHotCategory && !isDirectGameCategory() && categoryProviders.length <= 1;
+
+  if(isDirectGameCategory()){
+    currentGameList = list;
+    activeProviderCode = null;
+    if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
+    renderGames(list);
+    return;
   }
+
+  if(forceDirect && categoryProviders.length === 1 && !activeProviderCode){
+    const onlyCode = providerCodeOf(categoryProviders[0]);
+    const providerGames = list.filter(game => providerCodeOf(game) === onlyCode);
+    currentGameList = providerGames.length ? providerGames : list;
+    activeProviderCode = null;
+    if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
+    renderGames(currentGameList);
+    return;
+  }
+
+  if(activeProviderCode){
+    if(isAllProviderCode(activeProviderCode)){
+      currentGameList = list;
+      renderGames(list);
+      return;
+    }
+
+    // Preserve the complete category list for provider rail counts, while only
+    // rendering the selected provider/subcategory on the right.
+    currentGameList = list;
+    let providerList = list.filter(item => providerCodeOf(item) === activeProviderCode && gameMatchesActiveSubCategory(item));
+    const rule = providerRuleForCode(activeProviderCode);
+    if(rule && String(rule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
+      const allowed = new Set((rule.gameIds || []).map(String));
+      providerList = providerList.filter(item => allowed.has(String(item.id)));
+    }
+
+    if(!providerList.length && activeSubCategoryId && subCategories.length){
+      subCategoryAutoTriedIds.add(String(activeSubCategoryId));
+      const nextSub = subCategories.find(sub => !subCategoryAutoTriedIds.has(String(sub.id)));
+      if(nextSub){
+        activeSubCategoryId = nextSub.id;
+        renderSubTabs();
+        renderCatalogState();
+        return;
+      }
+    }
+    renderGames(providerList);
+    return;
+  }
+
+  currentGameList = list;
+  if(isHotCategory) renderMixedCategoryLanding(list);
+  else renderProviderCards(list);
+}
+
+function refreshCatalogSilently(cached){
+  const age = cached ? Date.now() - Number(cached.savedAt || 0) : Infinity;
+  if(age < GAME_CATALOG_FRESH_MS) return;
+  fetchFullGameCatalog(true).catch(err => {
+    console.warn('Background game catalog refresh failed:', err.message);
+  });
 }
 
 function loadCategories(){
   if(!categoryRow || !subTabRow || !gameGrid) return Promise.resolve();
 
-  // Category/provider configuration controls the whole lobby layout, so always
-  // fetch it fresh. This prevents an old session cache from treating a newly
-  // configured multi-provider HOT category as a direct game list.
-  return Promise.all([
-    fetchJson(GAME_CATEGORY_API_URL, { bypassCache: true }),
-    fetchJson(GAME_PROVIDER_API_URL, { bypassCache: true }).catch(() => ({data: []}))
-  ])
-    .then(([response, providerResponse]) => {
-      providers = normalizeApiList(providerResponse).filter(isActiveItem).sort(sortByOrder);
-      categories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      activeCategoryId = null;
-      activeSubCategoryId = null;
-      renderCategories();
-      setGamesLoading();
-      scheduleSlotCategoryPrefetch();
-      return loadSubCategories();
-    })
-    .catch(err => {
-      console.warn('Game category API failed:', err.message);
-      categories = [];
-      subCategories = [];
-      renderCategories();
-      renderSubTabs();
-      renderGames([]);
-    });
+  const cached = readGameCatalogCache();
+  if(cached){
+    applyGameCatalog(cached);
+    activeCategoryId = null;
+    activeSubCategoryId = null;
+    activeProviderCode = null;
+    renderCategories();
+    renderSubTabs();
+    renderCatalogState();
+    scheduleSlotCategoryPrefetch();
+    refreshCatalogSilently(cached);
+    return Promise.resolve();
+  }
+
+  setGamesLoading();
+  return fetchFullGameCatalog(false).then(catalog => {
+    applyGameCatalog(catalog);
+    activeCategoryId = null;
+    activeSubCategoryId = null;
+    activeProviderCode = null;
+    renderCategories();
+    renderSubTabs();
+    renderCatalogState();
+    scheduleSlotCategoryPrefetch();
+  }).catch(err => {
+    console.warn('Game catalog API failed:', err.message);
+    categories = [];
+    providers = [];
+    allSubCategories = [];
+    catalogGames = [];
+    subCategories = [];
+    gameCatalogReady = false;
+    renderCategories();
+    renderSubTabs();
+    renderGames([]);
+  });
 }
 
 function loadSubCategories(){
-  const sequence = ++subCategoryLoadSequence;
+  ++subCategoryLoadSequence;
 
-  if(!activeCategoryId){
-    ensureCategoryForSelectedProvider();
-  }
+  if(!activeCategoryId) ensureCategoryForSelectedProvider();
 
-  if(!activeCategoryId){
-    subCategories = [];
-    renderSubTabs();
-    return loadGames();
-  }
-
-  if(!activeProviderCode || isAllProviderCode(activeProviderCode) || (isDirectGameCategory() && activeCategoryTypeKey() === 'HOT')){
+  if(!activeCategoryId || !activeProviderCode || isAllProviderCode(activeProviderCode) || (isDirectGameCategory() && activeCategoryTypeKey() === 'HOT')){
     subCategories = [];
     activeSubCategoryId = null;
     renderSubTabs();
     return loadGames();
   }
 
-  setGamesLoading();
-  const categoryIdForRequest = activeCategoryId;
-  const url = buildUrl(GAME_SUB_CATEGORY_API_URL, {
-    categoryId: categoryIdForRequest,
-    providerCode: activeProviderCode,
-    lang: currentLang()
-  });
-
-  return fetchJson(url)
-    .then(response => {
-      if(sequence !== subCategoryLoadSequence || String(categoryIdForRequest) !== String(activeCategoryId)) return;
-      subCategories = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      activeSubCategoryId = pickDefaultSubCategoryId(subCategories);
-      subCategoryAutoTriedIds = new Set();
-      renderSubTabs();
-      return loadGames();
-    })
-    .catch(err => {
-      if(sequence !== subCategoryLoadSequence || String(categoryIdForRequest) !== String(activeCategoryId)) return;
-      console.warn('Game sub category API failed:', err.message);
-      subCategories = [];
-      activeSubCategoryId = null;
-      renderSubTabs();
-      return loadGames();
-    });
+  subCategories = filteredSubCategoriesFromCatalog();
+  activeSubCategoryId = pickDefaultSubCategoryId(subCategories);
+  subCategoryAutoTriedIds = new Set();
+  renderSubTabs();
+  return loadGames();
 }
 
 function loadGames(){
-  const sequence = ++gameLoadSequence;
-  const categoryIdForRequest = activeCategoryId;
-  const subCategoryIdForRequest = activeSubCategoryId;
-  const params = { lang: currentLang() };
-  const hasSelectedProvider = activeProviderCode && !isAllProviderCode(activeProviderCode);
-
-  // The backend resolves both directly assigned games and category provider_rules.
-  // Always include categoryId so ALL and SELECTED provider modes use the same
-  // authoritative category assignment logic on every frontend request.
-  if(categoryIdForRequest) params.categoryId = categoryIdForRequest;
-  if(hasSelectedProvider) params.providerCode = activeProviderCode;
-  if(activeProviderCode && !isAllProviderCode(activeProviderCode) && subCategoryIdForRequest) params.subCategoryId = subCategoryIdForRequest;
-
-  setGamesLoading();
-  const url = buildUrl(GAME_API_URL, params);
-  return fetchJson(url)
-    .then(response => {
-      if(sequence !== gameLoadSequence) return;
-      if(String(categoryIdForRequest || '') !== String(activeCategoryId || '')) return;
-      if(String(subCategoryIdForRequest || '') !== String(activeSubCategoryId || '')) return;
-      const list = normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
-      const categoryProviders = providersForActiveCategory();
-      const isHotCategory = activeCategoryTypeKey() === 'HOT';
-      const forceDirect = isHotCategory && !isDirectGameCategory() && categoryProviders.length <= 1;
-
-      // Direct Game List applies to every category: show games immediately and
-      // never render the left provider rail. Hot Game with one configured
-      // provider keeps its existing automatic direct-open behaviour.
-      if(isDirectGameCategory()){
-        currentGameList = list;
-        activeProviderCode = null;
-        if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
-        renderGames(list);
-      }else if(forceDirect && categoryProviders.length === 1 && !activeProviderCode){
-        const onlyCode = providerCodeOf(categoryProviders[0]);
-        const providerUrl = buildUrl(GAME_API_URL, {categoryId: categoryIdForRequest, providerCode: onlyCode, lang: currentLang()});
-        return fetchJson(providerUrl).then(providerResponse => {
-          let providerGames = normalizeApiList(providerResponse).filter(isActiveItem).sort(sortByOrder);
-          const seen = new Set();
-          const combined = [...providerGames, ...list].filter(g => { const key=String(g.id || providerCodeOf(g)+':' +(g.gameCode||g.game_code||g.name)); if(seen.has(key)) return false; seen.add(key); return true; });
-          currentGameList = combined; activeProviderCode = null;
-          if(subTabRow){ subTabRow.innerHTML=''; subTabRow.style.display='none'; }
-          renderGames(combined);
-        });
-      }else if(activeProviderCode){
-        if(isAllProviderCode(activeProviderCode)){
-          currentGameList = list;
-          renderGames(list);
-        }else{
-          let providerList = list.filter(item => providerCodeOf(item) === activeProviderCode);
-          const rule = providerRuleForCode(activeProviderCode);
-          if(rule && String(rule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
-            const allowed = new Set((rule.gameIds || []).map(String));
-            providerList = providerList.filter(item => allowed.has(String(item.id)));
-          }
-          if(!providerList.length && activeSubCategoryId && subCategories.length){
-            subCategoryAutoTriedIds.add(String(activeSubCategoryId));
-            const nextSub = subCategories.find(sub => !subCategoryAutoTriedIds.has(String(sub.id)));
-            if(nextSub){
-              activeSubCategoryId = nextSub.id;
-              renderSubTabs();
-              return loadGames();
-            }
-          }
-          renderGames(providerList);
-        }
-      }else{
-        currentGameList = list;
-        // Provider First is category-specific: Hot Game uses the large provider
-        // landing cards, while every other category uses the classic left rail.
-        if(isHotCategory){
-          renderMixedCategoryLanding(list);
-        }else{
-          renderProviderCards(list);
-        }
-      }
-    })
-    .catch(err => {
-      if(sequence !== gameLoadSequence) return;
-      console.warn('Game API failed:', err.message);
-      renderGames([]);
-    });
+  ++gameLoadSequence;
+  if(!gameCatalogReady){
+    setGamesLoading();
+    return Promise.resolve();
+  }
+  renderCatalogState();
+  return Promise.resolve();
 }
 
 if(categoryRow){
