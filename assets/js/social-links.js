@@ -63,8 +63,13 @@
     image.alt = 'Social link';
     image.decoding = 'async';
     image.loading = 'lazy';
+    // Keep the configured social entry visible even when its image cannot be
+    // loaded. Previously the whole anchor was hidden on image error, which made
+    // the social link disappear completely on the live site. The browser can
+    // now show its normal missing-image/alt-text state while the URL remains
+    // clickable, matching local behaviour.
     image.addEventListener('error', function () {
-      anchor.hidden = true;
+      anchor.classList.add('social-image-load-error');
     }, { once: true });
 
     anchor.appendChild(image);
