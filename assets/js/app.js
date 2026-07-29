@@ -228,7 +228,10 @@ function providersForActiveCategory(){
 
 function pickDefaultCategoryId(list){
   if(!Array.isArray(list) || !list.length) return null;
-  return list[0].id;
+  // Home page must open HOT GAME first. Fall back to the first configured
+  // category only when BO has no active hot category.
+  const hot = list.find(item => categoryTypeKey(item) === 'HOT' || getItemNameForMatch(item).includes('hot'));
+  return (hot || list[0]).id;
 }
 
 function pickDefaultSubCategoryId(list){
@@ -431,7 +434,7 @@ function ensureCategoryForSelectedProvider(){
   return true;
 }
 
-function providerRowsForActiveCategory(games){
+function providerRowsForActiveCategory(games, configuredOnly = false){
   const sourceGames = Array.isArray(games) ? games : currentGameList;
   const countByProvider = new Map();
   sourceGames.forEach(game => {
@@ -445,8 +448,30 @@ function providerRowsForActiveCategory(games){
   // empty list. Build the rail from provider codes that actually exist in the
   // selected category's game response, then use provider metadata for logos/name.
   const metadataByCode = new Map(providers.map(provider => [providerCodeOf(provider), provider]));
-  const configuredByCode = new Map(providersForActiveCategory().map(provider => [providerCodeOf(provider), provider]));
-  const providerSource = [...countByProvider.keys()].map(code =>
+  const configuredProviders = providersForActiveCategory();
+  const configuredByCode = new Map(configuredProviders.map(provider => [providerCodeOf(provider), provider]));
+
+  // Always keep every provider selected in BO visible in the category rail.
+  // Previously the rail was built only from providers that already had at least
+  // one matching game in the filtered result, so configured providers silently
+  // disappeared whenever their game rows were temporarily empty, uncategorised,
+  // disabled, or still waiting for import/sync.
+  const orderedCodes = [];
+  configuredProviders.forEach(provider => {
+    const code = providerCodeOf(provider);
+    if(code && !orderedCodes.includes(code)) orderedCodes.push(code);
+  });
+  // Normal category rails may also include provider codes found in the game
+  // response as a fallback for incomplete provider metadata. HOT GAME landing,
+  // however, must follow the BO selection exactly, otherwise unselected
+  // providers reappear simply because their games exist in the catalog.
+  if(!configuredOnly || !configuredProviders.length){
+    countByProvider.forEach((count, code) => {
+      if(code && !orderedCodes.includes(code)) orderedCodes.push(code);
+    });
+  }
+
+  const providerSource = orderedCodes.map(code =>
     configuredByCode.get(code) || metadataByCode.get(code) || {
       providerCode: code,
       providerName: code,
@@ -463,7 +488,7 @@ function providerRowsForActiveCategory(games){
     code: providerCodeOf(provider),
     provider,
     count: countByProvider.get(providerCodeOf(provider)) || 0
-  })).filter(row => row.code && row.count > 0);
+  })).filter(row => row.code);
 }
 
 function buildProviderRail(rows){
@@ -521,9 +546,18 @@ function renderMixedCategoryLanding(games){
   gameGrid.classList.remove('provider-with-rail', 'provider-grid');
   gameGrid.classList.add('provider-first-grid');
 
-  const providerRows = providerRowsForActiveCategory(currentGameList);
+  // HOT GAME provider cards must contain only providers selected in BO.
+  const providerRows = providerRowsForActiveCategory(currentGameList, true);
   const selectedCodes = new Set(providerRows.map(row => row.code));
-  const directGames = currentGameList.filter(game => !selectedCodes.has(providerCodeOf(game)));
+  const activeId = String(activeCategoryId || '');
+  // Keep only genuinely direct category assignments beneath the provider cards.
+  // Games from unselected providers must not leak into HOT GAME merely because
+  // they exist in the global catalog.
+  const directGames = currentGameList.filter(game => {
+    const code = providerCodeOf(game);
+    const directlyAssigned = gameCategoryIdsOf(game).includes(activeId);
+    return directlyAssigned && (!code || !selectedCodes.has(code));
+  });
 
   const shell = document.createElement('div');
   shell.className = 'category-mixed-shell';
@@ -595,31 +629,93 @@ function renderProviderCards(games){
   renderGames(currentGameList);
 }
 
-const GAME_RENDER_BATCH_DESKTOP = 40;
-const GAME_RENDER_BATCH_MOBILE = 40;
+const GAME_INITIAL_RENDER_DESKTOP = 40;
+const GAME_INITIAL_RENDER_MOBILE = 24;
+const GAME_SCROLL_BATCH_DESKTOP = 24;
+const GAME_SCROLL_BATCH_MOBILE = 18;
+const GAME_FRAME_CHUNK = 8;
+const GAME_SKELETON_DESKTOP = 40;
+const GAME_SKELETON_MOBILE = 24;
+const GAME_IMAGE_CACHE = new Map();
 let gameBatchObserver = null;
 let gameBatchToken = 0;
+let gameIdleHandle = null;
 
 function disconnectGameBatchObserver(){
   if(gameBatchObserver){
     gameBatchObserver.disconnect();
     gameBatchObserver = null;
   }
+  if(gameIdleHandle != null){
+    if('cancelIdleCallback' in window) window.cancelIdleCallback(gameIdleHandle);
+    else clearTimeout(gameIdleHandle);
+    gameIdleHandle = null;
+  }
 }
 
-function gameRenderBatchSize(){
-  return (window.matchMedia && window.matchMedia('(max-width: 768px)').matches)
-    ? GAME_RENDER_BATCH_MOBILE
-    : GAME_RENDER_BATCH_DESKTOP;
+function isGameMobile(){
+  return !!(window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+}
+
+function gameInitialRenderSize(){
+  return isGameMobile() ? GAME_INITIAL_RENDER_MOBILE : GAME_INITIAL_RENDER_DESKTOP;
+}
+
+function gameScrollBatchSize(){
+  return isGameMobile() ? GAME_SCROLL_BATCH_MOBILE : GAME_SCROLL_BATCH_DESKTOP;
+}
+
+function gameSkeletonSize(){
+  return isGameMobile() ? GAME_SKELETON_MOBILE : GAME_SKELETON_DESKTOP;
+}
+
+function gameImageUrl(item){
+  return getImageUrl(item, frontendGameFallbackImageOf(item), 'game');
+}
+
+function warmGameImages(list, fromIndex = 0, count = 16, priority = 'low'){
+  if(!Array.isArray(list)) return;
+  list.slice(fromIndex, fromIndex + count).forEach(item => {
+    const src = gameImageUrl(item);
+    if(!src || GAME_IMAGE_CACHE.has(src)) return;
+    const img = new Image();
+    img.decoding = 'async';
+    try{ img.fetchPriority = priority; }catch(e){}
+    img.src = src;
+    GAME_IMAGE_CACHE.set(src, img);
+  });
+}
+
+function scheduleWarmNextImages(list, fromIndex){
+  const run = () => {
+    gameIdleHandle = null;
+    warmGameImages(list, fromIndex, gameScrollBatchSize() + 12, 'low');
+  };
+  if('requestIdleCallback' in window) gameIdleHandle = window.requestIdleCallback(run, {timeout: 900});
+  else gameIdleHandle = window.setTimeout(run, 120);
+}
+
+function createGameSkeleton(){
+  const card = document.createElement('div');
+  card.className = 'game-card game-card-skeleton';
+  card.setAttribute('aria-hidden', 'true');
+  card.innerHTML = '<div class="game-card-img-wrap game-grid-skeleton"><span class="game-skeleton-shimmer"></span></div>';
+  return card;
+}
+
+function fillGameSkeletons(grid, count){
+  const fragment = document.createDocumentFragment();
+  for(let i = 0; i < count; i++) fragment.appendChild(createGameSkeleton());
+  grid.appendChild(fragment);
 }
 
 function createGameCard(item, renderIndex = 0){
   const card=document.createElement('div');
-  card.className='game-card provider-launch-card';
+  card.className='game-card provider-launch-card game-card-enter';
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
 
-  const imageUrl = getImageUrl(item, frontendGameFallbackImageOf(item), 'game');
+  const imageUrl = gameImageUrl(item);
   const gameName = langText(item, 'name', 'Game');
   const targetUrl = item.gameUrl || item.game_url || '';
 
@@ -633,7 +729,8 @@ function createGameCard(item, renderIndex = 0){
   if(gameName) card.dataset.gameName = gameName;
 
   card.innerHTML=`
-    <div class="game-card-img-wrap">
+    <div class="game-card-img-wrap game-image-loading">
+      <div class="game-image-skeleton" aria-hidden="true"><span class="game-skeleton-shimmer"></span></div>
       <img loading="${renderIndex < 12 ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${renderIndex < 8 ? 'high' : 'low'}" class="provider-launch-img"
            src="${imageUrl}"
            alt="${gameName}"
@@ -652,6 +749,14 @@ function createGameCard(item, renderIndex = 0){
   const playBtn = card.querySelector('.play-btn');
   const img = card.querySelector('.provider-launch-img');
   bindGameImageFallback(img, item);
+  const revealLoadedImage = () => {
+    card.classList.add('game-card-ready');
+    const wrap = card.querySelector('.game-card-img-wrap');
+    if(wrap) wrap.classList.remove('game-image-loading');
+  };
+  img.addEventListener('load', revealLoadedImage, {once:true});
+  img.addEventListener('error', revealLoadedImage, {once:true});
+  if(img.complete) revealLoadedImage();
 
   function fallbackOpen(){
     if(targetUrl){
@@ -680,6 +785,26 @@ function createGameCard(item, renderIndex = 0){
   return card;
 }
 
+function updateMobileDirectGameViewport(){
+  if(!gameGrid || !gameGrid.classList.contains('mobile-direct-game-scroll')) return;
+  if(!window.matchMedia('(max-width: 768px)').matches){
+    gameGrid.classList.remove('mobile-direct-game-scroll');
+    gameGrid.style.removeProperty('--mobile-direct-game-height');
+    return;
+  }
+  const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const top = Math.max(0, gameGrid.getBoundingClientRect().top);
+  const bottomNav = document.querySelector('.bottom-nav');
+  const bottomHeight = bottomNav ? Math.max(57, bottomNav.getBoundingClientRect().height || 0) : 57;
+  const available = Math.max(220, Math.floor(viewportHeight - top - bottomHeight - 6));
+  gameGrid.style.setProperty('--mobile-direct-game-height', available + 'px');
+}
+
+window.addEventListener('resize', updateMobileDirectGameViewport, { passive:true });
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', updateMobileDirectGameViewport, { passive:true });
+}
+
 function renderGames(list){
   if(!gameGrid) return;
   gameGrid.classList.remove('initial-game-loading');
@@ -692,10 +817,6 @@ function renderGames(list){
   const gameList = Array.isArray(list) ? list : [];
   const isHotCategory = activeCategoryTypeKey() === 'HOT';
 
-  // Provider First has two different layouts:
-  // - Hot Game: provider cards first, then games without the left rail.
-  // - Other categories: classic All/provider rail with games on the right.
-  // Direct Game List never shows the left provider rail.
   if(!isHotCategory && !isDirectGameCategory() && !activeProviderCode){
     activeProviderCode = ALL_PROVIDER_CODE;
   }
@@ -708,9 +829,6 @@ function renderGames(list){
   let scrollRoot = null;
   if(shouldShowProviderRail){
     gameGrid.classList.add('provider-with-rail');
-
-    // Reuse the existing lobby so the provider sidebar never refreshes when
-    // switching providers/subcategories. Only the right game panel is replaced.
     let lobby = gameGrid.querySelector('.provider-lobby-shell');
     let rail = lobby && lobby.querySelector('.provider-side-rail');
     let panel = lobby && lobby.querySelector('.provider-games-panel');
@@ -737,6 +855,19 @@ function renderGames(list){
     gameGrid.innerHTML = '';
     gameGrid.classList.remove('provider-with-rail');
     gameGrid.appendChild(targetGrid);
+
+    // Mobile direct-game views (including HOT GAME with one provider) must
+    // scroll inside the game area, exactly like the provider-game panel.
+    // Using a dedicated scroll root prevents the fixed bottom navigation from
+    // trapping the page and also lets lazy loading continue for every game.
+    if(window.matchMedia('(max-width: 768px)').matches){
+      gameGrid.classList.add('mobile-direct-game-scroll');
+      scrollRoot = gameGrid;
+      requestAnimationFrame(updateMobileDirectGameViewport);
+    }else{
+      gameGrid.classList.remove('mobile-direct-game-scroll');
+      gameGrid.style.removeProperty('--mobile-direct-game-height');
+    }
   }
 
   if(!gameList.length){
@@ -747,39 +878,69 @@ function renderGames(list){
     return;
   }
 
+  // Warm only the visible rows at high priority. Everything after that is
+  // prepared while the browser is idle, avoiding a burst of 40 image decodes.
+  warmGameImages(gameList, 0, Math.min(12, gameList.length), 'high');
+  fillGameSkeletons(targetGrid, Math.min(gameSkeletonSize(), gameList.length));
+
   let renderedCount = 0;
-  const batchSize = gameRenderBatchSize();
+  const initialTarget = Math.min(gameInitialRenderSize(), gameList.length);
   const sentinel = document.createElement('div');
   sentinel.className = 'game-load-sentinel';
   sentinel.setAttribute('aria-hidden', 'true');
 
-  function appendNextBatch(){
+  function removeSkeletonChunk(count){
+    const skeletons = targetGrid.querySelectorAll('.game-card-skeleton');
+    for(let i = 0; i < Math.min(count, skeletons.length); i++) skeletons[i].remove();
+  }
+
+  function appendFrameUntil(targetCount, done){
     if(renderToken !== gameBatchToken) return;
-    const endIndex = Math.min(renderedCount + batchSize, gameList.length);
+    const frameEnd = Math.min(renderedCount + GAME_FRAME_CHUNK, targetCount, gameList.length);
     const fragment = document.createDocumentFragment();
-    for(; renderedCount < endIndex; renderedCount++){
+    const added = frameEnd - renderedCount;
+    for(; renderedCount < frameEnd; renderedCount++){
       fragment.appendChild(createGameCard(gameList[renderedCount], renderedCount));
     }
+    removeSkeletonChunk(added);
     targetGrid.insertBefore(fragment, sentinel);
-    if(renderedCount >= gameList.length){
-      disconnectGameBatchObserver();
-      sentinel.remove();
+    if(renderedCount < targetCount && renderedCount < gameList.length){
+      requestAnimationFrame(() => appendFrameUntil(targetCount, done));
+    }else if(typeof done === 'function'){
+      done();
     }
+  }
+
+  function appendScrollBatch(){
+    if(renderToken !== gameBatchToken || renderedCount >= gameList.length) return;
+    const target = Math.min(renderedCount + gameScrollBatchSize(), gameList.length);
+    appendFrameUntil(target, () => {
+      scheduleWarmNextImages(gameList, renderedCount);
+      if(renderedCount >= gameList.length){
+        disconnectGameBatchObserver();
+        sentinel.remove();
+      }
+    });
   }
 
   targetGrid.appendChild(sentinel);
-  appendNextBatch();
-
-  if(renderedCount < gameList.length){
+  appendFrameUntil(initialTarget, () => {
+    targetGrid.querySelectorAll('.game-card-skeleton').forEach(node => node.remove());
+    scheduleWarmNextImages(gameList, renderedCount);
+    if(renderedCount >= gameList.length){
+      sentinel.remove();
+      return;
+    }
     gameBatchObserver = new IntersectionObserver(entries => {
-      if(entries.some(entry => entry.isIntersecting)) appendNextBatch();
+      if(entries.some(entry => entry.isIntersecting)) appendScrollBatch();
     }, {
       root: scrollRoot,
-      rootMargin: '160px 0px',
+      // Start preparing well before the user reaches the last visible row.
+      rootMargin: '700px 0px',
       threshold: 0.01
     });
     gameBatchObserver.observe(sentinel);
-  }
+  });
 }
 
 // VPBet-style catalog architecture:
@@ -790,7 +951,7 @@ function renderGames(list){
 const API_MEMORY_CACHE = new Map();
 const API_IN_FLIGHT = new Map();
 const API_CACHE_TTL_MS = 3 * 60 * 1000;
-const GAME_CATALOG_CACHE_VERSION = 'v4';
+const GAME_CATALOG_CACHE_VERSION = 'v10-no-session';
 const GAME_CATALOG_FRESH_MS = 2 * 60 * 1000;
 const GAME_CATALOG_KEY = 'naga_game_catalog_' + GAME_CATALOG_CACHE_VERSION + ':' + currentLangCode();
 const SLOT_IMAGE_PRELOAD_HOLD = [];
@@ -846,7 +1007,7 @@ function fetchJson(url, options = {}){
     delete EARLY_API_REQUESTS[key];
     return earlyRequest.then(data => {
       API_MEMORY_CACHE.set(key, { time: Date.now(), data });
-      writeApiSessionCache(key, data, ttl);
+      if(!forceRefresh) writeApiSessionCache(key, data, ttl);
       return data;
     });
   }
@@ -858,7 +1019,7 @@ function fetchJson(url, options = {}){
     return res.json();
   }).then(data => {
     API_MEMORY_CACHE.set(key, { time: Date.now(), data: data });
-    writeApiSessionCache(key, data, ttl);
+    if(!forceRefresh) writeApiSessionCache(key, data, ttl);
     return data;
   }).finally(() => {
     if(API_IN_FLIGHT.get(key) === request) API_IN_FLIGHT.delete(key);
@@ -897,28 +1058,11 @@ function normalizeStoredCatalog(value){
 }
 
 function readGameCatalogCache(){
-  const boot = normalizeStoredCatalog(BOOTSTRAP_CATALOG);
-  if(boot) return boot;
-  try{
-    return normalizeStoredCatalog(JSON.parse(sessionStorage.getItem(GAME_CATALOG_KEY) || 'null'));
-  }catch(e){
-    return null;
-  }
+  return null;
 }
 
 function writeGameCatalogCache(catalog){
-  try{
-    sessionStorage.setItem(GAME_CATALOG_KEY, JSON.stringify({
-      savedAt: Date.now(),
-      categories: catalog.categories || [],
-      providers: catalog.providers || [],
-      subCategories: catalog.subCategories || [],
-      games: catalog.games || []
-    }));
-  }catch(e){
-    // sessionStorage can be smaller on some embedded browsers. Endpoint-level
-    // caches written by fetchJson remain as a fallback.
-  }
+  // Disabled: always use current API category/provider configuration.
 }
 
 function catalogList(response){
@@ -942,7 +1086,7 @@ function fetchFullGameCatalog(forceRefresh = false){
     fetchJson(urls.subCategories, requestOptions),
     fetchJson(urls.games, requestOptions)
   ]).then(results => {
-    const existing = readGameCatalogCache() || {categories:[], providers:[], subCategories:[], games:[]};
+    const existing = {categories:[], providers:[], subCategories:[], games:[]};
     const catalog = {
       savedAt: Date.now(),
       categories: results[0].status === 'fulfilled' ? catalogList(results[0].value) : existing.categories,
@@ -1019,9 +1163,31 @@ function gameMatchesActiveCategory(game){
   if(!activeCategoryId) return true;
   const activeId = String(activeCategoryId);
   const directIds = gameCategoryIdsOf(game);
+
+  // Keep HOT GAME behaviour unchanged because it is a curated/aggregated
+  // category and may intentionally include games assigned to other database
+  // categories. For every normal category, the database category assignment
+  // is authoritative so Slot games cannot leak into Live/Sport/Other.
+  const isHotCategory = activeCategoryTypeKey() === 'HOT';
   if(directIds.includes(activeId)) return true;
 
   const gameProviderCode = providerCodeOf(game);
+  if(directIds.length && !isHotCategory){
+    // Imported rows can carry an old category_id even though the provider is
+    // now configured for only one frontend category. In that single-category
+    // case, use the current BO/provider configuration so providers such as
+    // EPICWIN do not become empty. Multi-category providers remain strict,
+    // preventing Slot games from leaking into Live/Sport/Other.
+    const configuredProvider = providerForCode(gameProviderCode);
+    const configuredIds = providerCategoryIdsOf(configuredProvider);
+    const configuredTypes = providerTypesOf(configuredProvider);
+    const activeKey = activeCategoryTypeKey();
+    const singleCategoryMatch =
+      (configuredIds.length === 1 && configuredIds[0] === activeId) ||
+      (!configuredIds.length && configuredTypes.length === 1 && configuredTypes[0] === activeKey);
+    if(!singleCategoryMatch) return false;
+  }
+
   const rule = providerRuleForCode(gameProviderCode);
   if(rule){
     const mode = String(rule.gameMode || 'ALL').toUpperCase();
@@ -1098,7 +1264,13 @@ function renderCatalogState(){
   const list = categoryGamesFromCatalog();
   const categoryProviders = providersForActiveCategory();
   const isHotCategory = activeCategoryTypeKey() === 'HOT';
-  const forceDirect = isHotCategory && !isDirectGameCategory() && categoryProviders.length <= 1;
+  const hotProviderRules = isHotCategory ? categoryProviderRules() : [];
+  // For HOT GAME, the BO provider selection is authoritative. One selected
+  // provider opens its games immediately; multiple selected providers show the
+  // provider landing first. Fall back to resolved provider metadata only for
+  // older category records that do not contain providerRules.
+  const hotConfiguredCount = hotProviderRules.length || categoryProviders.length;
+  const forceDirect = isHotCategory && !isDirectGameCategory() && hotConfiguredCount === 1;
 
   if(isDirectGameCategory()){
     currentGameList = list;
@@ -1108,10 +1280,17 @@ function renderCatalogState(){
     return;
   }
 
-  if(forceDirect && categoryProviders.length === 1 && !activeProviderCode){
-    const onlyCode = providerCodeOf(categoryProviders[0]);
-    const providerGames = list.filter(game => providerCodeOf(game) === onlyCode);
-    currentGameList = providerGames.length ? providerGames : list;
+  if(forceDirect && !activeProviderCode){
+    const onlyRule = hotProviderRules[0] || null;
+    const onlyCode = String(onlyRule?.providerCode || providerCodeOf(categoryProviders[0]) || '').trim().toUpperCase();
+    let providerGames = list.filter(game => providerCodeOf(game) === onlyCode);
+    if(onlyRule && String(onlyRule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
+      const allowed = new Set((onlyRule.gameIds || []).map(String));
+      providerGames = providerGames.filter(game => allowed.has(String(game.id)));
+    }
+    // Do not fall back to games from other providers. When BO selects one HOT
+    // provider, only that provider's games are valid for this category.
+    currentGameList = providerGames;
     activeProviderCode = null;
     if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
     renderGames(currentGameList);
@@ -1154,35 +1333,12 @@ function renderCatalogState(){
   else renderProviderCards(list);
 }
 
-function refreshCatalogSilently(cached){
-  const age = cached ? Date.now() - Number(cached.savedAt || 0) : Infinity;
-  if(age < GAME_CATALOG_FRESH_MS) return;
-  fetchFullGameCatalog(true).catch(err => {
-    console.warn('Background game catalog refresh failed:', err.message);
-  });
-}
-
 function loadCategories(){
   if(!categoryRow || !subTabRow || !gameGrid) return Promise.resolve();
-
-  const cached = readGameCatalogCache();
-  if(cached){
-    applyGameCatalog(cached);
-    activeCategoryId = null;
-    activeSubCategoryId = null;
-    activeProviderCode = null;
-    renderCategories();
-    renderSubTabs();
-    renderCatalogState();
-    scheduleSlotCategoryPrefetch();
-    refreshCatalogSilently(cached);
-    return Promise.resolve();
-  }
-
   setGamesLoading();
-  return fetchFullGameCatalog(false).then(catalog => {
+  return fetchFullGameCatalog(true).then(catalog => {
     applyGameCatalog(catalog);
-    activeCategoryId = null;
+    activeCategoryId = pickDefaultCategoryId(categories);
     activeSubCategoryId = null;
     activeProviderCode = null;
     renderCategories();

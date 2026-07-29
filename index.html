@@ -14,18 +14,8 @@
     try{
       var base = 'https://bo.titanxgaming.com';
       var lang = localStorage.getItem('site_lang') || localStorage.getItem('lang') || document.documentElement.lang || 'en';
-      var catalogKey = 'naga_game_catalog_v4:' + lang;
-      var cached = null;
-      try{ cached = JSON.parse(sessionStorage.getItem(catalogKey) || 'null'); }catch(e){}
-      if(cached && (Array.isArray(cached.games) || Array.isArray(cached.categories))){
-        // app.js consumes this synchronously, so refresh can paint games before
-        // waiting for the remote API, exactly like VPBet's session catalog.
-        window.__NAGA_CATALOG_BOOTSTRAP__ = cached;
-        return;
-      }
-
-      // Cold visit only: begin the one-time complete catalog requests before CSS
-      // finishes loading. app.js reuses these promises and never duplicates them.
+      // Always request the current catalog. Do not restore game category or
+      // provider rules from sessionStorage, which can flash an outdated layout.
       var urls = [
         base + '/api/admin/game-category/list',
         base + '/api/admin/game-provider/list',
@@ -36,14 +26,14 @@
       urls.forEach(function(rawUrl){
         var key = new URL(rawUrl, location.href).toString();
         if(store[key]) return;
-        store[key] = fetch(key, {cache:'default'})
+        store[key] = fetch(key, {cache:'no-store'})
           .then(function(res){ if(!res.ok) throw new Error('API error: ' + key); return res.json(); })
           .catch(function(err){ delete store[key]; throw err; });
       });
     }catch(e){}
   })();
   </script>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.78" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.84" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -282,7 +272,7 @@
   <script src="assets/js/social-links.js?v=1.0.4"></script>
   <script src="assets/js/frontend-display.js?v=1.0.0"></script>
   <script src="assets/js/provider-launch.js?v=1.0.5"></script>
-  <script src="assets/js/app.js?v=1.0.44"></script>
+  <script src="assets/js/app.js?v=1.0.45"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>
   <script src="assets/js/bonus.js?v=1.0.10"></script>

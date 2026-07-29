@@ -12122,7 +12122,7 @@ body.login-page .login-form .auth-message.success { color:#20c96b !important; }
 /* v1.0.72: immediate home lobby placeholders while early API bootstrap runs */
 .category-row.is-initial-loading{display:flex;gap:12px;align-items:center;min-height:112px;overflow:hidden}
 .category-skeleton{display:block;flex:0 0 108px;height:108px;border-radius:18px;background:linear-gradient(90deg,rgba(255,255,255,.10),rgba(255,255,255,.28),rgba(255,255,255,.10));background-size:220% 100%;animation:nagaLobbyShimmer 1.05s linear infinite}
-.initial-game-loading{display:flex!important;align-items:flex-start;justify-content:center;min-height:260px;padding-top:72px}
+.initial-game-loading{display:flex!important;align-items:flex-start;justify-content:center;min-height:260px;}
 .game-loading-inline{display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.55)}
 .game-loading-spinner{width:22px;height:22px;border:3px solid rgba(255,255,255,.28);border-top-color:#35f486;border-radius:50%;animation:pageLoaderSpin .65s linear infinite}
 @keyframes nagaLobbyShimmer{to{background-position:-220% 0}}
@@ -12360,4 +12360,201 @@ body.home-page .provider-games-panel::-webkit-scrollbar-track,
 body.home-page .provider-games-panel::-webkit-scrollbar-thumb{
   background:transparent!important;
   border:0!important;
+}
+
+/* Instant/progressive game loading enhancement */
+.game-card-skeleton{
+  pointer-events:none!important;
+  overflow:hidden;
+  contain:layout paint style;
+}
+.game-card-skeleton .game-card-img-wrap{
+  position:relative;
+  overflow:hidden;
+  background:rgba(213,225,244,.62);
+}
+.game-skeleton-shimmer{
+  position:absolute;
+  inset:0;
+  display:block;
+  background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.72) 48%,transparent 76%);
+  transform:translateX(-110%);
+  animation:nagaGameSkeleton 1.05s ease-in-out infinite;
+}
+@keyframes nagaGameSkeleton{
+  to{transform:translateX(110%)}
+}
+.game-card-enter{
+  opacity:0;
+  transform:translate3d(0,5px,0);
+  animation:nagaGameCardEnter .18s ease-out forwards;
+  contain:layout paint style;
+  content-visibility:auto;
+  contain-intrinsic-size:140px 120px;
+}
+@keyframes nagaGameCardEnter{
+  to{opacity:1;transform:translate3d(0,0,0)}
+}
+.provider-games-list,.direct-games-list{
+  contain:layout style;
+}
+@media (prefers-reduced-motion:reduce){
+  .game-skeleton-shimmer,.game-card-enter{animation:none!important;transform:none!important;opacity:1!important}
+}
+
+/* Instant/progressive game loading enhancement */
+.game-card-skeleton{pointer-events:none!important;overflow:hidden;contain:layout paint style;}
+.game-card-skeleton .game-card-img-wrap{position:relative;overflow:hidden;background:rgba(213,225,244,.62);}
+.game-skeleton-shimmer{position:absolute;inset:0;display:block;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.72) 48%,transparent 76%);transform:translateX(-110%);animation:nagaGameSkeleton 1.05s ease-in-out infinite;}
+@keyframes nagaGameSkeleton{to{transform:translateX(110%)}}
+.game-card-enter{opacity:0;transform:translate3d(0,5px,0);animation:nagaGameCardEnter .18s ease-out forwards;contain:layout paint style;content-visibility:auto;contain-intrinsic-size:140px 120px;}
+@keyframes nagaGameCardEnter{to{opacity:1;transform:translate3d(0,0,0)}}
+.provider-games-list,.direct-games-list{contain:layout style;}
+@media (prefers-reduced-motion:reduce){.game-skeleton-shimmer,.game-card-enter{animation:none!important;transform:none!important;opacity:1!important}}
+
+
+/* v1.0.81: Facebook-style game loading placeholders */
+.game-card-skeleton{
+  background:#fff!important;
+  border:1px solid rgba(12,56,130,.10)!important;
+  border-radius:14px!important;
+  box-shadow:0 2px 8px rgba(29,73,135,.10)!important;
+}
+.game-card-skeleton .game-card-img-wrap,
+.game-image-skeleton{
+  position:relative;
+  width:100%;
+  height:100%;
+  min-height:110px;
+  padding:12px;
+  box-sizing:border-box;
+  overflow:hidden;
+  border-radius:inherit;
+  background:#fff;
+}
+.game-skeleton-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.game-skeleton-avatar{display:block;flex:0 0 24px;width:24px;height:24px;border-radius:7px;background:#e8edf4;}
+.game-skeleton-line,.game-skeleton-block{display:block;border-radius:7px;background:#e8edf4;}
+.game-skeleton-line-short{width:44%;height:9px;}
+.game-skeleton-block{width:68%;height:24px;margin-bottom:10px;}
+.game-skeleton-line-medium{width:58%;height:8px;}
+.game-image-skeleton{position:absolute;inset:0;z-index:2;pointer-events:none;transition:opacity .18s ease,visibility .18s ease;}
+.game-image-loading .provider-launch-img{opacity:0!important;}
+.game-card-ready .game-image-skeleton{opacity:0;visibility:hidden;}
+.game-card-ready .provider-launch-img{opacity:1!important;transition:opacity .18s ease;}
+.game-facebook-skeleton .game-skeleton-shimmer,
+.game-image-skeleton .game-skeleton-shimmer{
+  position:absolute;inset:0;display:block;
+  background:linear-gradient(100deg,transparent 18%,rgba(255,255,255,.88) 48%,transparent 78%);
+  transform:translateX(-115%);animation:nagaGameSkeleton 1.15s ease-in-out infinite;
+}
+@media(max-width:768px){
+  .game-card-skeleton .game-card-img-wrap,.game-image-skeleton{min-height:92px;padding:9px;}
+  .game-skeleton-avatar{flex-basis:20px;width:20px;height:20px;}
+  .game-skeleton-block{height:20px;margin-bottom:8px;}
+}
+
+
+/* v1.0.82: game-grid-shaped skeleton placeholders
+   Match the exact rendered game grid/card pattern instead of a Facebook feed card. */
+body.home-page .provider-games-list .game-card-skeleton,
+body.home-page .direct-games-list .game-card-skeleton{
+  width:100%!important;
+  max-width:156px!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+body.home-page .game-card-skeleton .game-card-img-wrap,
+body.home-page .game-grid-skeleton,
+body.home-page .game-image-skeleton{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1 / 1!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:10px!important;
+  overflow:hidden!important;
+  background:rgba(224,231,241,.82)!important;
+  box-sizing:border-box!important;
+}
+body.home-page .game-image-skeleton{
+  position:absolute!important;
+  inset:0!important;
+  z-index:2!important;
+}
+body.home-page .game-grid-skeleton .game-skeleton-shimmer,
+body.home-page .game-image-skeleton .game-skeleton-shimmer{
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  background:linear-gradient(100deg,transparent 18%,rgba(255,255,255,.72) 48%,transparent 78%)!important;
+  transform:translateX(-115%);
+  animation:nagaGameSkeleton 1.05s ease-in-out infinite!important;
+}
+body.home-page .game-image-loading{
+  aspect-ratio:1 / 1;
+  background:rgba(224,231,241,.82);
+  border-radius:10px;
+  overflow:hidden;
+}
+body.home-page .game-image-loading .provider-launch-img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+body.home-page .game-card-ready .game-card-img-wrap{
+  aspect-ratio:auto;
+  background:transparent;
+}
+body.home-page .game-card-ready .provider-launch-img{
+  width:100%!important;
+  height:auto!important;
+  object-fit:contain!important;
+}
+@media(max-width:768px){
+  body.home-page .provider-games-list .game-card-skeleton,
+  body.home-page .direct-games-list .game-card-skeleton{border-radius:8px!important;}
+  body.home-page .game-card-skeleton .game-card-img-wrap,
+  body.home-page .game-grid-skeleton,
+  body.home-page .game-image-skeleton,
+  body.home-page .game-image-loading{border-radius:8px!important;}
+}
+
+
+/* v1.0.84: mobile HOT/direct game list scroll fix */
+@media (max-width:768px){
+  body.home-page .game-grid.mobile-direct-game-scroll{
+    display:block!important;
+    width:100%!important;
+    height:var(--mobile-direct-game-height, calc(100dvh - 330px))!important;
+    max-height:var(--mobile-direct-game-height, calc(100dvh - 330px))!important;
+    min-height:220px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-y!important;
+    padding-bottom:76px!important;
+    box-sizing:border-box!important;
+    scrollbar-width:none!important;
+  }
+  body.home-page .game-grid.mobile-direct-game-scroll::-webkit-scrollbar{
+    display:none!important;
+    width:0!important;
+    height:0!important;
+  }
+  body.home-page .game-grid.mobile-direct-game-scroll .direct-games-list{
+    overflow:visible!important;
+    min-height:min-content!important;
+    padding-bottom:84px!important;
+  }
 }
