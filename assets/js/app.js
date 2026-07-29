@@ -633,7 +633,8 @@ const GAME_INITIAL_RENDER_DESKTOP = 40;
 const GAME_INITIAL_RENDER_MOBILE = 24;
 const GAME_SCROLL_BATCH_DESKTOP = 24;
 const GAME_SCROLL_BATCH_MOBILE = 18;
-const GAME_FRAME_CHUNK = 8;
+const GAME_FRAME_CHUNK_DESKTOP = 40;
+const GAME_FRAME_CHUNK_MOBILE = 12;
 const GAME_SKELETON_DESKTOP = 40;
 const GAME_SKELETON_MOBILE = 24;
 const GAME_IMAGE_CACHE = new Map();
@@ -711,7 +712,7 @@ function fillGameSkeletons(grid, count){
 
 function createGameCard(item, renderIndex = 0){
   const card=document.createElement('div');
-  card.className='game-card provider-launch-card game-card-enter';
+  card.className='game-card provider-launch-card';
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
 
@@ -896,7 +897,8 @@ function renderGames(list){
 
   function appendFrameUntil(targetCount, done){
     if(renderToken !== gameBatchToken) return;
-    const frameEnd = Math.min(renderedCount + GAME_FRAME_CHUNK, targetCount, gameList.length);
+    const frameChunk = isGameMobile() ? GAME_FRAME_CHUNK_MOBILE : GAME_FRAME_CHUNK_DESKTOP;
+    const frameEnd = Math.min(renderedCount + frameChunk, targetCount, gameList.length);
     const fragment = document.createDocumentFragment();
     const added = frameEnd - renderedCount;
     for(; renderedCount < frameEnd; renderedCount++){
@@ -905,7 +907,8 @@ function renderGames(list){
     removeSkeletonChunk(added);
     targetGrid.insertBefore(fragment, sentinel);
     if(renderedCount < targetCount && renderedCount < gameList.length){
-      requestAnimationFrame(() => appendFrameUntil(targetCount, done));
+      if(isGameMobile()) requestAnimationFrame(() => appendFrameUntil(targetCount, done));
+      else appendFrameUntil(targetCount, done);
     }else if(typeof done === 'function'){
       done();
     }
@@ -1417,7 +1420,12 @@ loadCategories();
 document.addEventListener('i18n:changed', () => {
   renderCategories();
   renderSubTabs();
-  loadGames();
+  // Do not rebuild the whole game grid after language initialization. Rebuilding
+  // caused a second full-screen flash on slower live servers. Update only the
+  // translated PLAY labels in the already-rendered cards.
+  document.querySelectorAll('.provider-launch-btn').forEach(btn => {
+    btn.textContent = tr('play','PLAY');
+  });
   if(sliderBannerCache.length){
     document.querySelectorAll('.side-slider').forEach(slider => renderSliderBanners(slider, sliderBannerCache));
     document.querySelectorAll('.side-slider').forEach(initSlider);
