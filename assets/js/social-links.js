@@ -3,7 +3,7 @@
 
   var apiBase = String((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '').replace(/\/+$/, '');
   var uploadBase = String((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.uploadBaseUrl) || '').replace(/\/+$/, '');
-  var API_URL = apiBase + '/api/social/list';
+  var API_URL = (window.NAGA_API && window.NAGA_API.socialLinkList) || (apiBase + '/api/social/list');
   var current = [];
 
   function safeHttpUrl(value) {
@@ -27,6 +27,8 @@
     if (/^\/assets\//i.test(raw)) return raw;
     if (/^uploads\//i.test(raw)) return uploadBase.replace(/\/uploads$/i, '') + '/' + raw;
     if (/^\/uploads\//i.test(raw)) return uploadBase.replace(/\/uploads$/i, '') + raw;
+    if (/^social\//i.test(raw)) return uploadBase + '/' + raw.replace(/^\/+/, '');
+    if (/^\/social\//i.test(raw)) return uploadBase + raw;
 
     return uploadBase + '/social/' + raw.replace(/^\/+/, '');
   }
@@ -43,7 +45,7 @@
       return {
         id: item && item.id,
         url: safeHttpUrl(item && item.url),
-        image: imageUrl(item && (item.imageUrl || item.image))
+        image: imageUrl(item && (item.imageUrl || item.image || item.imagePath || item.path))
       };
     }).filter(function (item) {
       return item.url && item.image;
