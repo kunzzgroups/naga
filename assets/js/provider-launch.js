@@ -21,6 +21,7 @@
   const SETTLING_GAME_MESSAGE = 'Your previous game is closing and the balance is being returned. Please wait a moment.';
   const DEFAULT_CONFIRM_TEXT = 'Confirm & Play';
   const TERMINAL_SESSION_STATES = ['CLOSED', 'SETTLED', 'COMPLETED', 'EXITED', 'EXPIRED', 'INACTIVE', 'CANCELLED'];
+  const PROVIDER_GAME_WINDOW_NAME_PREFIX = 'naga_provider_game_';
 
   function getToken(){
     return localStorage.getItem('member_token') || localStorage.getItem('token') || localStorage.getItem('access_token') || '';
@@ -619,9 +620,12 @@
       const launchUrl = extractLaunchUrl(json);
       if(!launchUrl) throw new Error('Provider launch URL not returned. Please check BO provider response launch URL path.');
       closeModal();
-      // Open provider game in a normal browser tab instead of a popup window.
-      // The active session remains locked until exit/heartbeat settlement completes.
-      const gameTab = window.open(launchUrl, '_blank');
+      // Give the provider tab a persistent window.name marker. When the provider's
+      // Lobby/Close button navigates this same tab back to our domain (often index.html
+      // instead of provider-return.html), provider-launch.js can identify that this is
+      // the returned game tab and immediately settle/clear the active session.
+      const providerWindowName = PROVIDER_GAME_WINDOW_NAME_PREFIX + String(activeSession.sessionId || Date.now());
+      const gameTab = window.open(launchUrl, providerWindowName);
       if(gameTab){
         try{ gameTab.focus(); }catch(e){}
         startProviderMonitor(activeSession.sessionId, activeSession.providerCode || payload.providerCode || '', gameTab);
@@ -777,6 +781,47 @@
     }
   });
 
+  let returnedProviderSettlementPromise = null;
+  function isReturnedProviderGameTab(){
+    try{ return String(window.name || '').indexOf(PROVIDER_GAME_WINDOW_NAME_PREFIX) === 0; }catch(e){ return false; }
+  }
+
+  async function settleReturnedProviderGameTab(){
+    if(!isReturnedProviderGameTab()) return false;
+    const sessionId = getActiveProviderSessionId();
+    if(!sessionId){
+      try{ window.name = ''; }catch(e){}
+      syncLaunchAvailabilityUi();
+      return true;
+    }
+    if(returnedProviderSettlementPromise) return returnedProviderSettlementPromise;
+
+    returnedProviderSettlementPromise = (async function(){
+      try{
+        await exitProviderGame({
+          sessionId: sessionId,
+          providerCode: localStorage.getItem('naga_active_provider_code') || localStorage.getItem('naga_last_provider_code') || '',
+          transferBackAll: true
+        });
+        return true;
+      }catch(e){
+        // If BO/backend already closed it, clear the stale browser lock immediately.
+        if(isTerminalSessionMessage(e && e.message)){
+          clearStoredProviderSession();
+          refreshWalletAfterProviderExit();
+          return true;
+        }
+        return false;
+      }finally{
+        try{ window.name = ''; }catch(e){}
+        returnedProviderSettlementPromise = null;
+        resetTransferAction();
+        syncLaunchAvailabilityUi();
+      }
+    })();
+    return returnedProviderSettlementPromise;
+  }
+
   window.NAGA_PROVIDER_LAUNCH = {
     launch: launch,
     directLaunch: directLaunch,
@@ -795,12 +840,20 @@
     clearStoredProviderSession: clearStoredProviderSession,
     isGameActive: function(){ return Boolean(getActiveProviderSessionId()); },
     canLaunchAnotherGame: ensureProviderCanLaunch,
-    reconcileActiveProviderSession: reconcileActiveProviderSession
+    reconcileActiveProviderSession: reconcileActiveProviderSession,
+    settleReturnedProviderGameTab: settleReturnedProviderGameTab
   };
 
   document.addEventListener('DOMContentLoaded', function(){
     bindExisting();
     syncLaunchAvailabilityUi();
-    reconcileActiveProviderSession();
+    if(isReturnedProviderGameTab()){
+      // The provider navigated the game tab back to our index/lobby without closing
+      // the tab. Settle first, then the shared localStorage event unlocks the original
+      // lobby tab immediately—no refresh required.
+      settleReturnedProviderGameTab();
+    }else{
+      reconcileActiveProviderSession();
+    }
   });
 })();
