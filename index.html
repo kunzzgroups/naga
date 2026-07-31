@@ -33,7 +33,7 @@
     }catch(e){}
   })();
   </script>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.80" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.81" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -152,6 +152,16 @@
             <span id="bonusProgressRequired">MYR 0.00</span>
           </div>
           <div class="bonus-progress-note" id="bonusProgressNote">Winover progress</div>
+          <button type="button" class="bonus-progress-complete" id="bonusProgressComplete" hidden>Complete Promotion</button>
+        </div>
+        <div class="bonus-complete-modal" id="bonusCompleteModal" aria-hidden="true">
+          <div class="bonus-complete-backdrop" data-bonus-complete-close></div>
+          <div class="bonus-complete-dialog" role="dialog" aria-modal="true" aria-labelledby="bonusCompleteTitle">
+            <button type="button" class="bonus-complete-close" data-bonus-complete-close aria-label="Close">×</button>
+            <h3 id="bonusCompleteTitle">Complete Promotion</h3>
+            <p id="bonusCompleteMessage">Your turnover requirement is complete. Confirm to finish this promotion.</p>
+            <div class="bonus-complete-actions"><button type="button" data-bonus-complete-close>Cancel</button><button type="button" id="bonusCompleteConfirm">Confirm</button></div>
+          </div>
         </div>
 
       </div>
@@ -266,9 +276,9 @@
     </div>
   </div>
 
-  <script src="assets/js/site-shell.js?v=1.0.13"></script>
+  <script src="assets/js/site-shell.js?v=1.0.14"></script>
   <script src="assets/js/lang.js?v=1.0.8"></script>
-  <script src="assets/js/config.js?v=1.0.20"></script>
+  <script src="assets/js/config.js?v=1.0.21"></script>
   <script src="assets/js/social-links.js?v=1.0.4"></script>
   <script src="assets/js/frontend-display.js?v=1.0.0"></script>
   <script src="assets/js/provider-launch.js?v=1.0.5"></script>
@@ -280,7 +290,7 @@
   <script src="assets/js/layout-section-loader.js?v=1.1.9"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.16"></script>
   <script src="assets/js/member-auth.js?v=1.0.3"></script>
-  <script src="assets/js/bonus-progress.js?v=1.0.0"></script>
+  <script src="assets/js/bonus-progress.js?v=1.0.1"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
