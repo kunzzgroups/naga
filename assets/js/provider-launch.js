@@ -397,9 +397,15 @@
     const data = json && json.data ? json.data : (json || {});
     const session = data && data.session ? data.session : {};
     const rawState = firstValue(
+      // Heartbeat API returns the session state directly as data.status.
+      // Include direct status/state fields so a BO-closed session immediately
+      // clears the stale browser lock instead of showing the active-game alert.
+      data.status, data.state,
       data.sessionStatus, data.session_status, data.sessionState, data.session_state,
       session.status, session.state,
-      data.providerSessionStatus, data.provider_session_status
+      data.providerSessionStatus, data.provider_session_status,
+      json && json.sessionStatus, json && json.session_status,
+      json && json.providerSessionStatus, json && json.provider_session_status
     );
     const state = String(rawState || '').trim().toUpperCase();
     const explicitlyClosed = data.closed === true || data.active === false || data.open === false ||
@@ -464,7 +470,8 @@
     }catch(err){
       btn.disabled = false;
       btn.textContent = oldText;
-      setError(err.message || 'Launch game failed.');
+      const launchError = err && err.message ? err.message : 'Launch game failed.';
+      setError(launchError);
     }
   }
 
@@ -560,12 +567,13 @@
       .then(function(json){ handleHeartbeatResult(json, sessionId); })
       .catch(function(){});
 
-    // Detect a manually closed provider tab quickly and settle immediately.
+    // Detect a manually closed provider tab almost immediately. The original lobby stays open;
+    // only settle the provider wallet, refresh the wallet UI and unlock game launching.
     providerCloseCheckTimer = setInterval(function(){
       if(activeProviderTab && activeProviderTab.closed){
         closeAndSettle();
       }
-    }, 1200);
+    }, 200);
 
     // Keep the backend session alive, but also consume a CLOSED/SETTLED heartbeat
     // response so the frontend unlocks without requiring a page refresh.
@@ -712,19 +720,23 @@
     }
   });
 
-  window.addEventListener('focus', function(){
-    if(activeProviderTab && activeProviderTab.closed){
-      const sessionId = localStorage.getItem('naga_active_provider_session_id');
-      const providerCode = localStorage.getItem('naga_active_provider_code') || localStorage.getItem('naga_last_provider_code') || '';
-      if(sessionId){
-        exitProviderGame({ sessionId: sessionId, providerCode: providerCode, transferBackAll: true })
-          .catch(function(e){
-            if(isTerminalSessionMessage(e && e.message)) clearStoredProviderSession();
-          });
-      }else{
-        resetTransferAction();
-      }
+  function settleClosedProviderTabNow(){
+    if(!(activeProviderTab && activeProviderTab.closed)) return;
+    const sessionId = localStorage.getItem('naga_active_provider_session_id');
+    const providerCode = localStorage.getItem('naga_active_provider_code') || localStorage.getItem('naga_last_provider_code') || '';
+    if(sessionId){
+      exitProviderGame({ sessionId: sessionId, providerCode: providerCode, transferBackAll: true })
+        .catch(function(e){
+          if(isTerminalSessionMessage(e && e.message)) clearStoredProviderSession();
+        });
+    }else{
+      resetTransferAction();
     }
+  }
+
+  window.addEventListener('focus', settleClosedProviderTabNow);
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible') settleClosedProviderTabNow();
   });
 
   window.NAGA_PROVIDER_LAUNCH = {
