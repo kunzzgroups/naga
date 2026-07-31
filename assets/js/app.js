@@ -390,6 +390,13 @@ function providerImageOf(provider){
   return resolveUploadImage(value, 'provider', '');
 }
 
+function providerBrandImageOf(provider){
+  const value = provider?.providerBrandImageUrl || provider?.provider_brand_image_url || provider?.brandImageUrl || provider?.brand_image_url || '';
+  // Keep existing provider image as a backward-compatible fallback until a
+  // dedicated second brand image is configured in BO.
+  return resolveUploadImage(value, 'provider', '') || providerImageOf(provider);
+}
+
 function frontendGameFallbackImageOf(game){
   const provider = providerForCode(providerCodeOf(game));
   const configured = provider?.frontendGameFallbackImageUrl || provider?.frontend_game_fallback_image_url || '';
@@ -573,10 +580,10 @@ function renderMixedCategoryLanding(games){
       btn.type = 'button';
       btn.className = 'category-provider-card';
       btn.dataset.providerCode = row.code;
-      const image = providerImageOf(row.provider);
+      const image = providerBrandImageOf(row.provider);
       btn.innerHTML = image
-        ? `<img src="${image}" alt="${providerNameOf(row.provider)}"><span>${providerNameOf(row.provider)}</span>`
-        : `<span class="provider-letter">${providerInitials(providerNameOf(row.provider))}</span><span>${providerNameOf(row.provider)}</span>`;
+        ? `<img src="${image}" alt="${providerNameOf(row.provider)}" loading="lazy">`
+        : `<span class="provider-letter">${providerInitials(providerNameOf(row.provider))}</span>`;
       btn.addEventListener('click', () => {
         activeProviderCode = row.code;
         activeSubCategoryId = null;
@@ -610,7 +617,6 @@ function renderMixedCategoryLanding(games){
 function renderProviderCards(games){
   if(!gameGrid) return;
   showingProviderList = true;
-  activeProviderCode = ALL_PROVIDER_CODE;
   currentGameList = Array.isArray(games) ? games : [];
   if(subTabRow){
     subTabRow.innerHTML = '';
@@ -622,11 +628,27 @@ function renderProviderCards(games){
 
   const rows = providerRowsForActiveCategory(currentGameList);
   if(!rows.length){
+    activeProviderCode = null;
     gameGrid.innerHTML = '<div class="empty-state">No provider available for this category</div>';
     return;
   }
 
-  renderGames(currentGameList);
+  // SLOT GAME only: open the first configured provider by default so the
+  // highlighted provider on the left always matches the games on the right.
+  // Users can still select All or any other provider from the existing rail.
+  const firstProviderCode = rows[0].code;
+  activeProviderCode = firstProviderCode;
+  activeSubCategoryId = null;
+  subCategoryAutoTriedIds = new Set();
+
+  let firstProviderGames = currentGameList.filter(game => providerCodeOf(game) === firstProviderCode);
+  const rule = providerRuleForCode(firstProviderCode);
+  if(rule && String(rule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
+    const allowed = new Set((rule.gameIds || []).map(String));
+    firstProviderGames = firstProviderGames.filter(game => allowed.has(String(game.id)));
+  }
+
+  renderGames(firstProviderGames);
 }
 
 const GAME_INITIAL_RENDER_DESKTOP = 40;
@@ -822,7 +844,7 @@ function renderGames(list){
     activeProviderCode = ALL_PROVIDER_CODE;
   }
   const shouldShowProviderRail = !isDirectGameCategory()
-    && !isHotCategory
+    && activeCategoryTypeKey() === 'SLOT'
     && !!activeProviderCode;
   const targetGrid = document.createElement('div');
   targetGrid.className = shouldShowProviderRail ? 'provider-games-list' : 'direct-games-list';
@@ -1273,7 +1295,11 @@ function renderCatalogState(){
   // provider landing first. Fall back to resolved provider metadata only for
   // older category records that do not contain providerRules.
   const hotConfiguredCount = hotProviderRules.length || categoryProviders.length;
-  const forceDirect = isHotCategory && !isDirectGameCategory() && hotConfiguredCount === 1;
+  // HOT GAME only: when exactly one provider is configured, skip the
+  // provider brand landing and display that provider's games immediately.
+  // Multiple HOT providers still show brand-image cards first. Other
+  // Provider First categories keep their existing behavior unchanged.
+  const forceDirect = isHotCategory && hotConfiguredCount === 1;
 
   if(isDirectGameCategory()){
     currentGameList = list;
@@ -1332,8 +1358,11 @@ function renderCatalogState(){
   }
 
   currentGameList = list;
-  if(isHotCategory) renderMixedCategoryLanding(list);
-  else renderProviderCards(list);
+  // Slot keeps the current left provider rail + right game list layout.
+  // Every other Provider First category uses the same full-image provider
+  // landing pattern as Hot Game, including Live Game.
+  if(activeCategoryTypeKey() === 'SLOT') renderProviderCards(list);
+  else renderMixedCategoryLanding(list);
 }
 
 function loadCategories(){
