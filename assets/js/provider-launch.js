@@ -513,8 +513,12 @@
 
     const statusInfo = getProviderSessionState(json);
     const message = firstValue(json.message, json.error, json.data && json.data.message);
-    const terminalByError = json.__httpOk === false && isTerminalSessionMessage(message);
-    if(!statusInfo.terminal && !terminalByError) return false;
+    // Some providers/backend flows return HTTP 200 with a message such as
+    // "session already closed" or "no active session". Treat those messages
+    // as terminal too, otherwise the browser keeps a stale localStorage lock
+    // until the user manually refreshes the page.
+    const terminalByMessage = isTerminalSessionMessage(message);
+    if(!statusInfo.terminal && !terminalByMessage) return false;
 
     stopProviderMonitor();
     clearStoredProviderSession();
@@ -720,6 +724,30 @@
     }
   });
 
+
+
+  let providerSessionReconcilePromise = null;
+  async function reconcileActiveProviderSession(){
+    const sessionId = getActiveProviderSessionId();
+    if(!sessionId || providerSettlementPromise) return !sessionId;
+    if(providerSessionReconcilePromise) return providerSessionReconcilePromise;
+
+    providerSessionReconcilePromise = (async function(){
+      try{
+        const heartbeat = await sendProviderHeartbeat(sessionId);
+        return handleHeartbeatResult(heartbeat, sessionId);
+      }catch(e){
+        // Network errors must not unlock a genuinely active game. The next focus,
+        // visibility or launch attempt will retry the backend reconciliation.
+        return false;
+      }finally{
+        providerSessionReconcilePromise = null;
+        syncLaunchAvailabilityUi();
+      }
+    })();
+    return providerSessionReconcilePromise;
+  }
+
   function settleClosedProviderTabNow(){
     if(!(activeProviderTab && activeProviderTab.closed)) return;
     const sessionId = localStorage.getItem('naga_active_provider_session_id');
@@ -734,9 +762,19 @@
     }
   }
 
-  window.addEventListener('focus', settleClosedProviderTabNow);
+  window.addEventListener('focus', function(){
+    settleClosedProviderTabNow();
+    // The provider Lobby/Close button may navigate the game tab back to our site
+    // without actually closing that tab. Recheck the backend immediately so a
+    // CLOSED session unlocks the lobby without a manual refresh.
+    reconcileActiveProviderSession();
+  });
+  window.addEventListener('pageshow', function(){ reconcileActiveProviderSession(); });
   document.addEventListener('visibilitychange', function(){
-    if(document.visibilityState === 'visible') settleClosedProviderTabNow();
+    if(document.visibilityState === 'visible'){
+      settleClosedProviderTabNow();
+      reconcileActiveProviderSession();
+    }
   });
 
   window.NAGA_PROVIDER_LAUNCH = {
@@ -756,11 +794,13 @@
     resetTransferAction: resetTransferAction,
     clearStoredProviderSession: clearStoredProviderSession,
     isGameActive: function(){ return Boolean(getActiveProviderSessionId()); },
-    canLaunchAnotherGame: ensureProviderCanLaunch
+    canLaunchAnotherGame: ensureProviderCanLaunch,
+    reconcileActiveProviderSession: reconcileActiveProviderSession
   };
 
   document.addEventListener('DOMContentLoaded', function(){
     bindExisting();
     syncLaunchAvailabilityUi();
+    reconcileActiveProviderSession();
   });
 })();
