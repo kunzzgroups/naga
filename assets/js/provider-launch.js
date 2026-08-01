@@ -150,6 +150,50 @@
     return '';
   }
 
+  function cleanProviderErrorMessage(value, fallback){
+    const defaultMessage = fallback || 'Launch game failed.';
+    if(value === undefined || value === null) return defaultMessage;
+
+    if(typeof value === 'object'){
+      const nested = firstValue(
+        value.errMsg, value.errmsg, value.errorMessage, value.error_message,
+        value.message, value.statusdesc, value.description,
+        value.data && value.data.errMsg,
+        value.data && value.data.errorMessage,
+        value.data && value.data.message
+      );
+      if(nested) return cleanProviderErrorMessage(nested, defaultMessage);
+    }
+
+    let text = String(value).trim();
+    if(!text) return defaultMessage;
+
+    // Provider/backend debug messages may append the complete request context.
+    // Only expose the provider's errMsg/error message to the player.
+    const patterns = [
+      /(?:^|[,;\s{])errMsg\s*[=:]\s*["']?([^,;}\r\n"']+)/i,
+      /"errMsg"\s*:\s*"([^"]+)"/i,
+      /(?:^|[,;\s{])errorMessage\s*[=:]\s*["']?([^,;}\r\n"']+)/i,
+      /"errorMessage"\s*:\s*"([^"]+)"/i,
+      /(?:^|[,;\s{])statusdesc\s*[=:]\s*["']?([^,;}\r\n"']+)/i
+    ];
+    for(let i=0;i<patterns.length;i++){
+      const match = text.match(patterns[i]);
+      if(match && match[1]){
+        text = match[1].trim();
+        break;
+      }
+    }
+
+    // Never show internal request/signature/debug details in the member UI.
+    const debugIndex = text.search(/(?:_debug|debugPayload|debugHttp|requestContext|secret[_ ]?key|signature=|operatorcode=)/i);
+    if(debugIndex > 0) text = text.slice(0, debugIndex).trim();
+    text = text.replace(/^["']+|["',;}]+$/g, '').trim();
+
+    if(!text || text.length > 240) return defaultMessage;
+    return text;
+  }
+
   function readDataset(el){
     if(!el) return {};
     const d = el.dataset || {};
@@ -471,7 +515,7 @@
     }catch(err){
       btn.disabled = false;
       btn.textContent = oldText;
-      const launchError = err && err.message ? err.message : 'Launch game failed.';
+      const launchError = cleanProviderErrorMessage(err && err.message ? err.message : err, 'Launch game failed.');
       setError(launchError);
     }
   }
@@ -612,7 +656,7 @@
       });
       const json = await res.json().catch(function(){ return {}; });
       if(window.NAGA_PROVIDER_LAUNCH_DEBUG) console.log('[NAGA launch] response:', res.status, json);
-      if(!res.ok || json.status === 'error') throw new Error(json.message || json.error || 'Launch game failed.');
+      if(!res.ok || json.status === 'error') throw new Error(cleanProviderErrorMessage(json, 'Launch game failed.'));
 
       const data = json.data || {};
       const activeSession = saveActiveProviderSession(data);
@@ -694,11 +738,14 @@
     });
   }
 
+  let closeSettleSent = false;
   function trySettleOnPageClose(){
+    if(closeSettleSent) return;
     const sessionId = localStorage.getItem('naga_active_provider_session_id');
     const providerCode = localStorage.getItem('naga_active_provider_code') || localStorage.getItem('naga_last_provider_code') || '';
     const token = getToken();
     if(!sessionId || !token) return;
+    closeSettleSent = true;
     try{
       fetch(EXIT_API_URL, {
         method: 'POST',
@@ -710,6 +757,10 @@
   }
 
   window.addEventListener('pagehide', trySettleOnPageClose);
+  window.addEventListener('beforeunload', trySettleOnPageClose);
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'hidden' && getActiveProviderSessionId()) trySettleOnPageClose();
+  });
 
   // A provider-return tab and the main page share localStorage. When either tab
   // clears the active session, immediately reset the main page launch controls.

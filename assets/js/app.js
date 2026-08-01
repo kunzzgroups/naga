@@ -111,7 +111,19 @@ function normalizeApiList(response){
 }
 
 function isActiveItem(item){
-  return Number(item.status == null ? 1 : item.status) === 1;
+  if(!item || typeof item !== 'object') return false;
+
+  const raw = item.status ?? item.active ?? item.isActive ?? item.is_active ?? item.enabled ?? item.isEnabled;
+  if(raw == null || raw === '') return true;
+  if(typeof raw === 'boolean') return raw;
+  if(typeof raw === 'number') return raw === 1;
+
+  const value = String(raw).trim().toUpperCase();
+  if(['1', 'TRUE', 'ACTIVE', 'ENABLED', 'ENABLE', 'YES', 'Y'].includes(value)) return true;
+  if(['0', 'FALSE', 'INACTIVE', 'DISABLED', 'DISABLE', 'NO', 'N', 'DELETED'].includes(value)) return false;
+
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric === 1 : false;
 }
 
 function sortByOrder(a, b){
@@ -1136,7 +1148,25 @@ function applyGameCatalog(catalog){
   categories = (catalog.categories || []).filter(isActiveItem).sort(sortByOrder);
   providers = (catalog.providers || []).filter(isActiveItem).sort(sortByOrder);
   allSubCategories = (catalog.subCategories || []).filter(isActiveItem).sort(sortByOrder);
-  catalogGames = (catalog.games || []).filter(isActiveItem).sort(sortByOrder);
+
+  // A game can remain individually ACTIVE in BO while its parent provider is
+  // disabled. The public frontend must treat the provider status as the master
+  // switch, otherwise active game rows from an inactive provider can re-create
+  // the provider rail through the game-response fallback logic.
+  const activeProviderCodes = new Set(
+    providers.map(providerCodeOf).filter(Boolean)
+  );
+
+  catalogGames = (catalog.games || [])
+    .filter(isActiveItem)
+    .filter(game => {
+      const code = providerCodeOf(game);
+      // Provider-less/manual games remain backward compatible. Every game with
+      // a provider code must belong to a currently active provider.
+      return !code || activeProviderCodes.has(code);
+    })
+    .sort(sortByOrder);
+
   gameCatalogReady = categories.length > 0 || catalogGames.length > 0;
 }
 
