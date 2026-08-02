@@ -510,6 +510,13 @@ function providerRowsForActiveCategory(games, configuredOnly = false){
   })).filter(row => row.code);
 }
 
+
+function providerAllImageUrl(){
+  const assets = window.NAGA_CUSTOM_ASSETS || {};
+  const value = assets.providerAll || assets.providerAllUrl || '';
+  return String(value || '').trim();
+}
+
 function buildProviderRail(rows){
   const rail = document.createElement('div');
   rail.className = 'provider-side-rail';
@@ -518,7 +525,10 @@ function buildProviderRail(rows){
   allBtn.type = 'button';
   allBtn.className = 'provider-rail-card provider-rail-all' + (isAllProviderCode(activeProviderCode) ? ' active' : '');
   allBtn.dataset.providerCode = ALL_PROVIDER_CODE;
-  allBtn.innerHTML = '<div class="provider-rail-all-icon">All</div>';
+  const allImageUrl = providerAllImageUrl();
+  allBtn.innerHTML = allImageUrl
+    ? `<img src="${allImageUrl}" alt="All Providers" loading="eager">`
+    : '<div class="provider-rail-all-icon">All</div>';
   allBtn.addEventListener('click', () => {
     if(isAllProviderCode(activeProviderCode)) return;
     activeProviderCode = ALL_PROVIDER_CODE;
@@ -1862,4 +1872,14 @@ document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('img').forEach(function(img){
     if(!img.loading) img.loading='lazy';
   });
+});
+
+
+document.addEventListener('naga:custom-assets-ready', function(){
+  const btn = document.querySelector('.provider-side-rail .provider-rail-all');
+  if(!btn) return;
+  const imageUrl = providerAllImageUrl();
+  btn.innerHTML = imageUrl
+    ? `<img src="${imageUrl}" alt="All Providers" loading="eager">`
+    : '<div class="provider-rail-all-icon">All</div>';
 });

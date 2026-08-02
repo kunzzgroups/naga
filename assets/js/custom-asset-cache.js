@@ -42,7 +42,12 @@
     'history.png': 'historyUrl',
     'bonus.png': 'bonusUrl',
     'livechat.png': 'livechatUrl',
-    'setting.png': 'settingUrl'
+    'setting.png': 'settingUrl',
+    'provider-all.png': 'providerAllUrl',
+    'provider-all.jpg': 'providerAllUrl',
+    'provider-all.jpeg': 'providerAllUrl',
+    'provider-all.webp': 'providerAllUrl',
+    'provider-all.gif': 'providerAllUrl'
   };
 
   function apiBaseUrl(){
@@ -66,6 +71,7 @@
       .then(function(res){ return res.ok ? res.json() : {}; })
       .then(function(json){
         versionJsonCache = json || {};
+        window.NAGA_CUSTOM_ASSETS = versionJsonCache;
         CUSTOM_ASSET_VERSION = String(versionJsonCache.version || CUSTOM_ASSET_VERSION);
         return versionJsonCache;
       })
@@ -288,7 +294,7 @@
       var versionData = result[1] || {};
       applyBackground(data, versionData);
       applyImageTranslations(data);
-      document.dispatchEvent(new CustomEvent('naga:custom-assets-ready'));
+      document.dispatchEvent(new CustomEvent('naga:custom-assets-ready', { detail: versionData }));
     });
   }
 
