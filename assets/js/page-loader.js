@@ -4,9 +4,16 @@
   var root = document.documentElement;
   var startTime = Date.now();
   var MIN_SHOW_MS = 60;
-  var MAX_WAIT_MS = 700;
+  var isHomeLobby = /(?:^|\/)index\.html$/i.test(location.pathname) || /\/$/.test(location.pathname);
+  var isLoginPage = /(?:^|\/)login\.html$/i.test(location.pathname);
+  var isRegisterPage = /(?:^|\/)register\.html$/i.test(location.pathname);
+  var isAuthPage = isLoginPage || isRegisterPage;
+  var expectedAuthSection = isRegisterPage ? 'register-page' : 'login-page';
+  var MAX_WAIT_MS = isHomeLobby ? 3500 : (isAuthPage ? 4500 : 700);
   var domReady = document.readyState !== 'loading';
   var customAssetsReady = false;
+  var lobbyReady = !isHomeLobby;
+  var authLayoutReady = !isAuthPage;
   var revealed = false;
 
   function nextPaint(callback) {
@@ -30,7 +37,7 @@
   }
 
   function tryReveal() {
-    if (domReady && customAssetsReady) revealPage(false);
+    if (domReady && customAssetsReady && lobbyReady && authLayoutReady) revealPage(false);
   }
 
   function onDomReady() {
@@ -48,6 +55,19 @@
     customAssetsReady = true;
     tryReveal();
   }, { once: true });
+
+  document.addEventListener('naga:lobby-ready', function () {
+    lobbyReady = true;
+    tryReveal();
+  }, { once: true });
+
+  document.addEventListener('naga:auth-layout-ready', function (event) {
+    var key = event && event.detail && event.detail.sectionKey;
+    if (!isAuthPage || key === expectedAuthSection) {
+      authLayoutReady = true;
+      tryReveal();
+    }
+  });
 
   // Never hold the page because of a slow remote image or API.
   setTimeout(function () {

@@ -6,6 +6,32 @@
   const executedJs = new Set();
   const authoritativeSections = new Map();
   const sectionObservers = new Map();
+  const CACHE_PREFIX = 'naga_layout_section_v2:';
+
+  function cacheKey(sectionKey) {
+    return CACHE_PREFIX + sectionKey;
+  }
+
+  function readCachedSection(sectionKey) {
+    try {
+      const raw = localStorage.getItem(cacheKey(sectionKey));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return normalizeData(parsed.data || parsed);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeCachedSection(sectionKey, data) {
+    try {
+      localStorage.setItem(cacheKey(sectionKey), JSON.stringify({
+        savedAt: Date.now(),
+        data: normalizeData(data)
+      }));
+    } catch (_) {}
+  }
 
   function endpoint() {
     if (window.NAGA_API && window.NAGA_API.layoutSection) return window.NAGA_API.layoutSection;
@@ -39,7 +65,9 @@
       if (!response.ok || (json && json.status === 'error')) {
         throw new Error((json && json.message) || ('Unable to load layout section: ' + sectionKey));
       }
-      return normalizeData(json);
+      const normalized = normalizeData(json);
+      writeCachedSection(sectionKey, normalized);
+      return normalized;
     }).catch(function (error) {
       console.warn('[Layout Section]', error && error.message ? error.message : error);
       return { html: '', css: '', js: '' };
@@ -306,6 +334,21 @@
     return Array.from(document.querySelectorAll('[data-layout-section="' + CSS.escape(sectionKey) + '"]'));
   }
 
+  function applyCachedSection(sectionKey, targets) {
+    const data = readCachedSection(sectionKey);
+    if (!data) return false;
+    applyCss(sectionKey, data.css);
+    let htmlChanged = false;
+    (targets || targetsFor(sectionKey)).forEach(function (target) {
+      if (applyHtml(target, data.html, sectionKey)) htmlChanged = true;
+    });
+    if (data.js && data.js.trim()) applyJs(sectionKey, data.js);
+    document.dispatchEvent(new CustomEvent('naga:layout-section-applied', {
+      detail: { sectionKey: sectionKey, htmlChanged: htmlChanged, data: data, fromCache: true }
+    }));
+    return htmlChanged || !!(data.css && data.css.trim());
+  }
+
   async function loadSection(sectionKey, targets, force) {
     const data = await fetchSection(sectionKey, !!force);
     applyCss(sectionKey, data.css);
@@ -316,8 +359,13 @@
     applyJs(sectionKey, data.js);
 
     document.dispatchEvent(new CustomEvent('naga:layout-section-applied', {
-      detail: { sectionKey: sectionKey, htmlChanged: htmlChanged, data: data }
+      detail: { sectionKey: sectionKey, htmlChanged: htmlChanged, data: data, fromCache: false }
     }));
+    if (isAuthoritativePageSection(sectionKey) && htmlChanged) {
+      document.dispatchEvent(new CustomEvent('naga:auth-layout-ready', {
+        detail: { sectionKey: sectionKey, fromCache: false }
+      }));
+    }
 
     if (htmlChanged && (sectionKey === 'frontend-header' || sectionKey === 'frontend-sidebar')) {
       // First let the shell reconnect login state, wallet and menu behavior.
@@ -356,9 +404,6 @@
   }
 
   async function initialize() {
-    await loadSection(GLOBAL_CSS_SECTION, [], true);
-    await loadShellSections(true);
-
     const grouped = new Map();
     document.querySelectorAll('[data-layout-section]').forEach(function (target) {
       const key = (target.getAttribute('data-layout-section') || '').trim();
@@ -366,9 +411,32 @@
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key).push(target);
     });
-    await Promise.all(Array.from(grouped.entries()).map(function (entry) {
-      return loadSection(entry[0], entry[1], true);
-    }));
+
+    // Paint the most recently saved BO layout synchronously before any remote
+    // request. This prevents login/register fallback markup from flashing.
+    applyCachedSection(GLOBAL_CSS_SECTION, []);
+    applyCachedSection('frontend-header', targetsFor('frontend-header'));
+    applyCachedSection('frontend-sidebar', targetsFor('frontend-sidebar'));
+    grouped.forEach(function (targets, key) {
+      const applied = applyCachedSection(key, targets);
+      if (applied && isAuthoritativePageSection(key)) {
+        document.dispatchEvent(new CustomEvent('naga:auth-layout-ready', {
+          detail: { sectionKey: key, fromCache: true }
+        }));
+      }
+    });
+
+    // Refresh all sections in parallel. Auth pages no longer wait for home CSS
+    // and shell requests to finish before their own BO layout is requested.
+    const jobs = [
+      loadSection(GLOBAL_CSS_SECTION, [], true),
+      loadSection('frontend-header', targetsFor('frontend-header'), true),
+      loadSection('frontend-sidebar', targetsFor('frontend-sidebar'), true)
+    ];
+    grouped.forEach(function (targets, key) {
+      jobs.push(loadSection(key, targets, true));
+    });
+    await Promise.all(jobs);
     document.dispatchEvent(new CustomEvent('naga:layout-sections-loaded'));
   }
 

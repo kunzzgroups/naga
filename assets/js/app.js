@@ -1395,8 +1395,17 @@ function renderCatalogState(){
   else renderMixedCategoryLanding(list);
 }
 
+function signalLobbyReady(){
+  if(document.documentElement.classList.contains('lobby-ready')) return;
+  document.documentElement.classList.add('lobby-ready');
+  document.dispatchEvent(new CustomEvent('naga:lobby-ready'));
+}
+
 function loadCategories(){
-  if(!categoryRow || !subTabRow || !gameGrid) return Promise.resolve();
+  if(!categoryRow || !subTabRow || !gameGrid){
+    signalLobbyReady();
+    return Promise.resolve();
+  }
   setGamesLoading();
   return fetchFullGameCatalog(true).then(catalog => {
     applyGameCatalog(catalog);
@@ -1418,6 +1427,11 @@ function loadCategories(){
     renderCategories();
     renderSubTabs();
     renderGames([]);
+  }).finally(() => {
+    // Reveal the home page only after the category and first game/provider
+    // layout has been painted. This prevents the background-only/empty-shell
+    // flash that occurred while the remote catalog was still loading.
+    requestAnimationFrame(() => requestAnimationFrame(signalLobbyReady));
   });
 }
 
