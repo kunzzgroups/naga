@@ -21,6 +21,8 @@
   const SETTLING_GAME_MESSAGE = 'Your previous game is closing and the balance is being returned. Please wait a moment.';
   const DEFAULT_CONFIRM_TEXT = 'Confirm & Play';
   const TERMINAL_SESSION_STATES = ['CLOSED', 'SETTLED', 'COMPLETED', 'EXITED', 'EXPIRED', 'INACTIVE', 'CANCELLED'];
+  const PENDING_SETTLEMENT_STATES = ['PENDING_WITHDRAW', 'PENDING_SETTLEMENT', 'SETTLING', 'CLOSING', 'WITHDRAW_PENDING', 'AUTO_SETTLING'];
+  const PROVIDER_SESSION_STATE_KEY = 'naga_active_provider_session_state';
   const PROVIDER_GAME_WINDOW_NAME_PREFIX = 'naga_provider_game_';
 
   function getToken(){
@@ -120,9 +122,19 @@
     try{
       const heartbeat = await sendProviderHeartbeat(sessionId);
       if(handleHeartbeatResult(heartbeat, sessionId)) return true;
+      const info = getProviderSessionState(heartbeat);
+      const pendingState = info.state && PENDING_SETTLEMENT_STATES.indexOf(info.state) !== -1;
+      if(pendingState){
+        localStorage.setItem(PROVIDER_SESSION_STATE_KEY, info.state);
+        if(showMessage !== false) showProviderBusyMessage(SETTLING_GAME_MESSAGE);
+        return false;
+      }
     }catch(e){}
 
-    if(showMessage !== false) showProviderBusyMessage(ACTIVE_GAME_MESSAGE);
+    const storedState = String(localStorage.getItem(PROVIDER_SESSION_STATE_KEY) || '').toUpperCase();
+    if(showMessage !== false){
+      showProviderBusyMessage(PENDING_SETTLEMENT_STATES.indexOf(storedState) !== -1 ? SETTLING_GAME_MESSAGE : ACTIVE_GAME_MESSAGE);
+    }
     return false;
   }
 
@@ -158,6 +170,8 @@
       const nested = firstValue(
         value.errMsg, value.errmsg, value.errorMessage, value.error_message,
         value.message, value.statusdesc, value.description,
+        value.resp_msg && value.resp_msg.message,
+        value.respMsg && value.respMsg.message,
         value.data && value.data.errMsg,
         value.data && value.data.errorMessage,
         value.data && value.data.message
@@ -409,6 +423,8 @@
     localStorage.removeItem('naga_last_provider_session_id');
     localStorage.removeItem('naga_active_provider_session_id');
     localStorage.removeItem('naga_active_provider_code');
+    localStorage.removeItem(PROVIDER_SESSION_STATE_KEY);
+    localStorage.removeItem('naga_active_provider_wallet_flow');
     activeProviderTab = null;
     resetTransferAction();
     syncLaunchAvailabilityUi();
@@ -557,7 +573,16 @@
     if(currentSessionId && sessionId && String(currentSessionId) !== String(sessionId)) return false;
 
     const statusInfo = getProviderSessionState(json);
-    const message = firstValue(json.message, json.error, json.data && json.data.message);
+    const message = firstValue(
+      json.message, json.error,
+      json.resp_msg && json.resp_msg.message,
+      json.respMsg && json.respMsg.message,
+      json.data && json.data.message,
+      json.data && json.data.resp_msg && json.data.resp_msg.message
+    );
+    if(statusInfo.state){
+      localStorage.setItem(PROVIDER_SESSION_STATE_KEY, statusInfo.state);
+    }
     // Some providers/backend flows return HTTP 200 with a message such as
     // "session already closed" or "no active session". Treat those messages
     // as terminal too, otherwise the browser keeps a stale localStorage lock
@@ -569,6 +594,26 @@
     clearStoredProviderSession();
     refreshWalletAfterProviderExit();
     return true;
+  }
+
+  function startPendingSettlementWatch(sessionId){
+    stopProviderMonitor();
+    if(!sessionId) return;
+    localStorage.setItem(PROVIDER_SESSION_STATE_KEY, 'PENDING_SETTLEMENT');
+    syncLaunchAvailabilityUi();
+
+    const poll = function(){
+      sendProviderHeartbeat(sessionId)
+        .then(function(json){
+          if(handleHeartbeatResult(json, sessionId)) return;
+          const info = getProviderSessionState(json);
+          if(info.state) localStorage.setItem(PROVIDER_SESSION_STATE_KEY, info.state);
+        })
+        .catch(function(){});
+    };
+
+    poll();
+    providerMonitorTimer = setInterval(poll, 3000);
   }
 
   function stopProviderMonitor(){
@@ -602,6 +647,12 @@
           if(isTerminalSessionMessage(e && e.message)){
             clearStoredProviderSession();
             refreshWalletAfterProviderExit();
+          }else{
+            // Some providers reject transfer-out while their game session is still
+            // closing. Keep the member informed and poll the backend until its retry/
+            // scheduler marks the session terminal, rather than leaving a silent lock.
+            setError(SETTLING_GAME_MESSAGE);
+            startPendingSettlementWatch(sessionId);
           }
         }finally{
           providerSettlementPromise = null;
@@ -659,6 +710,10 @@
       if(!res.ok || json.status === 'error') throw new Error(cleanProviderErrorMessage(json, 'Launch game failed.'));
 
       const data = json.data || {};
+      const resolvedWalletFlow = firstValue(data.walletFlow, data.wallet_flow, json.walletFlow, json.wallet_flow);
+      if(resolvedWalletFlow){
+        localStorage.setItem('naga_active_provider_wallet_flow', String(resolvedWalletFlow));
+      }
       const activeSession = saveActiveProviderSession(data);
 
       const launchUrl = extractLaunchUrl(json);
