@@ -713,7 +713,28 @@
     releasePendingLaunchLock();
     providerLaunchInProgress = false;
     syncLaunchAvailabilityUi();
-    refreshWalletAfterProviderExit();
+
+    // The exit response now contains the already-committed main wallet balance.
+    // Paint it immediately instead of waiting for another wallet HTTP round trip.
+    const returnedWallet = json && json.data && json.data.mainWallet ? json.data.mainWallet : null;
+    const returnedBalance = returnedWallet && returnedWallet.balance != null
+      ? Number(returnedWallet.balance)
+      : (returnedWallet && returnedWallet.mainWallet && returnedWallet.mainWallet.balance != null
+          ? Number(returnedWallet.mainWallet.balance)
+          : NaN);
+    if(!isNaN(returnedBalance)){
+      walletBalanceCache = returnedBalance;
+      localStorage.setItem('member_main_wallet_balance', String(returnedBalance));
+      document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){
+        el.textContent = 'MYR ' + money(returnedBalance);
+      });
+      try{ document.dispatchEvent(new CustomEvent('naga:provider-balance-returned', { detail: { balance: returnedBalance } })); }catch(e){}
+      if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshBalance === 'function'){
+        try{ window.NAGA_SITE_SHELL.refreshBalance(); }catch(e){}
+      }
+    }else{
+      refreshWalletAfterProviderExit();
+    }
     return json;
   }
 
@@ -758,9 +779,9 @@
 
   window.addEventListener('pagehide', trySettleOnPageClose);
   window.addEventListener('beforeunload', trySettleOnPageClose);
-  document.addEventListener('visibilitychange', function(){
-    if(document.visibilityState === 'hidden' && getActiveProviderSessionId()) trySettleOnPageClose();
-  });
+  // Do not settle on visibilitychange. Opening/focusing the provider tab makes the
+  // lobby page hidden even though the game is still active, which previously caused
+  // premature exit requests and inconsistent delayed balance refreshes.
 
   // A provider-return tab and the main page share localStorage. When either tab
   // clears the active session, immediately reset the main page launch controls.
