@@ -2664,6 +2664,7 @@ body.bonus-page{
 
 .bonus-grid{
     display:grid;
+    grid-auto-flow:row;
     gap:12px;
     align-items:start;
     width:100%;

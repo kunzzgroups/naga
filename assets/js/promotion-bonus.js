@@ -105,9 +105,25 @@
     return `<a class="${cls.join(' ')}" href="${esc(href)}" data-id="${esc(p.id)}" data-title="${esc(p.name || 'Promotion')}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || 'Promotion')}"></a>`;
   }
 
+  function latestLogicalRows(rows){
+    const latest=new Map();
+    rows.forEach(raw=>{
+      const p=Object.assign({},raw||{});
+      const category=String(p.bonusCategoryTitleId||'uncategorized');
+      const code=String(p.promotionCode||'').trim().toLowerCase();
+      const name=String(p.name||'').trim().toLowerCase().replace(/\s+/g,' ');
+      // Old active rows with the same category + promotion code/name are historical
+      // records, not separate cards. Keep only the newest database ID.
+      const key=category+'|'+(code?('code:'+code):('name:'+name));
+      const previous=latest.get(key);
+      if(!previous || Number(p.id||0)>Number(previous.id||0)) latest.set(key,p);
+    });
+    return Array.from(latest.values());
+  }
+
   function groupRows(rows){
     const map = new Map();
-    rows.forEach(p => {
+    latestLogicalRows(rows).forEach(p => {
       const key = String(p.bonusCategoryTitleId || 'uncategorized');
       if(!map.has(key)) map.set(key, {
         title: p.bonusCategoryTitleName || 'Promotion Bonus',
@@ -119,7 +135,7 @@
       map.get(key).items.push(p);
     });
     return Array.from(map.values())
-      .map(g => { g.items.sort((a,b)=>Number(a.displayOrder||0)-Number(b.displayOrder||0)); return g; })
+      .map(g => { g.items.sort((a,b)=>Number(a.displayOrder||0)-Number(b.displayOrder||0) || Number(a.id||0)-Number(b.id||0)); return g; })
       .sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0));
   }
 
@@ -151,20 +167,38 @@
     }
   }
 
+  let promotionLoadSequence=0;
   async function load(){
+    const thisLoad=++promotionLoadSequence;
     if(window.NAGA_HOME_BONUS_ENABLED === false) return;
     const boxes = Array.from(document.querySelectorAll('#dynamicPromotionBox, [data-promotion-box]'));
     if(!boxes.length || !api().playerPromotionList) return;
+
+    // Never render bundled/static promotion cards. The visible layout must come only
+    // from the latest database response. Clear first so refresh cannot flash old data.
+    boxes.forEach(box=>{
+      box.innerHTML='';
+      const container=box.closest('.bonus-container');
+      if(container) container.querySelectorAll('.promo-static-fallback, :scope > .bonus-section:not(.promo-dynamic-section)').forEach(el=>{ el.hidden=true; el.style.display='none'; });
+    });
     try{
-      const r = await fetch(api().playerPromotionList);
+      const separator=api().playerPromotionList.includes('?')?'&':'?';
+      const r = await fetch(api().playerPromotionList+separator+'_='+Date.now(), {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
       const j = await r.json();
+      if(thisLoad!==promotionLoadSequence) return;
       const rows = Array.isArray(j.data) ? j.data : [];
-      if(!rows.length) return;
+      if(!rows.length){ const loading=document.getElementById('bonusLoading'); if(loading) loading.style.display='none'; return; }
       window.__promotionRows = rows;
       const groups = groupRows(rows);
       const html = groups.map(g => {
         const first = g.items[0] || {};
-        const gridCls = 'bonus-grid ' + clsNum('d-cols-', first.desktopColumns, 2, 6) + ' ' + clsNum('m-cols-', first.mobileColumns, 1, 3) + (Number(first.singleLeft) === 1 ? ' single-left' : '');
+        // Section values are already synchronized by the API. Render the exact
+        // database values from the first ordered item; each card keeps its own span.
+        const desktopColumns = Math.max(1, Math.min(6, Number(first.desktopColumns ?? 2)));
+        const mobileColumns = Math.max(1, Math.min(3, Number(first.mobileColumns ?? 1)));
+        // single-left is meaningful only when the category contains one visible card.
+        const singleLeft = g.items.length === 1 && Number(first.singleLeft) === 1;
+        const gridCls = 'bonus-grid ' + clsNum('d-cols-', desktopColumns, 2, 6) + ' ' + clsNum('m-cols-', mobileColumns, 1, 3) + (singleLeft ? ' single-left' : '');
         return `<div class="bonus-section promo-dynamic-section">${titleHtml(g)}<div class="${gridCls}">${g.items.map(cardHtml).join('')}</div></div>`;
       }).join('');
 
