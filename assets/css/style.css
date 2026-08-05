@@ -12655,3 +12655,30 @@ html.bonus-scroll-page body.bonus-page .bottom-nav{
         padding-bottom:calc(var(--mobile-bottom-nav-height,70px) + 28px)!important;
     }
 }
+
+/* ===== Promotion grid exact row-height normalization (v1.0.89) =====
+   Promotion source images use 7:5 for one column and 14:5 for two columns.
+   CSS Grid gaps make a span-2 card slightly wider than exactly two columns,
+   so natural image height:auto cannot line up perfectly. JavaScript supplies
+   --promo-row-height from the real single-column width for every grid. */
+.promo-dynamic-section .bonus-grid{
+  align-items:stretch;
+  /* grid-auto-rows:var(--promo-row-height, auto); */
+}
+.promo-dynamic-section .bonus-grid > .promo-image-card.promo-card{
+  /* height:var(--promo-row-height, auto); */
+  min-height:0;
+  align-self:stretch;
+  overflow:hidden;
+  background:transparent;
+}
+.promo-dynamic-section .bonus-grid > .promo-image-card.promo-card > img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain!important;
+  object-position:center!important;
+  box-sizing:border-box;
+}

@@ -95,6 +95,55 @@
     return `<h2 class="bonus-text-title">${esc(group.title || 'Promotion')}</h2>`;
   }
 
+
+
+  function promotionGridColumnCount(grid){
+    const mobile = window.matchMedia('(max-width: 900px)').matches;
+    const prefix = mobile ? 'm-cols-' : 'd-cols-';
+    const max = mobile ? 3 : 6;
+    for(let n=1;n<=max;n++) if(grid.classList.contains(prefix+n)) return n;
+    return mobile ? 1 : 2;
+  }
+
+  function syncPromotionTitleSpacing(root){
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('.promo-dynamic-section .bonus-title-img').forEach(img => {
+      const apply = () => {
+        const renderedHeight = img.getBoundingClientRect().height;
+        if(!renderedHeight) return;
+        // Keep the visual title-to-card spacing consistent even when a BO-uploaded
+        // title image has a much taller transparent canvas than the built-in artwork.
+        const normalTitleBlockHeight = 54;
+        const normalBottomGap = 12;
+        const transparentCanvasExcess = Math.max(0, renderedHeight - normalTitleBlockHeight);
+        img.style.marginBottom = (normalBottomGap - transparentCanvasExcess).toFixed(3) + 'px';
+      };
+      apply();
+      if(!img.complete) img.addEventListener('load', apply, {once:true});
+    });
+  }
+
+  function syncPromotionGridHeights(root){
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('.promo-dynamic-section .bonus-grid').forEach(grid => {
+      const columns = promotionGridColumnCount(grid);
+      const styles = getComputedStyle(grid);
+      const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+      const width = grid.getBoundingClientRect().width;
+      if(!width || columns < 1) return;
+      const oneColumnWidth = (width - gap * (columns - 1)) / columns;
+      // All uploaded promotion artwork is based on a 7:5 single-card canvas.
+      const rowHeight = oneColumnWidth * 5 / 7;
+      grid.style.setProperty('--promo-row-height', rowHeight.toFixed(3) + 'px');
+    });
+  }
+
+  let promotionGridResizeTimer = 0;
+  function schedulePromotionGridHeightSync(){
+    clearTimeout(promotionGridResizeTimer);
+    promotionGridResizeTimer = setTimeout(() => { syncPromotionTitleSpacing(document); syncPromotionGridHeights(document); }, 40);
+  }
+
   function cardHtml(p){
     const cls = ['bonus-card','promo-image-card','promo-card'];
     if(Number(p.desktopSpan) > 1) cls.push('d-span-' + Number(p.desktopSpan));
@@ -207,6 +256,9 @@
         const container = box.closest('.bonus-container');
         if(container) Array.from(container.children).forEach(el => { if(el !== box && el.classList && el.classList.contains('bonus-section')) el.style.display = 'none'; });
       });
+      syncPromotionTitleSpacing(document);
+      syncPromotionGridHeights(document);
+      requestAnimationFrame(() => { syncPromotionTitleSpacing(document); syncPromotionGridHeights(document); });
       const loading = document.getElementById('bonusLoading');
       if(loading) loading.style.display = 'none';
     }catch(e){
@@ -233,4 +285,9 @@
 
   document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(); });
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
+
+  window.addEventListener('resize', schedulePromotionGridHeightSync, {passive:true});
+  window.addEventListener('orientationchange', schedulePromotionGridHeightSync, {passive:true});
+  window.addEventListener('load', schedulePromotionGridHeightSync, {once:true});
+
 })();
