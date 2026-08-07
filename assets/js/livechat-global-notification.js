@@ -8,6 +8,7 @@
   var audio = null;
   var audioUnlocked = false;
   var queuedSound = false;
+  var queuedNotificationKey = '';
   var db = null;
   var conversationId = '';
   var unsubscribe = null;
@@ -21,9 +22,11 @@
   else init();
 
   function init(){
-    // Login/registration pages should not start background chat notifications.
+    // These pages must never run the background live-chat notification listener.
+    // chat.html is excluded because opening the conversation marks messages as read.
     var page = String(location.pathname || '').split('/').pop().toLowerCase();
-    if (page === 'login.html' || page === 'register.html' || page === 'forgot-password.html' || page === 'forget-password.html') return;
+    if (page === 'login.html' || page === 'register.html' || page === 'forgot-password.html' ||
+        page === 'forget-password.html' || page === 'chat.html') return;
 
     installSoundUnlock();
     requestNotificationPermission();
@@ -55,30 +58,35 @@
     if (unsubscribe) unsubscribe();
     unsubscribe = db.collection('conversations').doc(conversationId).onSnapshot(function(doc){
       var data = doc.data() || {};
-      var unread = Number(data.memberUnreadCount || 0);
+      var unread = Math.max(0, Number(data.memberUnreadCount || 0));
       var senderIsAdmin = String(data.lastSenderType || '').toLowerCase() === 'admin';
       var updatedMs = timestampValue(data.updatedAt);
 
       updatePageIndicators(unread);
 
+      // A Firestore listener immediately returns the existing document. Always use that
+      // first result only as a baseline, regardless of what was left in localStorage.
+      // This prevents an old/read message from sounding immediately after login/navigation.
       if (firstSnapshot){
         firstSnapshot = false;
-        if (!lastAdminMessageTime){
-          lastAdminMessageTime = senderIsAdmin ? updatedMs : 0;
-          persistState(lastAdminMessageTime);
-          currentUnread = unread;
-          return;
-        }
+        currentUnread = unread;
+        if (senderIsAdmin && updatedMs > lastAdminMessageTime) lastAdminMessageTime = updatedMs;
+        persistState(lastAdminMessageTime);
+        if (unread === 0) clearQueuedSound();
+        return;
       }
 
-      var newAdminMessage = senderIsAdmin && updatedMs > lastAdminMessageTime;
-      var unreadIncreased = senderIsAdmin && unread > currentUnread;
-      if ((newAdminMessage || unreadIncreased) && claimNotification(updatedMs, data.lastMessage || '')) {
-        notifyIncoming(data);
+      // Sound only for a genuinely new unread admin message. A timestamp change by itself
+      // is not enough because read receipts and other merged document updates can fire snapshots.
+      var unreadIncreased = senderIsAdmin && unread > 0 && unread > currentUnread;
+      var newerAdminActivity = updatedMs > 0 && updatedMs > lastAdminMessageTime;
+      if (unreadIncreased && newerAdminActivity && claimNotification(updatedMs, data.lastMessage || '')) {
+        notifyIncoming(data, updatedMs);
       }
 
       if (senderIsAdmin && updatedMs > lastAdminMessageTime) lastAdminMessageTime = updatedMs;
       currentUnread = unread;
+      if (unread === 0) clearQueuedSound();
       persistState(lastAdminMessageTime);
     }, function(error){
       console.warn('[Naga livechat notification] Listener unavailable:', error && error.message ? error.message : error);
@@ -132,7 +140,11 @@
     document.addEventListener('pointerdown', unlock, true);
     document.addEventListener('keydown', unlock, true);
     document.addEventListener('touchstart', unlock, true);
-    window.addEventListener('focus', function(){ if (queuedSound) playSound(); });
+    window.addEventListener('focus', function(){
+      // Only retry a blocked sound while that exact notification is still unread.
+      if (queuedSound && currentUnread > 0 && queuedNotificationKey) playSound(queuedNotificationKey);
+      else if (currentUnread === 0) clearQueuedSound();
+    });
   }
 
   function unlockSound(){
@@ -148,13 +160,18 @@
           player.currentTime = 0;
           player.muted = false;
           audioUnlocked = true;
-          if (queuedSound){ queuedSound = false; playSound(); }
+          if (queuedSound && currentUnread > 0 && queuedNotificationKey) playSound(queuedNotificationKey);
+          else clearQueuedSound();
         }).catch(function(){ player.muted = false; });
       }
     }catch(e){}
   }
 
-  function playSound(){
+  function playSound(notificationKey){
+    if (!notificationKey || currentUnread <= 0){
+      clearQueuedSound();
+      return;
+    }
     try{
       var player = getAudio();
       player.muted = false;
@@ -162,14 +179,20 @@
       player.currentTime = 0;
       var played = player.play();
       if (played && typeof played.then === 'function'){
-        played.then(function(){ audioUnlocked = true; queuedSound = false; })
-          .catch(function(){ queuedSound = true; });
+        played.then(function(){ audioUnlocked = true; clearQueuedSound(); })
+          .catch(function(){ queuedSound = true; queuedNotificationKey = notificationKey; });
       }
-    }catch(e){ queuedSound = true; }
+    }catch(e){ queuedSound = true; queuedNotificationKey = notificationKey; }
   }
 
-  function notifyIncoming(conversation){
-    playSound();
+  function clearQueuedSound(){
+    queuedSound = false;
+    queuedNotificationKey = '';
+  }
+
+  function notifyIncoming(conversation, messageTime){
+    var notificationKey = [conversationId, messageTime || 0, conversation.lastMessage || ''].join('|');
+    playSound(notificationKey);
     try{
       if ('Notification' in window && Notification.permission === 'granted'){
         var notification = new Notification('New live chat message', {
