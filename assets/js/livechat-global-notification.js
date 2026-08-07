@@ -23,7 +23,7 @@
   function init(){
     // Login/registration pages should not start background chat notifications.
     var page = String(location.pathname || '').split('/').pop().toLowerCase();
-    if (page === 'login.html' || page === 'register.html' || page === 'forgot-password.html') return;
+    if (page === 'login.html' || page === 'register.html' || page === 'forgot-password.html' || page === 'forget-password.html') return;
 
     installSoundUnlock();
     requestNotificationPermission();
