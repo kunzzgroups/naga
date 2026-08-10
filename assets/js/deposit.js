@@ -91,5 +91,5 @@
     catch(e){ msg(e.message||'Deposit failed', false); }
     finally{ submit.disabled=false; }
   }
-  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent='-'); ensureProof(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
+  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); ensureProof(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
 })();

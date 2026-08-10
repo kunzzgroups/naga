@@ -31,6 +31,13 @@ body{
     position: relative
 }
 
+
+/* Prevent the fallback/static logo from flashing before the current BO header is ready. */
+html:not(.naga-header-ready) .top-header .site-logo,
+html:not(.naga-header-ready) .top-header .logo-box img {
+    visibility: hidden !important;
+}
+
 .site-logo{
     height: 55px;
     width:auto;

@@ -7,6 +7,28 @@
   const authoritativeSections = new Map();
   const sectionObservers = new Map();
   const CACHE_PREFIX = 'naga_layout_section_v2:';
+  let initialized = false;
+  let shellReadySeen = false;
+  let freshHeaderLoaded = false;
+  let customAssetsReady = !!window.__NAGA_CUSTOM_ASSETS_READY__;
+
+  function markHeaderReady() {
+    if (!freshHeaderLoaded || !customAssetsReady) return;
+    const root = document.documentElement;
+    const header = document.querySelector('.top-header');
+    if (!header) { root.classList.add('naga-header-ready'); return; }
+    const logo = header.querySelector('.site-logo, .logo-box img');
+    if (!logo || logo.complete) { root.classList.add('naga-header-ready'); return; }
+    let done = false;
+    const finish = function () {
+      if (done) return;
+      done = true;
+      root.classList.add('naga-header-ready');
+    };
+    logo.addEventListener('load', finish, { once: true });
+    logo.addEventListener('error', finish, { once: true });
+    setTimeout(finish, 800);
+  }
 
   function cacheKey(sectionKey) {
     return CACHE_PREFIX + sectionKey;
@@ -393,6 +415,10 @@
 
       document.dispatchEvent(new CustomEvent('naga:site-shell-customized', { detail: { sectionKey: sectionKey } }));
     }
+    if (sectionKey === 'frontend-header') {
+      freshHeaderLoaded = true;
+      markHeaderReady();
+    }
     return data;
   }
 
@@ -412,14 +438,10 @@
       grouped.get(key).push(target);
     });
 
-    // Paint the most recently saved BO layout synchronously before any remote
-    // request. This prevents login/register fallback markup from flashing.
+    // Cached page/sidebar layout is safe, but the header/logo must always come
+    // from the current no-store BO response. Painting an older cached header first
+    // is what caused the logo to flash/change after refresh.
     applyCachedSection(GLOBAL_CSS_SECTION, []);
-    // Setting must never flash an older cached header/layout. Leave the header
-    // empty and let the no-store BO request below paint the authoritative data.
-    if(!(document.body && document.body.classList.contains('setting-page'))){
-      applyCachedSection('frontend-header', targetsFor('frontend-header'));
-    }
     applyCachedSection('frontend-sidebar', targetsFor('frontend-sidebar'));
     grouped.forEach(function (targets, key) {
       const applied = applyCachedSection(key, targets);
@@ -432,6 +454,7 @@
 
     // Refresh all sections in parallel. Auth pages no longer wait for home CSS
     // and shell requests to finish before their own BO layout is requested.
+    initialized = true;
     const jobs = [
       loadSection(GLOBAL_CSS_SECTION, [], true),
       loadSection('frontend-header', targetsFor('frontend-header'), true),
@@ -444,15 +467,29 @@
     document.dispatchEvent(new CustomEvent('naga:layout-sections-loaded'));
   }
 
-  document.addEventListener('naga:site-shell-ready', function () {
-    // Load immediately after site-shell creates the header/sidebar.
-    loadShellSections(true);
+
+  document.addEventListener('naga:custom-assets-ready', function () {
+    customAssetsReady = true;
+    markHeaderReady();
   });
 
-  // A final post-load refresh prevents late site-shell/page scripts from restoring old markup.
+  document.addEventListener('naga:site-shell-ready', function () {
+    shellReadySeen = true;
+    // During normal startup initialize() runs in the same DOMContentLoaded cycle.
+    // Do not issue a second identical header request/replacement. Only support a
+    // genuinely late shell creation after initialization.
+    if (initialized) loadShellSections(true);
+  });
+
+  // Do not unconditionally replace the header again at +100ms/+600ms: each
+  // replacement rebuilt the logo/wallet markup and caused the visible flash.
   window.addEventListener('load', function () {
-    setTimeout(function () { loadShellSections(true); }, 100);
-    setTimeout(function () { loadShellSections(true); }, 600);
+    const header = document.querySelector('.top-header');
+    if (header && !header.getAttribute('data-layout-custom-applied')) {
+      setTimeout(function () {
+        if (!header.getAttribute('data-layout-custom-applied')) loadSection('frontend-header', [header], true);
+      }, 500);
+    }
 
     // Login/register page scripts, translations or cached restoration must never
     // replace the BO Layout Section after it has been applied. Refresh those

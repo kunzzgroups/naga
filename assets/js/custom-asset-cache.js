@@ -293,6 +293,7 @@
       var versionData = result[1] || {};
       applyBackground(data, versionData);
       applyImageTranslations(data);
+      window.__NAGA_CUSTOM_ASSETS_READY__ = true;
       document.dispatchEvent(new CustomEvent('naga:custom-assets-ready', { detail: versionData }));
     });
   }

@@ -122,7 +122,6 @@
 
   async function loadMainWalletBalance(){
     const token = getToken();
-    if(document.body && document.body.classList.contains('setting-page')) setMainWalletBalance(null);
     if(!token){
       setMainWalletBalance(null);
       return null;
@@ -146,9 +145,6 @@
     setMainWalletBalance(balance);
     if(balance === null) localStorage.removeItem('member_main_wallet_balance');
     else localStorage.setItem('member_main_wallet_balance', String(balance));
-    if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshBalance === 'function'){
-      try{ window.NAGA_SITE_SHELL.refreshBalance(); }catch(e){}
-    }
     return balance;
   }
 
@@ -184,8 +180,8 @@
     const stored = getStoredMember();
     if(stored && Object.keys(stored).length){
       renderLoggedIn(stored);
-      // Do not show the amount cached by a previous browser session.
-      setMainWalletBalance(null);
+      // Keep the current on-page wallet text while fresh profile/balance data loads.
+      // The HTML starts at '-' so no cached amount is painted on first load.
     }
 
     try{
@@ -194,12 +190,12 @@
         renderLoggedIn(latest);
         try{ await loadMainWalletBalance(); }catch(balanceErr){
           localStorage.removeItem('member_main_wallet_balance');
-          setMainWalletBalance(null);
+          // Keep the last balance already rendered on this page if a refresh fails.
         }
       }
       else renderLoggedOut();
     }catch(e){
-      if(stored && Object.keys(stored).length){ renderLoggedIn(stored); setMainWalletBalance(null); }
+      if(stored && Object.keys(stored).length){ renderLoggedIn(stored); }
       else renderLoggedOut();
     }
   }

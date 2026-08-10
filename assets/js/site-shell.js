@@ -73,8 +73,9 @@
       return balance;
     })
     .catch(function(){
+      // Keep an already-rendered balance visible on a transient refresh failure.
+      // On first load the HTML placeholder is already '-', so no stale/fake value is introduced.
       invalidateStoredBalance();
-      setAllWalletText('-');
       return null;
     });
   }
@@ -83,7 +84,8 @@
     // Never paint a wallet amount saved by a previous browser session.
     // Always request the current amount from the API before showing a balance.
     invalidateStoredBalance();
-    setAllWalletText('-');
+    // Do not blank a valid amount while the fresh request is in flight.
+    // Static HTML placeholders are '-' on first load.
     setTimeout(refreshShellBalance, 0);
     window.addEventListener('load', function(){ setTimeout(refreshShellBalance, 80); });
     window.addEventListener('pageshow', function(){ refreshShellBalance(); });
@@ -355,7 +357,7 @@
     refreshHeaderAuth();
     updateSideLangLabel();
     invalidateStoredBalance();
-    setAllWalletText('-');
+    // Re-applying BO header HTML must not make wallet amount flash to '-'.
     refreshShellBalance();
     if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
   }
