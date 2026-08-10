@@ -13,24 +13,12 @@
   (function(){
     try{
       var base = 'https://bo.titanxgaming.com';
-      var lang = localStorage.getItem('site_lang') || localStorage.getItem('lang') || document.documentElement.lang || 'en';
-      // Always request the current catalog. Do not restore game category or
-      // provider rules from sessionStorage, which can flash an outdated layout.
-      var urls = [
-        base + '/api/admin/game-category/list',
-        base + '/api/admin/game-provider/list',
-        base + '/api/admin/game-sub-category/list?lang=' + encodeURIComponent(lang),
-        base + '/api/admin/game/list?lang=' + encodeURIComponent(lang),
-        base + '/api/admin/slider/list'
-      ];
+      var versionUrl = base + '/api/public/game-catalog/version';
       var store = window.__NAGA_EARLY_API__ = window.__NAGA_EARLY_API__ || {};
-      urls.forEach(function(rawUrl){
-        var key = new URL(rawUrl, location.href).toString();
-        if(store[key]) return;
-        store[key] = fetch(key, {cache:'no-store'})
-          .then(function(res){ if(!res.ok) throw new Error('API error: ' + key); return res.json(); })
-          .catch(function(err){ delete store[key]; throw err; });
-      });
+      var key = new URL(versionUrl, location.href).toString();
+      store[key] = fetch(key, {cache:'no-store'})
+        .then(function(res){ if(!res.ok) throw new Error('API error: ' + key); return res.json(); })
+        .catch(function(err){ delete store[key]; throw err; });
     }catch(e){}
   })();
   </script>
@@ -266,11 +254,11 @@
 
   <script src="assets/js/site-shell.js?v=1.0.15"></script>
   <script src="assets/js/lang.js?v=1.0.8"></script>
-  <script src="assets/js/config.js?v=1.0.21"></script>
+  <script src="assets/js/config.js?v=1.0.22"></script>
   <script src="assets/js/social-links.js?v=1.0.4"></script>
   <script src="assets/js/frontend-display.js?v=1.0.0"></script>
   <script src="assets/js/provider-launch.js?v=1.0.14"></script>
-  <script src="assets/js/app.js?v=1.0.52"></script>
+  <script src="assets/js/app.js?v=1.0.53"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>
   <script src="assets/js/bonus.js?v=1.0.10"></script>

@@ -18,6 +18,10 @@ const GAME_API_URL =
   API.gameList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list' : 'https://bo.titanxgaming.com/api/admin/game/list');
 const GAME_PROVIDER_API_URL =
   API.gameProviderList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-provider/list' : 'https://bo.titanxgaming.com/api/admin/game-provider/list');
+const PUBLIC_GAME_CATALOG_API_URL =
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
+const PUBLIC_GAME_CATALOG_VERSION_URL =
+  API.publicGameCatalogVersion || PUBLIC_GAME_CATALOG_API_URL + '/version';
 
 let categories = [];
 let subCategories = [];
@@ -998,7 +1002,7 @@ function renderGames(list){
 const API_MEMORY_CACHE = new Map();
 const API_IN_FLIGHT = new Map();
 const API_CACHE_TTL_MS = 3 * 60 * 1000;
-const GAME_CATALOG_CACHE_VERSION = 'v11-fast-catalog';
+const GAME_CATALOG_CACHE_VERSION = 'v12-public-catalog';
 const GAME_CATALOG_FRESH_MS = 2 * 60 * 1000;
 const GAME_CATALOG_MAX_STALE_MS = 24 * 60 * 60 * 1000;
 const GAME_CATALOG_KEY = 'naga_game_catalog_' + GAME_CATALOG_CACHE_VERSION + ':' + currentLangCode();
@@ -1096,6 +1100,7 @@ function normalizeStoredCatalog(value){
   const catalog = value.catalog && typeof value.catalog === 'object' ? value.catalog : value;
   const normalized = {
     savedAt: Number(value.savedAt || catalog.savedAt || 0),
+    serverVersion: String(value.serverVersion || catalog.serverVersion || catalog.version || ''),
     categories: Array.isArray(catalog.categories) ? catalog.categories : [],
     providers: Array.isArray(catalog.providers) ? catalog.providers : [],
     subCategories: Array.isArray(catalog.subCategories) ? catalog.subCategories : [],
@@ -1124,6 +1129,7 @@ function writeGameCatalogCache(catalog){
     localStorage.setItem(GAME_CATALOG_KEY, JSON.stringify({
       savedAt: Date.now(),
       catalog: {
+        serverVersion: String(catalog.serverVersion || catalog.version || ''),
         categories: catalog.categories || [],
         providers: catalog.providers || [],
         subCategories: catalog.subCategories || [],
@@ -1139,9 +1145,33 @@ function catalogList(response){
   return normalizeApiList(response).filter(isActiveItem).sort(sortByOrder);
 }
 
-function fetchFullGameCatalog(forceRefresh = false){
-  if(catalogRefreshPromise && !forceRefresh) return catalogRefreshPromise;
+function publicCatalogData(response){
+  if(!response || typeof response !== 'object') return null;
+  const data = response.data && typeof response.data === 'object' ? response.data : response;
+  if(!Array.isArray(data.games) && !Array.isArray(data.categories)) return null;
+  return {
+    savedAt: Date.now(),
+    serverVersion: String(data.version || ''),
+    categories: Array.isArray(data.categories) ? data.categories : [],
+    providers: Array.isArray(data.providers) ? data.providers : [],
+    subCategories: Array.isArray(data.subCategories) ? data.subCategories : [],
+    games: Array.isArray(data.games) ? data.games : []
+  };
+}
 
+function fetchCatalogVersion(){
+  const key = apiCacheKey(PUBLIC_GAME_CATALOG_VERSION_URL);
+  const early = EARLY_API_REQUESTS[key];
+  if(early){
+    delete EARLY_API_REQUESTS[key];
+    return early.then(response => String(response?.data?.version || response?.version || ''));
+  }
+  return fetch(PUBLIC_GAME_CATALOG_VERSION_URL, { cache:'no-store' })
+    .then(res => { if(!res.ok) throw new Error('Catalog version API error'); return res.json(); })
+    .then(response => String(response?.data?.version || response?.version || ''));
+}
+
+function fetchLegacyGameCatalog(forceRefresh = false){
   const requestOptions = { forceRefresh: forceRefresh, ttl: API_CACHE_TTL_MS };
   const urls = {
     categories: GAME_CATEGORY_API_URL,
@@ -1149,29 +1179,49 @@ function fetchFullGameCatalog(forceRefresh = false){
     subCategories: buildUrl(GAME_SUB_CATEGORY_API_URL, { lang: currentLang() }),
     games: buildUrl(GAME_API_URL, { lang: currentLang() })
   };
-
-  const request = Promise.allSettled([
+  return Promise.allSettled([
     fetchJson(urls.categories, requestOptions),
     fetchJson(urls.providers, requestOptions),
     fetchJson(urls.subCategories, requestOptions),
     fetchJson(urls.games, requestOptions)
-  ]).then(results => {
-    const existing = {categories:[], providers:[], subCategories:[], games:[]};
-    const catalog = {
-      savedAt: Date.now(),
-      categories: results[0].status === 'fulfilled' ? catalogList(results[0].value) : existing.categories,
-      providers: results[1].status === 'fulfilled' ? catalogList(results[1].value) : existing.providers,
-      subCategories: results[2].status === 'fulfilled' ? catalogList(results[2].value) : existing.subCategories,
-      games: results[3].status === 'fulfilled' ? catalogList(results[3].value) : existing.games
-    };
-    if(!catalog.categories.length && !catalog.games.length){
-      throw new Error('Game catalog API returned no usable data');
-    }
-    writeGameCatalogCache(catalog);
-    return catalog;
-  }).finally(() => {
-    if(catalogRefreshPromise === request) catalogRefreshPromise = null;
-  });
+  ]).then(results => ({
+    savedAt: Date.now(),
+    serverVersion: '',
+    categories: results[0].status === 'fulfilled' ? catalogList(results[0].value) : [],
+    providers: results[1].status === 'fulfilled' ? catalogList(results[1].value) : [],
+    subCategories: results[2].status === 'fulfilled' ? catalogList(results[2].value) : [],
+    games: results[3].status === 'fulfilled' ? catalogList(results[3].value) : []
+  }));
+}
+
+function fetchFullGameCatalog(forceRefresh = false){
+  if(catalogRefreshPromise && !forceRefresh) return catalogRefreshPromise;
+
+  const url = buildUrl(PUBLIC_GAME_CATALOG_API_URL, { lang: currentLang() });
+  const request = fetch(url, { cache: forceRefresh ? 'no-store' : 'default' })
+    .then(res => {
+      if(!res.ok) throw new Error('Public game catalog API error');
+      return res.json();
+    })
+    .then(response => {
+      const catalog = publicCatalogData(response);
+      if(!catalog || (!catalog.categories.length && !catalog.games.length)) {
+        throw new Error('Public game catalog returned no usable data');
+      }
+      writeGameCatalogCache(catalog);
+      return catalog;
+    })
+    .catch(publicError => {
+      console.warn('Public catalog unavailable; using legacy endpoints:', publicError.message);
+      return fetchLegacyGameCatalog(forceRefresh).then(catalog => {
+        if(!catalog.categories.length && !catalog.games.length) throw publicError;
+        writeGameCatalogCache(catalog);
+        return catalog;
+      });
+    })
+    .finally(() => {
+      if(catalogRefreshPromise === request) catalogRefreshPromise = null;
+    });
 
   catalogRefreshPromise = request;
   return request;
@@ -1451,8 +1501,8 @@ function loadCategories(){
     return Promise.resolve();
   }
 
-  // Stale-while-revalidate: returning visitors see the previous provider/game
-  // catalog immediately, while the latest BO configuration refreshes silently.
+  // Instant paint for returning visitors. Only the tiny version endpoint is
+  // checked first; the full catalogue is downloaded again only when BO data changed.
   const cachedCatalog = readGameCatalogCache();
   let paintedFromCache = false;
   if(cachedCatalog){
@@ -1463,8 +1513,20 @@ function loadCategories(){
     setGamesLoading();
   }
 
-  return fetchFullGameCatalog(true).then(catalog => {
-    paintInitialCatalog(catalog);
+  const refresh = cachedCatalog
+    ? fetchCatalogVersion().then(serverVersion => {
+        if(serverVersion && cachedCatalog.serverVersion && serverVersion === cachedCatalog.serverVersion){
+          return cachedCatalog;
+        }
+        return fetchFullGameCatalog(true);
+      }).catch(() => fetchFullGameCatalog(true))
+    : fetchFullGameCatalog(true);
+
+  return refresh.then(catalog => {
+    // Do not repaint an identical cached catalogue and cause avoidable DOM work.
+    if(!paintedFromCache || String(catalog.serverVersion || '') !== String(cachedCatalog?.serverVersion || '')){
+      paintInitialCatalog(catalog);
+    }
   }).catch(err => {
     console.warn('Game catalog API failed:', err.message);
     if(paintedFromCache) return;
@@ -1478,8 +1540,6 @@ function loadCategories(){
     renderSubTabs();
     renderGames([]);
   }).finally(() => {
-    // Cold visitors are revealed after the first API-backed layout is painted.
-    // Cached visitors were already revealed above without waiting on the network.
     if(!paintedFromCache){
       requestAnimationFrame(() => requestAnimationFrame(signalLobbyReady));
     }
