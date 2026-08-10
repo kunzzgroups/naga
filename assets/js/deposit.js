@@ -5,7 +5,7 @@
   const submit=document.querySelector('.submit-btn');
   const grid=document.querySelector('.payment-grid');
   let paymentMethods=[];
-  let selected='ONLINE_BANKING';
+  let selectedIndex=-1;
 
   function token(){return localStorage.getItem('member_token')||'';}
   function requireLogin(){ if(!token()){ location.href='login.html?redirect=deposit.html'; return false;} return true; }
@@ -17,29 +17,43 @@
   function extractBalance(json){ const d=(json&&json.data)||json||{}; const list=[d.balance,d.mainWalletBalance,d.walletBalance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of list){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return 0; }
   async function loadBalance(){ const url=String(API.playerMainWalletBalance)+(String(API.playerMainWalletBalance).includes('?')?'&':'?')+'_wallet_ts='+Date.now(); const res=await fetch(url,{cache:'no-store',headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load balance'); setBalance(extractBalance(json)); }
 
-  function selectedMethod(){ return selected || 'ONLINE_BANKING'; }
+  function selectedMethod(){ const m=paymentMethods[selectedIndex]; return m ? (m.methodType || '') : ''; }
   function icon(type){ if(type==='EWALLET') return '📱'; if(type==='CARD') return '💳'; return '🏦'; }
   function renderMethodButtons(){
     if(!grid) return;
     if(!paymentMethods.length){
-      paymentMethods=[
-        {methodType:'ONLINE_BANKING',displayName:'Online Banking',subtitle:'Fast deposit',bankName:'-',accountNumber:'-',status:1,sortOrder:1},
-        {methodType:'CARD',displayName:'Card',subtitle:'Visa / Mastercard',status:1,sortOrder:2},
-        {methodType:'EWALLET',displayName:'E-Wallet',subtitle:'Instant transfer',status:1,sortOrder:3}
-      ];
+      selectedIndex=-1;
+      grid.innerHTML='<div class="payment-empty">-</div>';
+      renderPaymentInfo();
+      return;
     }
-    grid.innerHTML=paymentMethods.map((m,i)=>`<button type="button" class="pay-method ${i===0?'active':''}" data-method="${esc(m.methodType)}"><span>${icon(m.methodType)}</span><b>${esc(m.displayName||m.methodType)}</b><em>${esc(m.subtitle||'')}</em></button>`).join('');
-    selected=paymentMethods[0]?.methodType||'ONLINE_BANKING';
-    grid.querySelectorAll('.pay-method').forEach(btn=>btn.addEventListener('click',()=>{ grid.querySelectorAll('.pay-method').forEach(x=>x.classList.remove('active')); btn.classList.add('active'); selected=btn.dataset.method; renderPaymentInfo(); }));
+    if(selectedIndex < 0 || selectedIndex >= paymentMethods.length) selectedIndex=0;
+    grid.innerHTML=paymentMethods.map((m,i)=>`<button type="button" class="pay-method ${i===selectedIndex?'active':''}" data-method-index="${i}"><span>${icon(String(m.methodType||'').toUpperCase())}</span><b>${esc(m.displayName||m.methodType||'-')}</b><em>${esc(m.subtitle||'')}</em></button>`).join('');
+    grid.querySelectorAll('.pay-method').forEach(btn=>btn.addEventListener('click',()=>{
+      grid.querySelectorAll('.pay-method').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      selectedIndex=Number(btn.dataset.methodIndex);
+      renderPaymentInfo();
+    }));
     renderPaymentInfo();
   }
   async function loadPaymentMethods(){
-    try{ const res=await fetch(API.paymentMethodList); const json=await res.json().catch(()=>({})); if(res.ok&&json.status!=='error'){ const rows=(json.data&&json.data.content)||json.data||[]; if(Array.isArray(rows)&&rows.length) paymentMethods=rows; } }catch(e){}
+    paymentMethods=[]; selectedIndex=-1;
+    try{
+      const url=String(API.paymentMethodList)+(String(API.paymentMethodList).includes('?')?'&':'?')+'_payment_ts='+Date.now();
+      const res=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}});
+      const json=await res.json().catch(()=>({}));
+      if(res.ok&&json.status!=='error'){
+        const rows=(json.data&&json.data.content)||json.data||[];
+        if(Array.isArray(rows)) paymentMethods=rows.filter(m=>Number(m&&m.status==null?1:m.status)!==0);
+      }
+    }catch(e){}
     renderMethodButtons();
   }
   function renderPaymentInfo(){
     let box=document.getElementById('paymentInfoBox'); if(!box){ box=document.createElement('div'); box.id='paymentInfoBox'; box.className='deposit-note payment-config-box'; grid?.after(box); }
-    const m=paymentMethods.find(x=>String(x.methodType).toUpperCase()===String(selected).toUpperCase())||{};
+    const m=paymentMethods[selectedIndex]||null;
+    if(!m){ box.innerHTML='<b>-</b>'; return; }
     const rows=[];
     if(m.bankName) rows.push(`<div><b>Bank Name</b><span>${esc(m.bankName)}</span></div>`);
     if(m.accountName) rows.push(`<div><b>Account Name</b><span>${esc(m.accountName)}</span></div>`);
@@ -49,7 +63,7 @@
     const qr=m.qrImage?`<div class="payment-config-qr"><img src="${esc(fileUrl(m.qrImage))}" alt="QR"></div>`:'';
     const info=rows.length?`<div class="payment-config-list">${rows.join('')}</div>`:'';
     const inst=m.instructions?`<p>${esc(m.instructions).replace(/\n/g,'<br>')}</p>`:'';
-    box.innerHTML=`<b>${esc(m.displayName||selected)}</b>${info}${qr}${inst}`;
+    box.innerHTML=`<b>${esc(m.displayName||m.methodType||'-')}</b>${info}${qr}${inst}`;
   }
 
   document.querySelectorAll('.quick-amounts button').forEach(btn=>btn.addEventListener('click',()=>{ if(input){ input.value=btn.textContent.trim(); input.focus(); } }));
@@ -70,11 +84,12 @@
   }
   async function submitDeposit(){
     if(!requireLogin()) return; const amount=Number(input?.value||0); if(amount<10){ msg('Minimum deposit is MYR 10.00',false); return; }
+    const method=paymentMethods[selectedIndex]; if(!method){ msg('Please select a payment method',false); return; }
     const fd=new FormData(); fd.append('amount', String(amount)); fd.append('paymentMethod', selectedMethod()); const proof=document.getElementById('depositProof')?.files?.[0]; if(proof) fd.append('proof', proof);
     submit.disabled=true; msg('Submitting deposit request...', true);
     try{ const res=await fetch(API.memberDeposit,{method:'POST',headers:{Authorization:'Bearer '+token()},body:fd}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Deposit failed'); msg(json.message||'Deposit submitted, waiting BO approval.', true); input.value=''; const proofInput=document.getElementById('depositProof'); if(proofInput){ proofInput.value=''; document.getElementById('paymentProofEmpty')?.removeAttribute('hidden'); document.getElementById('paymentProofPreview')?.setAttribute('hidden','hidden'); } await loadBalance().catch(()=>{}); }
     catch(e){ msg(e.message||'Deposit failed', false); }
     finally{ submit.disabled=false; }
   }
-  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent=money(0)); ensureProof(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
+  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent='-'); ensureProof(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
 })();

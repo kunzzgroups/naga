@@ -290,6 +290,14 @@
 
   function bindMenu(){
     document.addEventListener('click', function(e){
+      const logo = e.target.closest && e.target.closest('.site-logo, .logo-box');
+      if(logo){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation && e.stopImmediatePropagation();
+        window.location.href = 'index.html';
+        return;
+      }
       const logoutBtn = e.target.closest && e.target.closest('[data-member-logout]');
       if(logoutBtn){
         e.preventDefault();
