@@ -38,7 +38,7 @@
     localStorage.removeItem('member_token');
     localStorage.removeItem('member_info');
     localStorage.removeItem('member_main_wallet_balance');
-    setMainWalletBalance(0);
+    setMainWalletBalance(null);
     if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshHeaderAuth === 'function'){
       try{ window.NAGA_SITE_SHELL.refreshHeaderAuth(); }catch(e){}
     }
@@ -80,8 +80,9 @@
 
 
   function formatMoney(value){
-    const n = Number(value || 0);
-    return 'MYR ' + (isNaN(n) ? '0.00' : n.toFixed(2));
+    if(value === undefined || value === null || value === '') return '-';
+    const n = Number(value);
+    return isNaN(n) ? '-' : 'MYR ' + n.toFixed(2);
   }
 
   function setMainWalletBalance(value){
@@ -108,10 +109,10 @@
       const value = candidates[i];
       if(value !== undefined && value !== null && value !== ''){
         const n = Number(value);
-        return isNaN(n) ? 0 : n;
+        return isNaN(n) ? null : n;
       }
     }
-    return 0;
+    return null;
   }
 
   function noCacheUrl(url){
@@ -121,9 +122,10 @@
 
   async function loadMainWalletBalance(){
     const token = getToken();
+    if(document.body && document.body.classList.contains('setting-page')) setMainWalletBalance(null);
     if(!token){
-      setMainWalletBalance(0);
-      return 0;
+      setMainWalletBalance(null);
+      return null;
     }
 
     const res = await fetch(noCacheUrl(MAIN_WALLET_BALANCE_URL), {
@@ -142,7 +144,8 @@
 
     const balance = extractBalance(json);
     setMainWalletBalance(balance);
-    localStorage.setItem('member_main_wallet_balance', String(balance));
+    if(balance === null) localStorage.removeItem('member_main_wallet_balance');
+    else localStorage.setItem('member_main_wallet_balance', String(balance));
     if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshBalance === 'function'){
       try{ window.NAGA_SITE_SHELL.refreshBalance(); }catch(e){}
     }
@@ -174,7 +177,7 @@
     const token = getToken();
     if(!token){
       renderLoggedOut();
-      setMainWalletBalance(0);
+      setMainWalletBalance(null);
       return;
     }
 
@@ -182,7 +185,7 @@
     if(stored && Object.keys(stored).length){
       renderLoggedIn(stored);
       // Do not show the amount cached by a previous browser session.
-      setMainWalletBalance(0);
+      setMainWalletBalance(null);
     }
 
     try{
@@ -191,12 +194,12 @@
         renderLoggedIn(latest);
         try{ await loadMainWalletBalance(); }catch(balanceErr){
           localStorage.removeItem('member_main_wallet_balance');
-          setMainWalletBalance(0);
+          setMainWalletBalance(null);
         }
       }
       else renderLoggedOut();
     }catch(e){
-      if(stored && Object.keys(stored).length){ renderLoggedIn(stored); setMainWalletBalance(0); }
+      if(stored && Object.keys(stored).length){ renderLoggedIn(stored); setMainWalletBalance(null); }
       else renderLoggedOut();
     }
   }

@@ -457,6 +457,46 @@ function ensureCategoryForSelectedProvider(){
   return true;
 }
 
+function categoryIdForProviderNavigation(providerCode){
+  const cleanCode = String(providerCode || '').trim().toUpperCase();
+  if(!cleanCode) return null;
+  const currentId = String(activeCategoryId || '');
+  const provider = providerForCode(cleanCode);
+  const usable = cat => cat && cat.id != null && String(cat.id) !== currentId && categoryTypeKey(cat) !== 'HOT';
+
+  // Prefer the provider/category relationship configured in BO, excluding the
+  // Hot Game landing category itself. This stays generic for every provider.
+  const configuredIds = providerCategoryIdsOf(provider);
+  const configuredMatches = categories.filter(cat => usable(cat) && configuredIds.includes(String(cat.id)));
+  if(configuredMatches.length === 1) return configuredMatches[0].id;
+
+  // Provider type is the next strongest signal (SPORT/LIVE/SLOT/etc.).
+  const types = providerTypesOf(provider);
+  const typeMatches = categories.filter(cat => usable(cat) && types.includes(categoryTypeKey(cat)));
+  if(typeMatches.length === 1) return typeMatches[0].id;
+
+  // Fall back to the actual game assignments for this provider and choose the
+  // most frequently assigned non-Hot category. No provider code is hardcoded.
+  const counts = new Map();
+  (Array.isArray(catalogGames) ? catalogGames : []).forEach(game => {
+    if(providerCodeOf(game) !== cleanCode) return;
+    gameCategoryIdsOf(game).forEach(id => {
+      const cat = categories.find(c => String(c.id) === String(id));
+      if(!usable(cat)) return;
+      counts.set(String(id), (counts.get(String(id)) || 0) + 1);
+    });
+  });
+  if(counts.size){
+    const bestId = [...counts.entries()].sort((a,b) => b[1] - a[1])[0][0];
+    const best = categories.find(cat => String(cat.id) === String(bestId));
+    if(best) return best.id;
+  }
+
+  if(configuredMatches.length) return configuredMatches[0].id;
+  if(typeMatches.length) return typeMatches[0].id;
+  return null;
+}
+
 function providerRowsForActiveCategory(games, configuredOnly = false){
   const sourceGames = Array.isArray(games) ? games : currentGameList;
   const countByProvider = new Map();
@@ -611,9 +651,19 @@ function renderMixedCategoryLanding(games){
         ? `<img src="${image}" alt="${providerNameOf(row.provider)}" loading="lazy">`
         : `<span class="provider-letter">${providerInitials(providerNameOf(row.provider))}</span>`;
       btn.addEventListener('click', () => {
-        activeProviderCode = row.code;
+        const clickedProviderCode = row.code;
+        // Hot Game is a landing/featured category. When a provider card belongs
+        // to a real category such as Sport/Live/Slot, move the selected top tab
+        // to that category before opening the provider. The category is inferred
+        // from BO/provider/game metadata; no individual provider is hardcoded.
+        if(activeCategoryTypeKey() === 'HOT'){
+          const targetCategoryId = categoryIdForProviderNavigation(clickedProviderCode);
+          if(targetCategoryId != null) activeCategoryId = targetCategoryId;
+        }
+        activeProviderCode = clickedProviderCode;
         activeSubCategoryId = null;
         subCategoryAutoTriedIds = new Set();
+        renderCategories();
         setGamesLoading();
         loadSubCategories();
       });

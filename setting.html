@@ -16,7 +16,6 @@
 <body class="setting-page">
   <header class="top-header">
     <div data-layout-section="home-header"></div>
-    <div class="logo-box"><img class="site-logo" src="assets/custom/images/logo.png"/ decoding="async" loading="eager" fetchpriority="high"></div>
   </header>
 
   <main class="setting-main">
@@ -28,7 +27,7 @@
         <div class="setting-wallet-hero">
           <div>
             <p>Total Balance</p>
-            <h2 data-main-wallet-balance>MYR 44.99</h2>
+            <h2 data-main-wallet-balance>-</h2>
           </div>
           <div class="setting-wallet-glow"><i class="fa-solid fa-wallet"></i></div>
         </div>
@@ -52,13 +51,13 @@
 
       <article class="profile-card game-glass-card setting-merged-profile" id="profileDetails">
         <div class="setting-profile-mini setting-profile-mini-merged">
-          <div class="setting-profile-avatar">W</div>
+          <div class="setting-profile-avatar" data-profile-avatar>-</div>
           <div class="setting-profile-summary-text">
-            <h2>Wang Zai</h2>
-            <p><i class="fa-solid fa-mobile-screen-button"></i> 0112345678</p>
-            <p><i class="fa-solid fa-location-dot"></i> Malaysia</p>
+            <h2 data-profile-name>-</h2>
+            <p><i class="fa-solid fa-mobile-screen-button"></i> <span data-profile-mobile>-</span></p>
+            <p><i class="fa-solid fa-location-dot"></i> <span data-profile-country>-</span></p>
           </div>
-          <span class="profile-badge" data-i18n="vip">VIP</span>
+          <span class="profile-badge" data-profile-vip>-</span>
         </div>
         <div class="card-heading setting-merged-profile-heading">
           <div>
@@ -66,9 +65,7 @@
             <p data-i18n="account_information">Account information</p>
           </div>
         </div>
-        <div class="profile-list" id="memberProfileList">
-          <div class="profile-row"><span data-i18n="loading">Loading</span><strong>...</strong></div>
-        </div>
+        <div class="profile-list" id="memberProfileList"></div>
       </article>
 
       <article class="setting-card game-glass-card open">
@@ -125,11 +122,11 @@
 
   <script src="assets/js/config.js?v=1.0.22"></script>
   <script src="assets/js/social-links.js?v=1.0.4"></script>
-  <script src="assets/js/layout-section-loader.js?v=1.1.10"></script>
-  <script src="assets/js/site-shell.js?v=1.0.15"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.11"></script>
+  <script src="assets/js/site-shell.js?v=1.0.16"></script>
   <script src="assets/js/lang.js"></script>
-  <script src="assets/js/member-auth.js?v=1.0.3"></script>
-  <script src="assets/js/setting.js?v=1.0.7"></script>
+  <script src="assets/js/member-auth.js?v=1.0.13"></script>
+  <script src="assets/js/setting.js?v=1.0.8"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.18"></script>

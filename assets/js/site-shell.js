@@ -6,8 +6,9 @@
   }
 
   function formatMoney(value){
-    var n = Number(value || 0);
-    return 'MYR ' + (isNaN(n) ? '0.00' : n.toFixed(2));
+    if(value === undefined || value === null || value === '') return '-';
+    var n = Number(value);
+    return isNaN(n) ? '-' : 'MYR ' + n.toFixed(2);
   }
 
   function setAllWalletText(value){
@@ -15,7 +16,7 @@
     if(typeof value === 'number' || (/^-?\d+(\.\d+)?$/.test(String(value || '').trim()))){
       text = formatMoney(value);
     }else{
-      text = value || 'MYR 0.00';
+      text = value || '-';
     }
     document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){ el.textContent = text; });
   }
@@ -41,10 +42,10 @@
     for(var i=0;i<candidates.length;i++){
       if(candidates[i] !== undefined && candidates[i] !== null && candidates[i] !== ''){
         var n = Number(candidates[i]);
-        return isNaN(n) ? 0 : n;
+        return isNaN(n) ? null : n;
       }
     }
-    return 0;
+    return null;
   }
 
   function walletBalanceUrl(){
@@ -56,8 +57,8 @@
 
   function refreshShellBalance(){
     if(!getToken()){
-      setAllWalletText('MYR 0.00');
-      return Promise.resolve(0);
+      setAllWalletText('-');
+      return Promise.resolve(null);
     }
     return fetch(noCacheUrl(walletBalanceUrl()), {
       cache: 'no-store',
@@ -67,14 +68,14 @@
     .then(function(pair){
       if(!pair.res.ok || pair.json.status === 'error') throw new Error(pair.json.message || 'Unable to load wallet balance');
       var balance = extractBalance(pair.json);
-      try{ localStorage.setItem('member_main_wallet_balance', String(balance)); }catch(e){}
+      try{ if(balance === null) localStorage.removeItem('member_main_wallet_balance'); else localStorage.setItem('member_main_wallet_balance', String(balance)); }catch(e){}
       setAllWalletText(balance);
       return balance;
     })
     .catch(function(){
       invalidateStoredBalance();
-      setAllWalletText('MYR 0.00');
-      return 0;
+      setAllWalletText('-');
+      return null;
     });
   }
 
@@ -82,7 +83,7 @@
     // Never paint a wallet amount saved by a previous browser session.
     // Always request the current amount from the API before showing a balance.
     invalidateStoredBalance();
-    setAllWalletText('MYR 0.00');
+    setAllWalletText('-');
     setTimeout(refreshShellBalance, 0);
     window.addEventListener('load', function(){ setTimeout(refreshShellBalance, 80); });
     window.addEventListener('pageshow', function(){ refreshShellBalance(); });
@@ -96,7 +97,7 @@
     try{ localStorage.removeItem('member_main_wallet_balance'); }catch(e){}
     ['token','user','member','memberInfo','auth_token','access_token','jwt','main_wallet_balance'].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
     document.body.classList.remove('member-logged-in');
-    setAllWalletText('MYR 0.00');
+    setAllWalletText('-');
     refreshHeaderAuth();
     try{ document.dispatchEvent(new CustomEvent('naga:member-logout')); }catch(e){}
     closeMenu();
@@ -172,7 +173,7 @@
 
     const member = document.createElement('div');
     member.className = 'top-member-actions';
-    member.innerHTML = '<a class="top-wallet-pill" href="deposit.html"><span data-main-wallet-balance>MYR 0.00</span></a><button type="button" class="top-logout-btn" data-member-logout data-i18n="logout">Logout</button>';
+    member.innerHTML = '<a class="top-wallet-pill" href="deposit.html"><span data-main-wallet-balance>-</span></a><button type="button" class="top-logout-btn" data-member-logout data-i18n="logout">Logout</button>';
 
     actions.appendChild(guest);
     actions.appendChild(member);
@@ -248,7 +249,7 @@
             <a href="login.html" class="mobile-login-btn auth-image-link" aria-label="Login"><img class="sidebar-auth-image sidebar-login-image" src="assets/custom/images/login.png" alt="LOGIN" decoding="async" loading="eager"></a>
             <a href="register.html" class="mobile-register-btn auth-image-link" aria-label="Register"><img class="sidebar-auth-image sidebar-register-image" src="assets/custom/images/register.png" alt="REGISTER" decoding="async" loading="eager"></a>
           </div>
-          <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>MYR 0.00</span></div></div>
+          <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>-</span></div></div>
         </div>
         <div class="mobile-menu-list">
           <a href="index.html"><i class="fa-solid fa-house mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_home">Home</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
@@ -346,7 +347,7 @@
     refreshHeaderAuth();
     updateSideLangLabel();
     invalidateStoredBalance();
-    setAllWalletText('MYR 0.00');
+    setAllWalletText('-');
     refreshShellBalance();
     if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
   }

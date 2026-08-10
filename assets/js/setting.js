@@ -10,26 +10,46 @@
   function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function t(key, fallback){ return (window.I18N && typeof window.I18N.t === 'function') ? window.I18N.t(key) : (fallback || key); }
   function row(labelKey, value, fallback){ return '<div class="profile-row"><span>'+esc(t(labelKey, fallback || labelKey))+'</span><strong>'+esc(value || '-')+'</strong></div>'; }
-  function setBadge(member){ const b=document.querySelector('.profile-badge'); if(b) b.textContent = member.vipName || member.vipLevel || 'VIP'; }
+  function firstValue(member, keys){
+    for(const key of keys){
+      const value = member && member[key];
+      if(value !== undefined && value !== null && String(value).trim() !== '') return value;
+    }
+    return '';
+  }
+  function setText(selector, value){ const el=document.querySelector(selector); if(el) el.textContent = value == null || String(value).trim()==='' ? '-' : String(value); }
+  function setBadge(member){ setText('[data-profile-vip]', firstValue(member, ['vipName','vip_name','vipLevelName','vip_level_name','vipLevel','vip_level'])); }
+  function renderSummary(member){
+    const name = firstValue(member, ['fullName','full_name','name','username']);
+    const mobile = firstValue(member, ['mobile','phoneNumber','phone_number','phone']);
+    const country = firstValue(member, ['countryName','country_name','country','countryCode','country_code']);
+    setText('[data-profile-name]', name);
+    setText('[data-profile-mobile]', mobile);
+    setText('[data-profile-country]', country);
+    const avatar=document.querySelector('[data-profile-avatar]');
+    if(avatar) avatar.textContent = name ? String(name).trim().charAt(0).toUpperCase() : '-';
+    setBadge(member);
+  }
   function render(member){
     const list = document.getElementById('memberProfileList'); if(!list) return;
     const rows = [];
     rows.push(row('username', member.username, 'Username'));
-    rows.push(row('name', member.fullName || member.name, 'Name'));
-    rows.push(row('phone_number', member.mobile, 'Phone Number'));
+    rows.push(row('name', firstValue(member, ['fullName','full_name','name']), 'Name'));
+    rows.push(row('phone_number', firstValue(member, ['mobile','phoneNumber','phone_number','phone']), 'Phone Number'));
     rows.push(row('bank_name', member.bankName, 'Bank Name'));
     rows.push(row('bank_account_name', member.bankAccountName, 'Bank Account Name'));
     rows.push(row('bank_account_number', member.bankAccountNumber, 'Bank Account Number'));
     if(Number(member.showBankBsb == null ? 1 : member.showBankBsb) === 1) rows.push(row('bank_bsb', member.bankBsb, 'Bank BSB'));
     if(Number(member.showPayId == null ? 1 : member.showPayId) === 1) rows.push(row('pay_id', member.payId, 'Pay ID'));
     list.innerHTML = rows.join('');
-    setBadge(member);
+    renderSummary(member);
   }
   async function loadProfile(){
-    const res = await fetch(API_BASE + '/api/auth/member/me', {headers:{'Authorization':'Bearer ' + token()}});
+    const url = API_BASE + '/api/auth/member/me?_profile_ts=' + Date.now();
+    const res = await fetch(url, {cache:'no-store', headers:{'Authorization':'Bearer ' + token(), 'Cache-Control':'no-cache'}});
     const json = await res.json().catch(()=>({}));
     if(res.status === 401 || json.message === 'Unauthorized' || json.status === 'error') { localStorage.removeItem('member_token'); location.href='login.html?redirect=setting.html'; return; }
-    const member = json.data || {};
+    const member = (json && json.data && typeof json.data === 'object') ? json.data : {};
     localStorage.setItem('member_info', JSON.stringify(member));
     render(member);
   }
@@ -59,8 +79,9 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     const list=document.getElementById('memberProfileList');
-    if(list) list.innerHTML=row('loading', '...', 'Loading');
+    renderSummary({});
+    if(list) render({});
     if(!requireLogin()) return;
-    loadProfile().catch(e => { if(list) list.innerHTML=row('error', e.message || t('load_failed', 'Load failed'), 'Error'); });
+    loadProfile().catch(e => { renderSummary({}); if(list) render({}); console.warn('Setting profile unavailable:', e && e.message ? e.message : e); });
   });
 })();

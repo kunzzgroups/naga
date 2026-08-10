@@ -415,7 +415,11 @@
     // Paint the most recently saved BO layout synchronously before any remote
     // request. This prevents login/register fallback markup from flashing.
     applyCachedSection(GLOBAL_CSS_SECTION, []);
-    applyCachedSection('frontend-header', targetsFor('frontend-header'));
+    // Setting must never flash an older cached header/layout. Leave the header
+    // empty and let the no-store BO request below paint the authoritative data.
+    if(!(document.body && document.body.classList.contains('setting-page'))){
+      applyCachedSection('frontend-header', targetsFor('frontend-header'));
+    }
     applyCachedSection('frontend-sidebar', targetsFor('frontend-sidebar'));
     grouped.forEach(function (targets, key) {
       const applied = applyCachedSection(key, targets);
