@@ -214,7 +214,7 @@
   function renderMessage(msg, messageId){
     const isMe = msg.senderType === 'member';
     const bubble = document.createElement('article');
-    bubble.className = 'chat-bubble ' + (isMe ? 'user' : 'admin') + (hasLongContent(msg) ? ' medium' : '');
+    bubble.className = 'chat-bubble chat-message ' + (isMe ? 'chat-message-sender user' : 'chat-message-receiver admin') + (hasLongContent(msg) ? ' medium' : '');
     let html = '';
     if(isMe && messageId){
       html += '<button class="chat-msg-more" type="button" aria-label="Message actions" title="Message actions">⋮</button>';

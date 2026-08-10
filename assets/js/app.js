@@ -998,8 +998,9 @@ function renderGames(list){
 const API_MEMORY_CACHE = new Map();
 const API_IN_FLIGHT = new Map();
 const API_CACHE_TTL_MS = 3 * 60 * 1000;
-const GAME_CATALOG_CACHE_VERSION = 'v10-no-session';
+const GAME_CATALOG_CACHE_VERSION = 'v11-fast-catalog';
 const GAME_CATALOG_FRESH_MS = 2 * 60 * 1000;
+const GAME_CATALOG_MAX_STALE_MS = 24 * 60 * 60 * 1000;
 const GAME_CATALOG_KEY = 'naga_game_catalog_' + GAME_CATALOG_CACHE_VERSION + ':' + currentLangCode();
 const SLOT_IMAGE_PRELOAD_HOLD = [];
 const EARLY_API_REQUESTS = window.__NAGA_EARLY_API__ || {};
@@ -1105,11 +1106,33 @@ function normalizeStoredCatalog(value){
 }
 
 function readGameCatalogCache(){
-  return null;
+  try{
+    const cached = normalizeStoredCatalog(JSON.parse(localStorage.getItem(GAME_CATALOG_KEY) || 'null'));
+    if(!cached) return null;
+    if(!cached.savedAt || Date.now() - cached.savedAt > GAME_CATALOG_MAX_STALE_MS){
+      localStorage.removeItem(GAME_CATALOG_KEY);
+      return null;
+    }
+    return cached;
+  }catch(e){
+    return null;
+  }
 }
 
 function writeGameCatalogCache(catalog){
-  // Disabled: always use current API category/provider configuration.
+  try{
+    localStorage.setItem(GAME_CATALOG_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      catalog: {
+        categories: catalog.categories || [],
+        providers: catalog.providers || [],
+        subCategories: catalog.subCategories || [],
+        games: catalog.games || []
+      }
+    }));
+  }catch(e){
+    // Storage can be unavailable in private mode; memory/API rendering still works.
+  }
 }
 
 function catalogList(response){
@@ -1411,23 +1434,40 @@ function signalLobbyReady(){
   document.dispatchEvent(new CustomEvent('naga:lobby-ready'));
 }
 
+function paintInitialCatalog(catalog){
+  applyGameCatalog(catalog);
+  activeCategoryId = pickDefaultCategoryId(categories);
+  activeSubCategoryId = null;
+  activeProviderCode = null;
+  renderCategories();
+  renderSubTabs();
+  renderCatalogState();
+  scheduleSlotCategoryPrefetch();
+}
+
 function loadCategories(){
   if(!categoryRow || !subTabRow || !gameGrid){
     signalLobbyReady();
     return Promise.resolve();
   }
-  setGamesLoading();
+
+  // Stale-while-revalidate: returning visitors see the previous provider/game
+  // catalog immediately, while the latest BO configuration refreshes silently.
+  const cachedCatalog = readGameCatalogCache();
+  let paintedFromCache = false;
+  if(cachedCatalog){
+    paintInitialCatalog(cachedCatalog);
+    paintedFromCache = true;
+    requestAnimationFrame(() => requestAnimationFrame(signalLobbyReady));
+  }else{
+    setGamesLoading();
+  }
+
   return fetchFullGameCatalog(true).then(catalog => {
-    applyGameCatalog(catalog);
-    activeCategoryId = pickDefaultCategoryId(categories);
-    activeSubCategoryId = null;
-    activeProviderCode = null;
-    renderCategories();
-    renderSubTabs();
-    renderCatalogState();
-    scheduleSlotCategoryPrefetch();
+    paintInitialCatalog(catalog);
   }).catch(err => {
     console.warn('Game catalog API failed:', err.message);
+    if(paintedFromCache) return;
     categories = [];
     providers = [];
     allSubCategories = [];
@@ -1438,10 +1478,11 @@ function loadCategories(){
     renderSubTabs();
     renderGames([]);
   }).finally(() => {
-    // Reveal the home page only after the category and first game/provider
-    // layout has been painted. This prevents the background-only/empty-shell
-    // flash that occurred while the remote catalog was still loading.
-    requestAnimationFrame(() => requestAnimationFrame(signalLobbyReady));
+    // Cold visitors are revealed after the first API-backed layout is painted.
+    // Cached visitors were already revealed above without waiting on the network.
+    if(!paintedFromCache){
+      requestAnimationFrame(() => requestAnimationFrame(signalLobbyReady));
+    }
   });
 }
 

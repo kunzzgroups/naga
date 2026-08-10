@@ -142,8 +142,8 @@
     if(!box) return;
     const isMe = msg.senderType === 'member';
     const wrap = document.createElement('div');
-    wrap.className = 'mini-msg ' + (isMe ? 'me' : 'admin');
-    let html = '<div class="mini-bubble">';
+    wrap.className = 'mini-msg ' + (isMe ? 'mini-msg-sender me' : 'mini-msg-receiver admin');
+    let html = '<div class="mini-bubble ' + (isMe ? 'mini-bubble-sender' : 'mini-bubble-receiver') + '">';
     if(msg.text) html += '<div>' + esc(msg.text).replace(/\r\n|\r|\n/g,'<br>') + '</div>';
     const files = Array.isArray(msg.attachments) ? msg.attachments : [];
     if(files.length){

@@ -147,7 +147,8 @@
     btn._nagaLangTimer = setTimeout(function(){
       btn.classList.remove('changed');
       updateSideLangLabel();
-      closeMenu();
+      // Keep the mobile sidebar open after switching language.
+      // The user should close it explicitly with the close button, overlay, or Escape key.
     }, 350);
   }
 

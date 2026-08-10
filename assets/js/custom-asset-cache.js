@@ -252,7 +252,6 @@
       style.textContent = [
       'body,',
       'body.bonus-page,',
-      'body.chat-page,',
       'body.deposit-page,',
       'body.downline-page,',
       'body.forgot-page,',

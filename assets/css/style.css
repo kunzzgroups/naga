@@ -12840,3 +12840,52 @@ body.forget-password-page{
   .forget-password-code-btn{font-size:10px;}
   .forget-password-form{padding:18px 15px 21px;}
 }
+
+
+/* ===== Live chat sender / receiver separation =====
+   Explicit semantic classes prevent sender and receiver styles from sharing
+   the same colour when global/chat theme styles are changed later. */
+.chat-message-sender{
+    margin-left:auto !important;
+    margin-right:0 !important;
+    background:linear-gradient(180deg,#0878d1,#064a98) !important;
+    border-color:rgba(113,198,255,.55) !important;
+    color:#fff !important;
+    border-bottom-right-radius:5px !important;
+}
+.chat-message-receiver{
+    margin-left:0 !important;
+    margin-right:auto !important;
+    background:linear-gradient(180deg,#333a45,#20252d) !important;
+    border-color:rgba(255,255,255,.18) !important;
+    color:#fff !important;
+    border-bottom-left-radius:5px !important;
+}
+.chat-message-sender .bubble-name{color:#d8f1ff !important;}
+.chat-message-receiver .bubble-name{color:#9ce860 !important;}
+
+/* Floating/minimized live-chat widget uses its own sender/receiver classes. */
+.mini-msg-sender{justify-content:flex-end !important;}
+.mini-msg-receiver{justify-content:flex-start !important;}
+.mini-bubble-sender{
+    background:linear-gradient(180deg,#0878d1,#064a98) !important;
+    color:#fff !important;
+    border:1px solid rgba(113,198,255,.5);
+    border-bottom-right-radius:5px !important;
+}
+.mini-bubble-receiver{
+    background:linear-gradient(180deg,#333a45,#20252d) !important;
+    color:#fff !important;
+    border:1px solid rgba(255,255,255,.16);
+    border-bottom-left-radius:5px !important;
+}
+
+/* Disable the page wallpaper on Live Chat only.
+   Other pages continue receiving the BO/customized page background. */
+body.chat-page{
+    background-image:none !important;
+    background-color:#dfe5ed !important;
+}
+body.chat-page .chat-main{
+    background:linear-gradient(180deg,rgba(239,244,250,.82),rgba(210,220,232,.9)) !important;
+}
