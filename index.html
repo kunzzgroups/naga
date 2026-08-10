@@ -20,7 +20,8 @@
         base + '/api/admin/game-category/list',
         base + '/api/admin/game-provider/list',
         base + '/api/admin/game-sub-category/list?lang=' + encodeURIComponent(lang),
-        base + '/api/admin/game/list?lang=' + encodeURIComponent(lang)
+        base + '/api/admin/game/list?lang=' + encodeURIComponent(lang),
+        base + '/api/admin/slider/list'
       ];
       var store = window.__NAGA_EARLY_API__ = window.__NAGA_EARLY_API__ || {};
       urls.forEach(function(rawUrl){
@@ -50,25 +51,11 @@
 
   <section class="main-layout">
     <section class="mobile-top-area">
-      <div class="side-slider mobile-slider slider-ready">
-        <div class="slider-track">
-          <img class="slide active" src="assets/images/banner-weekly.png" alt="Weekly Ranking Bonus" decoding="async" loading="eager" fetchpriority="high">
-          <img class="slide" src="assets/images/banner-daily.png" alt="Daily Mission" decoding="async" loading="eager">
-        </div>
-        <div class="dots"><span class="active"></span><span></span></div>
-        <div class="slider-timer"><span></span></div>
-      </div>
+      <div class="side-slider mobile-slider" aria-busy="true" aria-label="Promotional banners"></div>
     </section>
 
     <aside class="left-sidebar">
-      <div class="side-slider slider-ready" id="sideSlider">
-        <div class="slider-track">
-          <img class="slide active" src="assets/images/banner-weekly.png" alt="Weekly Ranking Bonus" decoding="async" loading="eager" fetchpriority="high">
-          <img class="slide" src="assets/images/banner-daily.png" alt="Daily Mission" decoding="async" loading="eager">
-        </div>
-        <div class="dots"><span class="active"></span><span></span></div>
-        <div class="slider-timer"><span></span></div>
-      </div>
+      <div class="side-slider" id="sideSlider" aria-busy="true" aria-label="Promotional banners"></div>
 
       <div data-layout-section="home-before-referral"></div>
 
@@ -283,7 +270,7 @@
   <script src="assets/js/social-links.js?v=1.0.4"></script>
   <script src="assets/js/frontend-display.js?v=1.0.0"></script>
   <script src="assets/js/provider-launch.js?v=1.0.14"></script>
-  <script src="assets/js/app.js?v=1.0.51"></script>
+  <script src="assets/js/app.js?v=1.0.52"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>
   <script src="assets/js/bonus.js?v=1.0.10"></script>

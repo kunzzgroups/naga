@@ -1703,9 +1703,9 @@ let sliderBannerCache = [];
 function renderSliderBanners(slider, banners){
   if(!slider || !Array.isArray(banners) || !banners.length) return;
 
-  // Build the complete slider off-DOM, then swap once. This prevents the
-  // visible slider from becoming empty for a frame while API banners replace
-  // the fallback banners.
+  // Build the complete BO-configured slider off-DOM, then swap once. The
+  // HTML contains no fallback banner, so an outdated hardcoded image can never
+  // flash before the current BO slider data is ready.
   const fragment = document.createDocumentFragment();
   const track = document.createElement('div');
   const dots = document.createElement('div');
@@ -1740,6 +1740,7 @@ function renderSliderBanners(slider, banners){
   fragment.appendChild(timer);
   slider.replaceChildren(fragment);
   slider.classList.add('slider-ready');
+  slider.setAttribute('aria-busy', 'false');
 }
 
 function preloadSliderBanners(banners){
@@ -1753,11 +1754,17 @@ function preloadSliderBanners(banners){
 }
 
 function loadSliderBanners(){
-  return fetch(SLIDER_API_URL, { cache: 'no-store' })
-    .then(res => {
-      if(!res.ok) throw new Error('Slider API error');
-      return res.json();
-    })
+  // index.html starts this request in <head> so BO-configured banners can be
+  // ready before app.js reaches the slider. Reuse that promise when present
+  // instead of making a second request. No HTML/default banner is ever shown.
+  const earlyKey = new URL(SLIDER_API_URL, location.href).toString();
+  const earlyRequest = window.__NAGA_EARLY_API__ && window.__NAGA_EARLY_API__[earlyKey];
+  const request = earlyRequest || fetch(earlyKey, { cache: 'no-store' }).then(res => {
+    if(!res.ok) throw new Error('Slider API error');
+    return res.json();
+  });
+
+  return Promise.resolve(request)
     .then(async data => {
       const banners = normalizeSliderResponse(data)
         .filter(item => Number(item.status || 1) === 1)
@@ -1775,7 +1782,7 @@ function loadSliderBanners(){
       });
     })
     .catch(err => {
-      console.warn('Using default slider banners:', err.message);
+      console.warn('Slider banners unavailable; slider kept hidden:', err.message);
     });
 }
 
