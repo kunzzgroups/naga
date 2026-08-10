@@ -12896,3 +12896,62 @@ body.chat-page{
 body.chat-page .chat-main{
     background:linear-gradient(180deg,rgba(239,244,250,.82),rgba(210,220,232,.9)) !important;
 }
+
+/* ===== v1.0.65: separate desktop/mobile sizing for header auth images =====
+   Keep desktop Login/Register image sizing independent from mobile so
+   mobile adjustments no longer resize the desktop header controls. */
+@media (min-width:481px){
+  .top-header-actions > .top-auth-actions{
+    gap:14px!important;
+    column-gap:14px!important;
+  }
+  .top-header-actions > .top-auth-actions > .top-login-btn.auth-image-link,
+  .top-header-actions > .top-auth-actions > .top-register-btn.auth-image-link{
+    width:auto!important;
+    min-width:0!important;
+    height:40px!important;
+    margin:0!important;
+    padding:0!important;
+    flex:0 0 auto!important;
+  }
+  .top-header-actions > .top-auth-actions .header-auth-image{
+    display:block!important;
+    width:auto!important;
+    max-width:135px!important;
+    height:40px!important;
+    margin:0!important;
+    padding:0!important;
+    object-fit:contain!important;
+  }
+  .top-header-actions > .top-auth-actions > .top-register-btn.auth-image-link{
+    margin-left:-6px!important;
+  }
+}
+
+@media (max-width:480px){
+  .top-header-actions > .top-auth-actions{
+    gap:20px!important;
+    column-gap:20px!important;
+  }
+  .top-header-actions > .top-auth-actions > .top-login-btn.auth-image-link,
+  .top-header-actions > .top-auth-actions > .top-register-btn.auth-image-link{
+    width:auto!important;
+    min-width:0!important;
+    height:36px!important;
+    margin:0!important;
+    padding:0!important;
+    flex:0 0 auto!important;
+  }
+  .top-header-actions > .top-auth-actions .header-auth-image{
+    display:block!important;
+    width:auto!important;
+    max-width:88px!important;
+    height:36px!important;
+    margin:0!important;
+    padding:0!important;
+    object-fit:contain!important;
+  }
+  .top-header-actions > .top-auth-actions > .top-register-btn.auth-image-link{
+    margin-left:-6px!important;
+  }
+}
