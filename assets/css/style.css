@@ -13171,3 +13171,149 @@ body.bank-detail-page .form-status.success{color:#70f3aa;}
   }
   body.home-page .bottom-nav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:1000!important;}
 }
+
+/* ===== v1.0.93: desktop home right promotion column real scrolling =====
+   The right panel previously had overflow-y:auto but no constrained height, so it
+   expanded with BO promotion content instead of becoming a scroll container. */
+@media (min-width:901px){
+  body.home-page .right-panel{
+    height:calc(100vh - 69px - 57px)!important;
+    height:calc(100dvh - 69px - 57px)!important;
+    min-height:0!important;
+    max-height:calc(100vh - 69px - 57px)!important;
+    max-height:calc(100dvh - 69px - 57px)!important;
+    box-sizing:border-box!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+    scrollbar-gutter:stable!important;
+    padding-bottom:36px!important;
+  }
+  body.home-page .right-panel #homeBonusDisplaySection,
+  body.home-page .right-panel #dynamicPromotionBox,
+  body.home-page .right-panel #dynamicPromotionBox .promo-dynamic-section{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.home-page .right-panel::after{
+    content:"";
+    display:block;
+    height:18px;
+    flex:0 0 18px;
+  }
+  body.home-page .right-panel::-webkit-scrollbar{width:7px;}
+  body.home-page .right-panel::-webkit-scrollbar-track{background:transparent;}
+  body.home-page .right-panel::-webkit-scrollbar-thumb{background:rgba(42,105,190,.42);border-radius:999px;}
+}
+
+/* ===== v1.0.94: hard fix desktop right promotion scrolling =====
+   Make the desktop lobby a definite-height grid. The right column then owns its
+   vertical overflow instead of expanding with BO promotion content. */
+@media (min-width:901px){
+  body.home-page{
+    overflow:hidden!important;
+  }
+  body.home-page .main-layout{
+    height:calc(100vh - 69px - 57px)!important;
+    height:calc(100dvh - 69px - 57px)!important;
+    min-height:0!important;
+    max-height:calc(100vh - 69px - 57px)!important;
+    max-height:calc(100dvh - 69px - 57px)!important;
+    overflow:hidden!important;
+    align-items:stretch!important;
+  }
+  body.home-page .right-panel{
+    align-self:stretch!important;
+    height:100%!important;
+    min-height:0!important;
+    max-height:100%!important;
+    overflow-y:scroll!important;
+    overflow-x:hidden!important;
+    padding-top:14px!important;
+    padding-bottom:28px!important;
+    box-sizing:border-box!important;
+    scrollbar-gutter:stable!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  body.home-page .right-panel > *{
+    flex-shrink:0!important;
+  }
+  body.home-page .right-panel .right-content-box,
+  body.home-page .right-panel [data-layout-section="home-after-account-status"],
+  body.home-page .right-panel #homeBonusDisplaySection,
+  body.home-page .right-panel #dynamicPromotionBox,
+  body.home-page .right-panel #dynamicPromotionBox .promo-dynamic-section,
+  body.home-page .right-panel #dynamicPromotionBox .bonus-grid{
+    position:static!important;
+    top:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    left:auto!important;
+    transform:none!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.home-page .right-panel #homeBonusDisplaySection{
+    display:block!important;
+    margin-top:10px!important;
+    padding-bottom:24px!important;
+  }
+  body.home-page .right-panel::-webkit-scrollbar{
+    display:block!important;
+    width:8px!important;
+  }
+  body.home-page .right-panel::-webkit-scrollbar-track{
+    background:rgba(255,255,255,.08)!important;
+    border-radius:999px!important;
+  }
+  body.home-page .right-panel::-webkit-scrollbar-thumb{
+    background:rgba(42,105,190,.58)!important;
+    border-radius:999px!important;
+  }
+}
+
+
+/* ===== v1.0.95: native/smooth right-column scrolling =====
+   Do not intercept wheel/trackpad input in JavaScript. The former wheel handler
+   changed scrollTop for every wheel event while an older rule also applied
+   scroll-behavior:smooth, causing queued animations and a lag/stutter feeling.
+   Keep the definite-height scroll container from v1.0.94, but let the browser
+   handle wheel/trackpad/touch scrolling natively and immediately. */
+@media (min-width:901px){
+  body.home-page .right-panel{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    scroll-behavior:auto!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+    scrollbar-gutter:stable!important;
+  }
+}
+
+
+/* ===== v1.0.96: reliable low-latency desktop right-column wheel scrolling =====
+   The page itself is intentionally locked on desktop, so some browser/layout
+   combinations do not hand wheel input to the nested right column reliably.
+   Keep the fixed-height scroll container, disable smooth animation, and let the
+   small index handler move scrollTop immediately. */
+@media (min-width:901px){
+  body.home-page .right-panel{
+    overflow-y:scroll!important;
+    overflow-x:hidden!important;
+    scroll-behavior:auto!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+  }
+  body.home-page .right-panel,
+  body.home-page .right-panel *{
+    scroll-behavior:auto!important;
+  }
+}
