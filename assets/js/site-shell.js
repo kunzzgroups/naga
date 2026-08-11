@@ -93,7 +93,23 @@
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshShellBalance(); });
   }
 
+  var presenceTimer = null;
+  function presenceBase(){ var cfg=window.NAGA_CONFIG&&window.NAGA_CONFIG.api; return String((cfg&&cfg.baseUrl)||'https://bo.titanxgaming.com').replace(/\/+$/,''); }
+  function sendPresence(path, keepalive){
+    var token=getToken(); if(!token) return Promise.resolve();
+    return fetch(presenceBase()+path,{method:'POST',keepalive:!!keepalive,cache:'no-store',headers:{'Authorization':'Bearer '+token,'Cache-Control':'no-store'}}).catch(function(){});
+  }
+  function heartbeatPresence(){ if(getToken()) sendPresence('/api/auth/member/presence/heartbeat', false); }
+  function startPresence(){
+    if(presenceTimer) clearInterval(presenceTimer);
+    heartbeatPresence();
+    presenceTimer=setInterval(heartbeatPresence,5000);
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) heartbeatPresence(); });
+    window.addEventListener('focus',heartbeatPresence);
+  }
+
   function doShellLogout(){
+    if(getToken()) sendPresence('/api/auth/member/presence/offline', true);
     try{ localStorage.removeItem('member_token'); }catch(e){}
     try{ localStorage.removeItem('member_info'); }catch(e){}
     try{ localStorage.removeItem('member_main_wallet_balance'); }catch(e){}
@@ -372,6 +388,7 @@
     });
     refreshHeaderAuth();
     scheduleBalanceRefresh();
+    startPresence();
     document.dispatchEvent(new CustomEvent('naga:site-shell-ready'));
   }
 
