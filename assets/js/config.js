@@ -54,5 +54,6 @@ window.NAGA_API = {
   // BO Layout Section CSS/HTML/JS. CSS saved under the `home` key is loaded globally.
   layoutSection: window.NAGA_CONFIG.api.baseUrl + '/api/customize/section',
   compliancePolicyList: window.NAGA_CONFIG.api.baseUrl + '/api/compliance-policies',
-  frontendDisplaySetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/display-setting'
+  frontendDisplaySetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/display-setting',
+  advertisementPopup: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/ad-popup'
 };
