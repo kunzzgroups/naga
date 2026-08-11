@@ -627,6 +627,23 @@
     }
   }
 
+  function emitPromotionProgressFromHeartbeat(json){
+    try{
+      const data=json&&json.data&&typeof json.data==='object'?json.data:{};
+      const progress=data&&data.promotionProgress&&typeof data.promotionProgress==='object'?data.promotionProgress:null;
+      if(progress) document.dispatchEvent(new CustomEvent('naga:promotion-progress',{detail:progress}));
+    }catch(e){}
+  }
+
+  function providerTabReturnedToNaga(){
+    if(!activeProviderTab || activeProviderTab.closed) return false;
+    try{
+      // Access succeeds only after the provider tab has navigated back to our origin.
+      // Cross-origin game pages throw here and are correctly treated as still active.
+      return activeProviderTab.location && activeProviderTab.location.origin === window.location.origin;
+    }catch(e){ return false; }
+  }
+
   function startProviderMonitor(sessionId, providerCode, popupWindow){
     stopProviderMonitor();
     if(!sessionId) return;
@@ -664,13 +681,13 @@
     }
 
     sendProviderHeartbeat(sessionId)
-      .then(function(json){ handleHeartbeatResult(json, sessionId); })
+      .then(function(json){ emitPromotionProgressFromHeartbeat(json); handleHeartbeatResult(json, sessionId); })
       .catch(function(){});
 
     // Detect a manually closed provider tab almost immediately. The original lobby stays open;
     // only settle the provider wallet, refresh the wallet UI and unlock game launching.
     providerCloseCheckTimer = setInterval(function(){
-      if(activeProviderTab && activeProviderTab.closed){
+      if(activeProviderTab && (activeProviderTab.closed || providerTabReturnedToNaga())){
         closeAndSettle();
       }
     }, 200);
@@ -678,12 +695,12 @@
     // Keep the backend session alive, but also consume a CLOSED/SETTLED heartbeat
     // response so the frontend unlocks without requiring a page refresh.
     providerMonitorTimer = setInterval(function(){
-      if(activeProviderTab && activeProviderTab.closed){
+      if(activeProviderTab && (activeProviderTab.closed || providerTabReturnedToNaga())){
         closeAndSettle();
         return;
       }
       sendProviderHeartbeat(sessionId)
-        .then(function(json){ handleHeartbeatResult(json, sessionId); })
+        .then(function(json){ emitPromotionProgressFromHeartbeat(json); handleHeartbeatResult(json, sessionId); })
         .catch(function(){});
     }, 10000);
   }

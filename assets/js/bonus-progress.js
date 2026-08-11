@@ -62,5 +62,18 @@
     document.querySelectorAll('[data-bonus-complete-close]').forEach(e=>e.addEventListener('click',()=>modal(false)));
   });
   window.addEventListener('focus',load);document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
-  window.NAGA_BONUS_PROGRESS={refresh:load};
+
+  // Provider heartbeat already runs while a game is active. Consume its promotion snapshot
+  // directly instead of making another API call every few seconds. This keeps the progress
+  // display live without multiplying backend traffic as the member count grows.
+  document.addEventListener('naga:promotion-progress',function(e){
+    const detail=e&&e.detail;
+    if(detail&&typeof detail==='object'&&Object.keys(detail).length){render(detail);}
+    else if(!currentClaim){render(null);}
+  });
+
+  // Lightweight fallback for non-provider pages / providers that use callback ingestion.
+  // It only runs while this page is visible; focus/visibility also force an immediate refresh.
+  setInterval(function(){if(!document.hidden&&token())load();},15000);
+  window.NAGA_BONUS_PROGRESS={refresh:load,render:render};
 })();
