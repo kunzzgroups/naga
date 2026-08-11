@@ -45,6 +45,7 @@ window.NAGA_API = {
   memberDeposit: window.NAGA_CONFIG.api.baseUrl + '/api/member/deposit',
   memberWithdraw: window.NAGA_CONFIG.api.baseUrl + '/api/member/withdraw',
   memberSetTransactionPassword: window.NAGA_CONFIG.api.baseUrl + '/api/member/transaction-password',
+  memberChangeMobile: window.NAGA_CONFIG.api.baseUrl + '/api/auth/member/mobile/change',
   memberDownline: window.NAGA_CONFIG.api.baseUrl + '/api/member/downline',
   paymentMethodList: window.NAGA_CONFIG.api.baseUrl + '/api/payment-method/list',
   socialLinkList: window.NAGA_CONFIG.api.baseUrl + '/api/social/list',

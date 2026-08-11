@@ -7,7 +7,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title data-i18n="mobile_setting_page_title">TitanXGaming - Change Mobile Number</title>
-<link href="assets/css/style.css?v=1.0.90" rel="stylesheet"/>
+<link href="assets/css/style.css?v=1.0.91" rel="stylesheet"/>
 <link href="assets/fontawesome/css/all.min.css" rel="stylesheet"/>
 <link crossorigin="" href="https://bo.titanxgaming.com" rel="preconnect"/>
 <link crossorigin="" href="https://static.titanxgaming.com" rel="preconnect"/>
@@ -28,20 +28,20 @@
 <p data-i18n="update_contact_securely">Update your contact number securely</p>
 </div>
 </div>
-<form class="theme-form">
+<form class="theme-form" id="mobileChangeForm">
 <label class="form-label" data-i18n="new_mobile_number">New Mobile Number</label>
 <div class="theme-input-wrap">
 <span class="input-ico"><i class="fa-solid fa-mobile"></i></span>
-<input data-i18n-placeholder="mobile_number_placeholder" placeholder="e.g. 61480050689" type="tel"/>
+<input id="newMobileNumber" data-i18n-placeholder="mobile_number_placeholder" placeholder="e.g. 61480050689" type="tel" autocomplete="tel" required/>
 </div>
 <div class="verification-panel">
-<p data-i18n-html="mobile_verification_instruction">Press <strong>GET CODE</strong> button to receive verification code via SMS.</p>
+<p>For security, enter your current login password to confirm this mobile-number change.</p>
 <div class="verify-row">
-<input data-i18n-placeholder="verification_code" placeholder="Verification Code" type="text"/>
-<button data-i18n="get_code" type="button">GET CODE</button>
+<input id="mobileCurrentPassword" placeholder="Current Password" type="password" autocomplete="current-password" required/>
 </div>
 </div>
-<button class="gold-ring-btn" data-i18n="submit" type="submit">SUBMIT</button>
+<div id="mobileChangeStatus" class="form-status" aria-live="polite"></div>
+<button class="gold-ring-btn" id="mobileChangeSubmit" data-i18n="submit" type="submit">SUBMIT</button>
 </form>
 </section>
 </main>
@@ -58,10 +58,11 @@
 <button class="lang-option" data-lang="zh" type="button">中文</button>
 </div>
 </div>
+<script src="assets/js/config.js?v=1.0.23"></script>
 <script src="assets/js/site-shell.js?v=1.0.18"></script>
 <script src="assets/js/lang.js"></script>
-<script src="assets/js/setting.js?v=1.0.8"></script>
-<script src="assets/js/config.js?v=1.0.22"></script>
+<script src="assets/js/setting.js?v=1.0.9"></script>
+<script src="assets/js/mobile-setting.js?v=1.0.0"></script>
   <script src="assets/js/layout-section-loader.js?v=1.1.12"></script>
 <script src="assets/js/custom-asset-cache.js?v=1.0.19"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>

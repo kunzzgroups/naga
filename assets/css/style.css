@@ -8960,7 +8960,7 @@ body.setting-form-page .top-header{
   margin-bottom:10px !important;
 }
 .verify-row{
-  grid-template-columns:1fr 116px !important;
+  grid-template-columns:1fr !important;
   gap:8px !important;
 }
 .verify-row input{
