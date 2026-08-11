@@ -6,7 +6,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="setting_page_title">TitanXGaming - Setting</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.91" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.92" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -46,6 +46,23 @@
           <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b>MYR 10.00</b></p>
           <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b>MYR 50.00</b></p>
         </div>
+        <div class="bonus-progress-widget setting-bonus-progress-widget" id="bonusProgressWidget" data-bonus-progress-widget hidden>
+          <div class="bonus-progress-head"><span>Active Bonus</span><strong id="bonusProgressStatus">0%</strong></div>
+          <div class="bonus-progress-name" id="bonusProgressName">-</div>
+          <div class="bonus-progress-bar" aria-label="Bonus turnover progress"><span id="bonusProgressBar"></span></div>
+          <div class="bonus-progress-meta"><span id="bonusProgressCurrent">MYR 0.00</span><span id="bonusProgressRequired">MYR 0.00</span></div>
+          <div class="bonus-progress-note" id="bonusProgressNote">Turnover progress</div>
+          <button type="button" class="bonus-progress-complete" id="bonusProgressComplete" hidden>Complete Promotion</button>
+        </div>
+        <div class="bonus-complete-modal" id="bonusCompleteModal" aria-hidden="true">
+          <div class="bonus-complete-backdrop" data-bonus-complete-close></div>
+          <div class="bonus-complete-dialog" role="dialog" aria-modal="true" aria-labelledby="bonusCompleteTitle">
+            <button type="button" class="bonus-complete-close" data-bonus-complete-close aria-label="Close">×</button>
+            <h3 id="bonusCompleteTitle">Complete Promotion</h3>
+            <p id="bonusCompleteMessage">Your turnover requirement is complete. Confirm to finish this promotion.</p>
+            <div class="bonus-complete-actions"><button type="button" data-bonus-complete-close>Cancel</button><button type="button" id="bonusCompleteConfirm">Confirm</button></div>
+          </div>
+        </div>
         <div data-member-auth-area class="setting-wallet-auth setting-auth-hidden"></div>
       </article>
 
@@ -76,6 +93,7 @@
         <div class="setting-menu" id="settingMenu">
           <a href="history.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-clock-rotate-left"></i></span><span data-i18n="setting_history">History</span><em>›</em></a>
           <a href="mobile-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-mobile"></i></span><span data-i18n="mobile_number">Mobile Number</span><em>›</em></a>
+          <a href="bank-detail.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-building-columns"></i></span><span>Bank Detail</span><em>›</em></a>
           <a href="password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-lock"></i></span><span data-i18n="password">Password</span><em>›</em></a>
           <a href="transaction-password-setting.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-key"></i></span><span data-i18n="transaction_password">Transaction Password</span><em>›</em></a>
           <a href="policies.html" class="setting-item"><span class="setting-ico"><i class="fa-solid fa-shield-halved"></i></span><span data-i18n="compliance_policy">Compliance Policy</span><em>›</em></a>
@@ -126,6 +144,7 @@
   <script src="assets/js/site-shell.js?v=1.0.19"></script>
   <script src="assets/js/lang.js"></script>
   <script src="assets/js/member-auth.js?v=1.0.14"></script>
+  <script src="assets/js/bonus-progress.js?v=1.0.3"></script>
   <script src="assets/js/setting.js?v=1.0.8"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>

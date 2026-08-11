@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>document.documentElement.classList.add('page-loading');</script>
+  <style id="page-loader-critical">html{background:#070707}html.page-loading,html.page-loading body{overflow:hidden!important}html.page-loading body{opacity:0}html.page-loading:before{content:"";position:fixed;inset:0;z-index:2147483646;background:#070707}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid rgba(255,255,255,.18);border-top-color:#35f486;border-radius:50%;animation:pageLoaderSpin .65s linear .24s infinite}@keyframes pageLoaderSpin{to{transform:rotate(360deg)}}</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TitanXGaming - Bank Detail</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.92" />
+  <link rel="stylesheet" href="assets/fontawesome/css/all.min.css" />
+</head>
+<body class="setting-page setting-form-page bank-detail-page">
+  <header class="top-header">
+    <div data-layout-section="home-header"></div>
+    <div class="logo-box"><img class="site-logo" src="assets/custom/images/logo.png" alt="TitanX" decoding="async" loading="eager" fetchpriority="high"></div>
+  </header>
+  <main class="setting-form-main bank-detail-main">
+    <section class="setting-form-card game-glass-card bank-detail-card">
+      <div class="setting-form-head">
+        <a class="back-link" id="bankBackLink" href="setting.html"><i class="fa-solid fa-chevron-left"></i></a>
+        <div>
+          <h1>Bank Detail</h1>
+          <p id="bankDetailSubtitle">Enter the bank account used for your withdrawals.</p>
+        </div>
+      </div>
+      <div class="bank-first-setup-note" id="bankFirstSetupNote" hidden>
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Registration completed. Please fill in your bank details before continuing.</span>
+      </div>
+      <form class="theme-form" id="bankDetailForm">
+        <label class="form-label" for="bankName">Bank Name</label>
+        <div class="theme-input-wrap"><span class="input-ico"><i class="fa-solid fa-building-columns"></i></span><input id="bankName" type="text" placeholder="e.g. Maybank" autocomplete="organization" required></div>
+        <label class="form-label" for="bankAccountName">Bank Account Name</label>
+        <div class="theme-input-wrap"><span class="input-ico"><i class="fa-solid fa-user"></i></span><input id="bankAccountName" type="text" placeholder="Account holder name" autocomplete="name" required></div>
+        <label class="form-label" for="bankAccountNumber">Bank Account Number</label>
+        <div class="theme-input-wrap"><span class="input-ico"><i class="fa-solid fa-credit-card"></i></span><input id="bankAccountNumber" type="text" inputmode="numeric" placeholder="Bank account number" autocomplete="off" required></div>
+        <div id="bankBsbField">
+          <label class="form-label" for="bankBsb">Bank BSB <span class="bank-optional">Optional</span></label>
+          <div class="theme-input-wrap"><span class="input-ico"><i class="fa-solid fa-code-branch"></i></span><input id="bankBsb" type="text" placeholder="BSB / branch code" autocomplete="off"></div>
+        </div>
+        <div id="payIdField">
+          <label class="form-label" for="payId">Pay ID <span class="bank-optional">Optional</span></label>
+          <div class="theme-input-wrap"><span class="input-ico"><i class="fa-solid fa-at"></i></span><input id="payId" type="text" placeholder="Pay ID" autocomplete="off"></div>
+        </div>
+        <div id="bankDetailStatus" class="form-status" aria-live="polite"></div>
+        <button class="gold-ring-btn" id="bankDetailSubmit" type="submit">SAVE &amp; CONTINUE</button>
+      </form>
+    </section>
+  </main>
+  <nav class="bottom-nav">
+    <a href="index.html"><img alt="HOME" src="assets/custom/images/home.png" decoding="async" loading="lazy"></a>
+    <a href="history.html"><img alt="HISTORY" src="assets/custom/images/history.png" decoding="async" loading="lazy"></a>
+    <a href="bonus.html"><img alt="BONUS" src="assets/custom/images/bonus.png" decoding="async" loading="lazy"></a>
+    <a href="chat.html"><img alt="LIVE CHAT" src="assets/custom/images/livechat.png" decoding="async" loading="lazy"></a>
+    <a class="active" href="setting.html"><img alt="SETTING" src="assets/custom/images/setting.png" decoding="async" loading="lazy"></a>
+  </nav>
+  <script src="assets/js/config.js?v=1.0.24"></script>
+  <script src="assets/js/site-shell.js?v=1.0.19"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.12"></script>
+  <script src="assets/js/member-auth.js?v=1.0.14"></script>
+  <script src="assets/js/bank-detail.js?v=1.0.0"></script>
+  <script src="assets/js/custom-asset-cache.js?v=1.0.19"></script>
+  <script src="assets/js/page-loader.js?v=1.0.7"></script>
+</body>
+</html>

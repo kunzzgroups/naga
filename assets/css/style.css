@@ -12955,3 +12955,219 @@ body.chat-page .chat-main{
     margin-left:-6px!important;
   }
 }
+
+/* ===== v1.0.92: responsive header, home promo scroll, mobile landscape, setting turnover, bank detail ===== */
+/* Keep the TitanX logo consistent across every frontend page. Earlier patches had
+   separate 430/390/360 rules that progressively shrank it and made the header jump. */
+@media (max-width:900px){
+  .top-header .logo-box,
+  .top-header .mobile-style-logo{
+    flex:0 0 auto!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  .top-header .site-logo,
+  .top-header .logo-box img.site-logo,
+  .top-header .mobile-style-logo img{
+    width:auto!important;
+    height:clamp(38px,10vw,44px)!important;
+    max-width:clamp(96px,27vw,126px)!important;
+    object-fit:contain!important;
+    object-position:left center!important;
+    display:block!important;
+  }
+}
+@media (max-width:360px){
+  .top-header .site-logo,
+  .top-header .logo-box img.site-logo,
+  .top-header .mobile-style-logo img{
+    height:38px!important;
+    max-width:98px!important;
+  }
+}
+
+/* The desktop lobby itself stays viewport-locked, but the right account/promotion
+   column is an independent vertical scroller. BO enabled promotion blocks can grow
+   naturally below the balance/turnover cards without shifting the grid. */
+@media (min-width:769px){
+  body.home-page .right-panel{
+    display:block!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    scroll-behavior:smooth!important;
+    padding-bottom:34px!important;
+  }
+  body.home-page .right-panel .right-content-box,
+  body.home-page .right-panel [data-layout-section="home-after-account-status"],
+  body.home-page .right-panel #homeBonusDisplaySection,
+  body.home-page .right-panel #dynamicPromotionBox{
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.home-page .right-panel #homeBonusDisplaySection{
+    margin-top:12px!important;
+    padding-bottom:24px!important;
+  }
+  body.home-page .right-panel #dynamicPromotionBox .promo-dynamic-section,
+  body.home-page .right-panel #dynamicPromotionBox .bonus-grid{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+}
+
+/* Portrait keeps the compact non-scrolling lobby behaviour. Landscape phones have
+   much less vertical room, so allow normal document scrolling instead of trapping
+   touch gestures inside a 100dvh viewport. */
+@media (max-width:900px) and (orientation:landscape){
+  html:has(body.home-page),
+  body.home-page{
+    width:100%!important;
+    height:auto!important;
+    min-height:100vh!important;
+    min-height:100dvh!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  body.home-page{
+    padding-bottom:var(--mobile-bottom-nav-height,70px)!important;
+    background-attachment:scroll!important;
+  }
+  body.home-page .main-layout,
+  body.home-page .center-content,
+  body.home-page .game-grid{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    touch-action:pan-y!important;
+  }
+  body.home-page .provider-lobby-shell{
+    height:auto!important;
+    min-height:300px!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.home-page .provider-side-rail,
+  body.home-page .provider-games-panel{
+    max-height:min(72dvh,520px)!important;
+    touch-action:pan-y!important;
+  }
+}
+
+/* Mobile Setting is the replacement for the hidden desktop right sidebar, so keep
+   wallet balance and active promotion turnover together in the first card. */
+body.setting-page .setting-bonus-progress-widget{
+  margin-top:14px!important;
+  width:100%!important;
+}
+@media (max-width:900px){
+  body.setting-page .setting-wallet-card{
+    display:block!important;
+    order:1!important;
+  }
+  body.setting-page .setting-bonus-progress-widget{
+    display:block;
+    margin-top:14px!important;
+    padding:12px!important;
+    border-radius:14px!important;
+    background:rgba(2,12,28,.62)!important;
+    border:1px solid rgba(85,194,255,.24)!important;
+  }
+  body.setting-page .setting-bonus-progress-widget[hidden]{display:none!important;}
+}
+
+/* Bank-detail setup/edit page */
+body.bank-detail-page{
+  overflow-x:hidden!important;
+}
+body.bank-detail-page .bank-detail-main{
+  min-height:calc(100vh - 69px - 57px)!important;
+  padding:24px 14px 90px!important;
+}
+body.bank-detail-page .bank-detail-card{
+  width:min(620px,100%)!important;
+  margin:0 auto!important;
+}
+body.bank-detail-page .bank-first-setup-note{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:0 0 18px;
+  padding:12px 14px;
+  border:1px solid rgba(63,193,255,.32);
+  border-radius:12px;
+  background:rgba(32,146,255,.10);
+  color:#dff6ff;
+  font-size:13px;
+  line-height:1.45;
+}
+body.bank-detail-page .bank-first-setup-note[hidden]{display:none!important;}
+body.bank-detail-page .bank-first-setup-note i{margin-top:2px;color:#67d5ff;}
+body.bank-detail-page .bank-optional{font-size:11px;font-weight:500;opacity:.65;margin-left:5px;}
+body.bank-detail-page .form-status{min-height:20px;margin:4px 0 8px;font-size:13px;}
+body.bank-detail-page .form-status.error{color:#ff8f8f;}
+body.bank-detail-page .form-status.success{color:#70f3aa;}
+@media (max-width:900px){
+  html:has(body.bank-detail-page),
+  body.bank-detail-page{
+    height:auto!important;
+    min-height:100%!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    touch-action:pan-y!important;
+  }
+  body.bank-detail-page .bank-detail-main{
+    min-height:calc(100dvh - 69px - var(--mobile-bottom-nav-height,70px))!important;
+    padding:16px 12px calc(var(--mobile-bottom-nav-height,70px) + 24px)!important;
+  }
+  body.bank-detail-page .bank-detail-card{padding:18px 14px!important;}
+}
+
+/* Wide phones can report >900 CSS px in landscape. Treat short landscape viewports
+   as mobile lobby layout as well, otherwise desktop's fixed 3-column viewport wins. */
+@media (orientation:landscape) and (max-height:600px) and (max-width:1100px){
+  html:has(body.home-page),
+  body.home-page{
+    height:auto!important;
+    min-height:100dvh!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    touch-action:pan-y!important;
+    overscroll-behavior-y:auto!important;
+  }
+  body.home-page{display:block!important;padding-bottom:var(--mobile-bottom-nav-height,70px)!important;}
+  body.home-page .top-header{height:69px!important;}
+  body.home-page .main-layout{
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.home-page .left-sidebar,
+  body.home-page .right-panel{display:none!important;}
+  body.home-page .mobile-top-area{display:block!important;}
+  body.home-page .center-content,
+  body.home-page .game-grid{
+    width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.home-page .bottom-nav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:1000!important;}
+}

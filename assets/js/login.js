@@ -121,9 +121,12 @@
           referrerCode
         });
         saveMemberAuth(json);
-        showMessage(registerForm, 'Register success.', 'success');
-        const redirect = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
-        window.location.href = redirect;
+        showMessage(registerForm, 'Register success. Please complete your bank details.', 'success');
+        // Registration is already an authenticated session. New members must complete
+        // their payout bank details before continuing to the lobby. Preserve an
+        // explicitly requested destination so bank-detail.html can continue there.
+        const requestedRedirect = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
+        window.location.href = 'bank-detail.html?firstSetup=1&redirect=' + encodeURIComponent(requestedRedirect);
       }catch(err){
         showMessage(registerForm, err.message || 'Register failed.', 'error');
       }finally{
