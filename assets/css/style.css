@@ -13321,3 +13321,143 @@ body.bank-detail-page .form-status.success{color:#70f3aa;}
 
 /* VIP automatic unlock status fix 2026-08-12 */
 .vip-reward-row.vip-level-unlocked>button,.vip-reward-row>button.vip-status-unlocked{background:rgba(40,167,69,.18);color:#dff7e5}.vip-reward-row.vip-level-current>button,.vip-reward-row>button.vip-status-current,.vip-progress-card>button.vip-status-current{background:rgba(255,255,255,.18);color:#fff}.vip-reward-row.vip-level-unlocked h3{color:#fff}.vip-reward-row.vip-level-unlocked .vip-timeline-dot{background:#72d58a}
+
+/* v1.0.97: Provider First mobile layout - 3 providers per row, wrap downward.
+   Do not create a horizontal provider carousel on mobile. */
+@media (max-width:768px){
+  body.home-page .category-provider-cards{
+    display:grid !important;
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:10px 8px !important;
+    width:100% !important;
+    max-width:100% !important;
+    overflow:visible !important;
+    overflow-x:visible !important;
+    overflow-y:visible !important;
+    padding:2px 0 8px !important;
+    margin:0 !important;
+    scroll-snap-type:none !important;
+  }
+  body.home-page .category-provider-card{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    min-height:0 !important;
+    height:auto !important;
+    aspect-ratio:1 / 1 !important;
+    flex:none !important;
+    margin:0 !important;
+    padding:0 !important;
+  }
+  body.home-page .category-provider-card img{
+    width:100% !important;
+    height:100% !important;
+    max-width:100% !important;
+    object-fit:contain !important;
+  }
+  body.home-page .category-provider-section,
+  body.home-page .category-mixed-shell{
+    width:100% !important;
+    min-width:0 !important;
+    overflow:visible !important;
+  }
+}
+
+/* v1.0.98: Provider First mobile document scrolling.
+   Keep the 3-column wrapped provider grid from v1.0.97, but when that provider
+   selector is visible let the home page grow vertically and use native page
+   scrolling. Slot's provider-rail/game-panel layout is not changed. */
+@media (max-width:768px){
+  html:has(body.home-page .category-provider-cards),
+  body.home-page:has(.category-provider-cards){
+    height:auto!important;
+    min-height:100dvh!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    touch-action:pan-y!important;
+    overscroll-behavior-y:auto!important;
+  }
+
+  body.home-page:has(.category-provider-cards){
+    display:block!important;
+    padding-bottom:var(--mobile-bottom-nav-height,70px)!important;
+  }
+
+  body.home-page:has(.category-provider-cards) .main-layout,
+  body.home-page:has(.category-provider-cards) .center-content,
+  body.home-page:has(.category-provider-cards) .game-grid,
+  body.home-page:has(.category-provider-cards) .category-provider-section,
+  body.home-page:has(.category-provider-cards) .category-mixed-shell{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page:has(.category-provider-cards) .category-provider-cards{
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:12px!important;
+  }
+
+  body.home-page:has(.category-provider-cards) .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    z-index:1000!important;
+  }
+}
+
+/* v1.0.99: mobile direct game list must use native document scrolling.
+   Provider-first landing already wraps 3 providers per row. After selecting a
+   HOT/LIVE/SPORT/OTHER provider, direct-games-list also needs to grow downward
+   instead of inheriting the older fixed-height/overflow-hidden mobile lobby.
+   SLOT keeps its dedicated left provider rail + independent game panel scroll. */
+@media (max-width:768px){
+  html:has(body.home-page .direct-games-list),
+  body.home-page:has(.direct-games-list){
+    height:auto!important;
+    min-height:100dvh!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    touch-action:pan-y!important;
+    overscroll-behavior-y:auto!important;
+  }
+
+  body.home-page:has(.direct-games-list){
+    display:block!important;
+    padding-bottom:var(--mobile-bottom-nav-height,70px)!important;
+  }
+
+  body.home-page:has(.direct-games-list) .main-layout,
+  body.home-page:has(.direct-games-list) .center-content,
+  body.home-page:has(.direct-games-list) .game-grid{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page:has(.direct-games-list) .direct-games-list{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    /* padding-bottom:100px!important; */
+    touch-action:pan-y!important;
+  }
+
+  body.home-page:has(.direct-games-list) .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    z-index:1000!important;
+  }
+}

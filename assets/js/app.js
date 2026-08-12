@@ -610,6 +610,60 @@ function buildProviderRail(rows){
   return rail;
 }
 
+function gamesForProviderFromCategoryList(games, providerCode){
+  const cleanCode = String(providerCode || '').trim().toUpperCase();
+  let providerGames = (Array.isArray(games) ? games : []).filter(game => providerCodeOf(game) === cleanCode);
+  const rule = providerRuleForCode(cleanCode);
+  if(rule && String(rule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
+    const allowed = new Set((rule.gameIds || []).map(String));
+    providerGames = providerGames.filter(game => allowed.has(String(game.id)));
+  }
+  return providerGames;
+}
+
+function allCatalogGamesForProvider(providerCode){
+  const cleanCode = String(providerCode || '').trim().toUpperCase();
+  if(!cleanCode) return [];
+
+  // IMPORTANT: direct-launch detection must count the provider's TOTAL active
+  // games across the whole catalog, across ALL categories. Do NOT apply the
+  // selected category's provider rule here. That rule is category-specific and
+  // can make a multi-game provider (for example FACHAI) look like it has only
+  // one game inside LIVE GAME, causing an incorrect immediate launch.
+  // catalogGames is already filtered to active games + active providers.
+  return (Array.isArray(catalogGames) ? catalogGames : [])
+    .filter(game => providerCodeOf(game) === cleanCode);
+}
+
+function openProviderFromLanding(providerCode, games){
+  const cleanCode = String(providerCode || '').trim().toUpperCase();
+  if(!cleanCode) return;
+
+  const providerGames = gamesForProviderFromCategoryList(games, cleanCode);
+  const allProviderGames = allCatalogGamesForProvider(cleanCode);
+
+  // Direct launch only when the WHOLE provider has exactly one active game.
+  // Do not use the selected category count for this decision.
+  if(allProviderGames.length === 1){
+    const game = allProviderGames[0];
+    const gameName = langText(game, 'name', 'Game');
+    if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.launch === 'function'){
+      Promise.resolve(window.NAGA_PROVIDER_LAUNCH.launch(game, { transferAmount: 0, gameName: gameName }))
+        .catch(err => alert((err && err.message) || 'Launch game failed.'));
+      return;
+    }
+    const targetUrl = game.gameUrl || game.game_url || '';
+    window.location.href = targetUrl || ('game-detail.html?id=' + encodeURIComponent(game.id || ''));
+    return;
+  }
+
+  activeProviderCode = cleanCode;
+  activeSubCategoryId = null;
+  subCategoryAutoTriedIds = new Set();
+  setGamesLoading();
+  loadSubCategories();
+}
+
 function renderMixedCategoryLanding(games){
   if(!gameGrid) return;
   showingProviderList = true;
@@ -651,21 +705,10 @@ function renderMixedCategoryLanding(games){
         ? `<img src="${image}" alt="${providerNameOf(row.provider)}" loading="lazy">`
         : `<span class="provider-letter">${providerInitials(providerNameOf(row.provider))}</span>`;
       btn.addEventListener('click', () => {
-        const clickedProviderCode = row.code;
-        // Hot Game is a landing/featured category. When a provider card belongs
-        // to a real category such as Sport/Live/Slot, move the selected top tab
-        // to that category before opening the provider. The category is inferred
-        // from BO/provider/game metadata; no individual provider is hardcoded.
-        if(activeCategoryTypeKey() === 'HOT'){
-          const targetCategoryId = categoryIdForProviderNavigation(clickedProviderCode);
-          if(targetCategoryId != null) activeCategoryId = targetCategoryId;
-        }
-        activeProviderCode = clickedProviderCode;
-        activeSubCategoryId = null;
-        subCategoryAutoTriedIds = new Set();
-        renderCategories();
-        setGamesLoading();
-        loadSubCategories();
+        // Provider First is a single drill-down only: keep the selected top
+        // category (including HOT GAME), then show this provider's games
+        // directly without rendering the provider rail a second time.
+        openProviderFromLanding(row.code, currentGameList);
       });
       cards.appendChild(btn);
     });
@@ -919,9 +962,10 @@ function renderGames(list){
   if(!isHotCategory && !isDirectGameCategory() && !activeProviderCode){
     activeProviderCode = ALL_PROVIDER_CODE;
   }
-  const shouldShowProviderRail = !isDirectGameCategory()
-    && activeCategoryTypeKey() === 'SLOT'
-    && !!activeProviderCode;
+  // SLOT GAME keeps the classic provider rail on the left. Other Provider
+  // First categories (HOT/LIVE/SPORT/OTHER) drill directly into a full-width
+  // game grid after the provider card is selected.
+  const shouldShowProviderRail = activeCategoryTypeKey() === 'SLOT';
   const targetGrid = document.createElement('div');
   targetGrid.className = shouldShowProviderRail ? 'provider-games-list' : 'direct-games-list';
 
@@ -952,21 +996,13 @@ function renderGames(list){
     scrollRoot = panel;
   }else{
     gameGrid.innerHTML = '';
-    gameGrid.classList.remove('provider-with-rail');
+    gameGrid.classList.remove('provider-with-rail', 'mobile-direct-game-scroll');
+    gameGrid.style.removeProperty('--mobile-direct-game-height');
     gameGrid.appendChild(targetGrid);
 
-    // Mobile direct-game views (including HOT GAME with one provider) must
-    // scroll inside the game area, exactly like the provider-game panel.
-    // Using a dedicated scroll root prevents the fixed bottom navigation from
-    // trapping the page and also lets lazy loading continue for every game.
-    if(window.matchMedia('(max-width: 768px)').matches){
-      gameGrid.classList.add('mobile-direct-game-scroll');
-      scrollRoot = gameGrid;
-      requestAnimationFrame(updateMobileDirectGameViewport);
-    }else{
-      gameGrid.classList.remove('mobile-direct-game-scroll');
-      gameGrid.style.removeProperty('--mobile-direct-game-height');
-    }
+    // Direct provider game lists use the normal document flow on mobile.
+    // Games wrap row-by-row instead of creating a second/internal scroll area.
+    scrollRoot = null;
   }
 
   if(!gameList.length){
@@ -1413,10 +1449,20 @@ function filteredSubCategoriesFromCatalog(){
   if(!activeCategoryId || !activeProviderCode || isAllProviderCode(activeProviderCode)) return [];
   const categoryId = String(activeCategoryId);
   const providerCode = String(activeProviderCode).toUpperCase();
+
+  // HOT GAME is a curated provider landing. Keep the HOT top tab selected after
+  // a provider is clicked, but still allow that provider's real category
+  // subcategories (Slot/Live/Sport/etc.) to appear above its game list.
+  const categoryContextIds = new Set([categoryId]);
+  if(activeCategoryTypeKey() === 'HOT'){
+    const inferredCategoryId = categoryIdForProviderNavigation(providerCode);
+    if(inferredCategoryId != null) categoryContextIds.add(String(inferredCategoryId));
+  }
+
   return allSubCategories.filter(sub => {
     const categoryIds = subCategoryCategoryIdsOf(sub);
     const providerCodes = subCategoryProviderCodesOf(sub);
-    const categoryMatch = !categoryIds.length || categoryIds.includes(categoryId);
+    const categoryMatch = !categoryIds.length || categoryIds.some(id => categoryContextIds.has(String(id)));
     const providerMatch = !providerCodes.length || providerCodes.includes(providerCode);
     return categoryMatch && providerMatch;
   });
@@ -1450,42 +1496,12 @@ function scheduleSlotCategoryPrefetch(){
 
 function renderCatalogState(){
   const list = categoryGamesFromCatalog();
-  const categoryProviders = providersForActiveCategory();
-  const isHotCategory = activeCategoryTypeKey() === 'HOT';
-  const hotProviderRules = isHotCategory ? categoryProviderRules() : [];
-  // For HOT GAME, the BO provider selection is authoritative. One selected
-  // provider opens its games immediately; multiple selected providers show the
-  // provider landing first. Fall back to resolved provider metadata only for
-  // older category records that do not contain providerRules.
-  const hotConfiguredCount = hotProviderRules.length || categoryProviders.length;
-  // HOT GAME only: when exactly one provider is configured, skip the
-  // provider brand landing and display that provider's games immediately.
-  // Multiple HOT providers still show brand-image cards first. Other
-  // Provider First categories keep their existing behavior unchanged.
-  const forceDirect = isHotCategory && hotConfiguredCount === 1;
 
   if(isDirectGameCategory()){
     currentGameList = list;
     activeProviderCode = null;
     if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
     renderGames(list);
-    return;
-  }
-
-  if(forceDirect && !activeProviderCode){
-    const onlyRule = hotProviderRules[0] || null;
-    const onlyCode = String(onlyRule?.providerCode || providerCodeOf(categoryProviders[0]) || '').trim().toUpperCase();
-    let providerGames = list.filter(game => providerCodeOf(game) === onlyCode);
-    if(onlyRule && String(onlyRule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
-      const allowed = new Set((onlyRule.gameIds || []).map(String));
-      providerGames = providerGames.filter(game => allowed.has(String(game.id)));
-    }
-    // Do not fall back to games from other providers. When BO selects one HOT
-    // provider, only that provider's games are valid for this category.
-    currentGameList = providerGames;
-    activeProviderCode = null;
-    if(subTabRow){ subTabRow.innerHTML = ''; subTabRow.style.display = 'none'; }
-    renderGames(currentGameList);
     return;
   }
 
@@ -1496,15 +1512,12 @@ function renderCatalogState(){
       return;
     }
 
-    // Preserve the complete category list for provider rail counts, while only
-    // rendering the selected provider/subcategory on the right.
+    // Provider First: after choosing a provider, render only its games. Never
+    // re-create the left provider rail; the provider card itself is the first
+    // level and the game grid is the second/final level.
     currentGameList = list;
-    let providerList = list.filter(item => providerCodeOf(item) === activeProviderCode && gameMatchesActiveSubCategory(item));
-    const rule = providerRuleForCode(activeProviderCode);
-    if(rule && String(rule.gameMode || 'ALL').toUpperCase() === 'SELECTED'){
-      const allowed = new Set((rule.gameIds || []).map(String));
-      providerList = providerList.filter(item => allowed.has(String(item.id)));
-    }
+    let providerList = gamesForProviderFromCategoryList(list, activeProviderCode)
+      .filter(gameMatchesActiveSubCategory);
 
     if(!providerList.length && activeSubCategoryId && subCategories.length){
       subCategoryAutoTriedIds.add(String(activeSubCategoryId));
@@ -1521,11 +1534,16 @@ function renderCatalogState(){
   }
 
   currentGameList = list;
-  // Slot keeps the current left provider rail + right game list layout.
-  // Every other Provider First category uses the same full-image provider
-  // landing pattern as Hot Game, including Live Game.
-  if(activeCategoryTypeKey() === 'SLOT') renderProviderCards(list);
-  else renderMixedCategoryLanding(list);
+
+  // SLOT GAME is the exception: keep the provider rail on the left exactly as
+  // before. HOT/LIVE/SPORT/OTHER continue to use provider cards and then open
+  // the selected provider's games directly.
+  if(activeCategoryTypeKey() === 'SLOT'){
+    renderProviderCards(list);
+    return;
+  }
+
+  renderMixedCategoryLanding(list);
 }
 
 function signalLobbyReady(){
