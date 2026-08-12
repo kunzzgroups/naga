@@ -13317,3 +13317,7 @@ body.bank-detail-page .form-status.success{color:#70f3aa;}
     scroll-behavior:auto!important;
   }
 }
+
+
+/* VIP automatic unlock status fix 2026-08-12 */
+.vip-reward-row.vip-level-unlocked>button,.vip-reward-row>button.vip-status-unlocked{background:rgba(40,167,69,.18);color:#dff7e5}.vip-reward-row.vip-level-current>button,.vip-reward-row>button.vip-status-current,.vip-progress-card>button.vip-status-current{background:rgba(255,255,255,.18);color:#fff}.vip-reward-row.vip-level-unlocked h3{color:#fff}.vip-reward-row.vip-level-unlocked .vip-timeline-dot{background:#72d58a}
