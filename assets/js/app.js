@@ -2099,9 +2099,11 @@ loadSliderBanners().then(() => {
       // the games naturally pushes the banner completely off-screen. Category
       // and subcategory become sticky only after they reach the top.
       var header = document.querySelector('.top-header');
+      var marquee = document.getElementById('nagaGlobalMarquee');
       var category = document.querySelector('.category-slider');
       var subTabs = document.getElementById('subTabRow');
       var headerHeight = header ? Math.max(0, header.getBoundingClientRect().height || 0) : 69;
+      if(marquee && getComputedStyle(marquee).display !== 'none') headerHeight += Math.max(0, marquee.getBoundingClientRect().height || 0);
       var categoryHeight = category ? Math.max(0, category.getBoundingClientRect().height || 0) : 58;
       var subTabHeight = (subTabs && getComputedStyle(subTabs).display !== 'none') ? Math.max(0, subTabs.getBoundingClientRect().height || 0) : 0;
 
