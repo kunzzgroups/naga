@@ -194,7 +194,7 @@
         guest: !!member.isGuest,
         adminUnreadCount: firebase.firestore.FieldValue.increment(1)
       }, {merge:true});
-    }catch(e){ alert(e.message || 'Send failed.'); }
+    }catch(e){ if(window.NAGA_MODAL) window.NAGA_MODAL.error(e.message || 'Send failed.', 'Message Not Sent'); }
   }
 
   async function uploadFiles(files){

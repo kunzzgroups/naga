@@ -95,7 +95,34 @@
       setError(message);
       return;
     }
-    alert(message);
+    if(window.NAGA_MODAL) window.NAGA_MODAL.alert(message, 'Game Notice');
+  }
+
+
+  function promotionLaunchState(payload){
+    const access=window.NAGA_PROMOTION_ACCESS;
+    if(!access) return {allowed:true, loading:false, message:''};
+    const loading=typeof access.isLoading==='function' && access.isLoading();
+    const providerCode=payload && payload.providerCode || '';
+    const gameCode=payload && payload.gameCode || '';
+    const gameName=payload && payload._display && payload._display.gameName || payload && payload.gameName || '';
+    const allowed=loading ? false : (typeof access.isLaunchAllowed==='function' ? access.isLaunchAllowed(providerCode, gameCode, gameName) : true);
+    const message=loading ? 'Checking your active promotion game access. Please wait a moment.' :
+      (typeof access.message==='function' ? access.message() : 'This game is not available while your active promotion is in progress. Complete the promotion to unlock all games.');
+    return {allowed:allowed, loading:loading, message:message};
+  }
+
+  function applyPromotionConfirmState(){
+    const modal=document.getElementById('providerTransferModal');
+    if(!modal || !pendingLaunch) return;
+    const btn=modal.querySelector('[data-provider-transfer-confirm]');
+    if(!btn) return;
+    const state=promotionLaunchState(pendingLaunch);
+    btn.disabled=!state.allowed;
+    btn.classList.toggle('promotion-confirm-disabled', !state.allowed);
+    btn.textContent=state.loading ? 'Checking...' : DEFAULT_CONFIRM_TEXT;
+    if(!state.allowed) setError(state.message);
+    else clearError();
   }
 
   async function ensureProviderCanLaunch(showMessage){
@@ -496,6 +523,7 @@
     modal.querySelector('[data-provider-transfer-amount]').value = '';
     modal.querySelector('[data-provider-transfer-balance]').textContent = 'Loading...';
     modal.classList.remove('hidden');
+    applyPromotionConfirmState();
 
     try{
       const balance = await fetchMainWalletBalance();
@@ -510,6 +538,14 @@
     if(!pendingLaunch) return;
     const modal = ensureModal();
     const btn = modal.querySelector('[data-provider-transfer-confirm]');
+    const promotionState = promotionLaunchState(pendingLaunch);
+    if(!promotionState.allowed){
+      btn.disabled = true;
+      btn.classList.add('promotion-confirm-disabled');
+      btn.textContent = promotionState.loading ? 'Checking...' : DEFAULT_CONFIRM_TEXT;
+      setError(promotionState.message);
+      return;
+    }
     if(!(await ensureProviderCanLaunch(true))) return;
     const amountValue = modal.querySelector('[data-provider-transfer-amount]').value;
     const amount = Number(amountValue || 0);
@@ -810,6 +846,9 @@
     return json;
   }
 
+  document.addEventListener('naga:promotion-access-changed', function(){ setTimeout(applyPromotionConfirmState, 50); });
+  document.addEventListener('naga:promotion-access-ready', function(){ setTimeout(applyPromotionConfirmState, 0); });
+
   function bindElement(el, game, options){
     if(!el || el.dataset.providerLaunchBound === '1') return;
     el.dataset.providerLaunchBound = '1';
@@ -819,7 +858,7 @@
       e.stopPropagation();
       if(el.disabled || el.classList.contains('is-launching')) return;
       try{ await launch(game, Object.assign({}, options || {}, { element: el })); }
-      catch(err){ alert(err.message || 'Launch game failed.'); }
+      catch(err){ if(window.NAGA_MODAL) window.NAGA_MODAL.error(err.message || 'Launch game failed.', 'Launch Game'); }
     });
   }
 

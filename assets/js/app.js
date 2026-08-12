@@ -41,6 +41,100 @@ const DEFAULT_GAME_SECTION_KEYWORD = 'slot';
 const ALL_PROVIDER_CODE = '__ALL__';
 let subCategoryAutoTriedIds = new Set();
 
+// Active promotion game/provider lock. When BO Allowed Game / Provider is
+// populated, only matching providers/games are clickable until the promotion
+// lifecycle is completed/settled/forfeited.
+let activePromotionAllowedTokens = null;
+let promotionRestrictionLoading = !!localStorage.getItem('member_token');
+
+function normalizePromotionAccessToken(value){
+  return String(value == null ? '' : value).trim().replace(/\s+/g, ' ').toUpperCase();
+}
+
+function parsePromotionAllowedTokens(raw){
+  const tokens = new Set();
+  String(raw == null ? '' : raw).split(/[,;\n\r|]+/).forEach(part => {
+    const token = normalizePromotionAccessToken(part);
+    if(token) tokens.add(token);
+  });
+  return tokens;
+}
+
+function isPromotionLifecycleActive(status){
+  return ['ACTIVE','PENDING_COMPLETION','READY_TO_COMPLETE'].includes(String(status || '').toUpperCase());
+}
+
+function promotionGameAllowed(game){
+  if(promotionRestrictionLoading) return false;
+  if(!activePromotionAllowedTokens || !activePromotionAllowedTokens.size) return true;
+  const provider = normalizePromotionAccessToken(providerCodeOf(game));
+  const code = normalizePromotionAccessToken(game && (game.gameCode || game.game_code || game.code));
+  const name = normalizePromotionAccessToken(game && (game.name || game.gameName || game.game_name));
+  return (!!provider && activePromotionAllowedTokens.has(provider)) ||
+         (!!code && activePromotionAllowedTokens.has(code)) ||
+         (!!name && activePromotionAllowedTokens.has(name));
+}
+
+function promotionProviderAllowed(providerCode){
+  if(promotionRestrictionLoading) return false;
+  if(!activePromotionAllowedTokens || !activePromotionAllowedTokens.size) return true;
+  const provider = normalizePromotionAccessToken(providerCode);
+  if(provider && activePromotionAllowedTokens.has(provider)) return true;
+  return (Array.isArray(catalogGames) ? catalogGames : []).some(game =>
+    providerCodeOf(game) === provider && promotionGameAllowed(game));
+}
+
+function promotionDisabledMessage(){
+  return 'This game/provider is disabled while your active promotion is in progress. Complete the promotion to unlock all games.';
+}
+
+function markPromotionDisabled(el, disabled){
+  if(!el) return;
+  el.classList.toggle('promotion-access-disabled', !!disabled);
+  el.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  if(disabled) el.setAttribute('title', promotionDisabledMessage());
+  else if(el.getAttribute('title') === promotionDisabledMessage()) el.removeAttribute('title');
+}
+
+async function loadPromotionGameRestriction(){
+  const memberToken = localStorage.getItem('member_token') || '';
+  if(!memberToken){
+    promotionRestrictionLoading = false;
+    activePromotionAllowedTokens = null;
+    return;
+  }
+  try{
+    const base = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || '';
+    const url = (window.NAGA_API && window.NAGA_API.playerPromotionClaims) || (base.replace(/\/+$/, '') + '/api/player/promotion/my-claims');
+    const res = await fetch(url, {headers:{'Authorization':'Bearer ' + memberToken}, cache:'no-store'});
+    const json = await res.json().catch(()=>({}));
+    if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load promotion access rule');
+    const claims = Array.isArray(json.data) ? json.data : [];
+    const active = claims.filter(c => isPromotionLifecycleActive(c && c.status)).sort((a,b) => Number(b.id || 0) - Number(a.id || 0))[0];
+    activePromotionAllowedTokens = active && String(active.allowedGames || '').trim() ? parsePromotionAllowedTokens(active.allowedGames) : null;
+  }catch(err){
+    console.warn('Promotion game restriction unavailable:', err && err.message ? err.message : err);
+    // Fail closed for a logged-in member until the restriction endpoint can be read.
+    activePromotionAllowedTokens = new Set(['__PROMOTION_RULE_UNAVAILABLE__']);
+  }finally{
+    promotionRestrictionLoading = false;
+    if(gameCatalogReady && typeof loadGames === 'function') loadGames();
+    try{ document.dispatchEvent(new CustomEvent('naga:promotion-access-ready')); }catch(e){}
+  }
+}
+
+loadPromotionGameRestriction();
+window.NAGA_PROMOTION_ACCESS = {
+  refresh: loadPromotionGameRestriction,
+  isGameAllowed: function(game){ return promotionGameAllowed(game || {}); },
+  isLaunchAllowed: function(providerCode, gameCode, gameName){
+    return promotionGameAllowed({providerCode: providerCode, gameCode: gameCode, name: gameName});
+  },
+  isLoading: function(){ return promotionRestrictionLoading; },
+  message: promotionDisabledMessage
+};
+document.addEventListener('naga:promotion-access-changed', loadPromotionGameRestriction);
+
 function isAllProviderCode(code){
   return String(code || '') === ALL_PROVIDER_CODE;
 }
@@ -638,7 +732,6 @@ function allCatalogGamesForProvider(providerCode){
 function openProviderFromLanding(providerCode, games){
   const cleanCode = String(providerCode || '').trim().toUpperCase();
   if(!cleanCode) return;
-
   const providerGames = gamesForProviderFromCategoryList(games, cleanCode);
   const allProviderGames = allCatalogGamesForProvider(cleanCode);
 
@@ -649,7 +742,7 @@ function openProviderFromLanding(providerCode, games){
     const gameName = langText(game, 'name', 'Game');
     if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.launch === 'function'){
       Promise.resolve(window.NAGA_PROVIDER_LAUNCH.launch(game, { transferAmount: 0, gameName: gameName }))
-        .catch(err => alert((err && err.message) || 'Launch game failed.'));
+        .catch(err => { if(window.NAGA_MODAL) window.NAGA_MODAL.error((err && err.message) || 'Launch game failed.', 'Launch Game'); });
       return;
     }
     const targetUrl = game.gameUrl || game.game_url || '';
@@ -700,7 +793,7 @@ function renderMixedCategoryLanding(games){
       btn.type = 'button';
       btn.className = 'category-provider-card';
       btn.dataset.providerCode = row.code;
-      const image = providerBrandImageOf(row.provider);
+        const image = providerBrandImageOf(row.provider);
       btn.innerHTML = image
         ? `<img src="${image}" alt="${providerNameOf(row.provider)}" loading="lazy">`
         : `<span class="provider-letter">${providerInitials(providerNameOf(row.provider))}</span>`;

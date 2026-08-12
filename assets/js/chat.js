@@ -312,7 +312,7 @@
 
   async function recallMessage(messageId){
     if(!db || !conversationId || !messageId) return;
-    if(!confirm('Recall this message for everyone?')) return;
+    if(window.NAGA_MODAL && !(await window.NAGA_MODAL.confirm('Recall this message for everyone?', 'Recall Message', {okText:'Recall'}))) return;
     try{
       await db.collection('conversations').doc(conversationId).collection('messages').doc(messageId).set({
         text: '',
@@ -325,7 +325,7 @@
 
   async function deleteMessage(messageId){
     if(!db || !conversationId || !messageId) return;
-    if(!confirm('Delete this message from your chat view?')) return;
+    if(window.NAGA_MODAL && !(await window.NAGA_MODAL.confirm('Delete this message from your chat view?', 'Delete Message', {okText:'Delete'}))) return;
     try{
       await db.collection('conversations').doc(conversationId).collection('messages').doc(messageId).delete();
     }catch(e){ showSystem(e.message || 'Delete failed.'); }

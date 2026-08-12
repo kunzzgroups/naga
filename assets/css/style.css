@@ -13461,3 +13461,29 @@ body.bank-detail-page .form-status.success{color:#70f3aa;}
     z-index:1000!important;
   }
 }
+
+
+/* ===== v1.0.100: active promotion Allowed Game / Provider lock ===== */
+.promotion-access-disabled{
+  opacity:.38 !important;
+  filter:grayscale(.72) brightness(.78) !important;
+  cursor:not-allowed !important;
+  pointer-events:auto !important;
+}
+.promotion-access-disabled .play-btn,
+.play-btn[aria-disabled="true"]{
+  cursor:not-allowed !important;
+  opacity:.55 !important;
+}
+.category-provider-card.promotion-access-disabled,
+.provider-rail-card.promotion-access-disabled{
+  transform:none !important;
+  box-shadow:none !important;
+}
+
+/* ===== v1.0.101: promotion access UX =====
+   Providers and game cards stay fully browseable during an active promotion.
+   The final Confirm & Play action alone is disabled for non-allowed games. */
+.promotion-access-disabled{opacity:1!important;filter:none!important;pointer-events:auto!important;cursor:pointer!important}
+.provider-transfer-confirm.promotion-confirm-disabled,
+.provider-transfer-confirm:disabled.promotion-confirm-disabled{opacity:.46!important;filter:grayscale(.35);cursor:not-allowed!important;box-shadow:none!important}

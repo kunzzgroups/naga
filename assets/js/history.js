@@ -76,7 +76,13 @@
   async function loadAll(){
     transactionsBody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>'; betBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
     const [tx, bet] = await Promise.all([fetchJson(TX_URL), fetchJson(BET_URL)]);
-    lazyState.transactions.records = Array.isArray(tx.data) ? tx.data : [];
+    // History page is for member-facing transactions only. Provider wallet
+    // TRANSFER_IN / TRANSFER_OUT rows are internal game-wallet movements and
+    // should not be shown here.
+    lazyState.transactions.records = (Array.isArray(tx.data) ? tx.data : []).filter(item => {
+      const type = String(item && (item.type || item.ledgerType) || '').trim().toUpperCase();
+      return type !== 'TRANSFER_IN' && type !== 'TRANSFER_OUT';
+    });
     lazyState.bet.records = Array.isArray(bet.data) ? bet.data : [];
     lazyState.transactions.visible = 0; lazyState.bet.visible = 0; transactionsBody.innerHTML=''; betBody.innerHTML='';
     renderBatch('transactions'); renderBatch('bet');

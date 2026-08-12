@@ -45,7 +45,7 @@
     try{
       const res=await fetch(COMPLETE_BASE.replace(/\/$/,'')+'/'+encodeURIComponent(currentClaim.id),{method:'POST',headers:{Authorization:'Bearer '+token()}});
       const json=await res.json().catch(()=>({}));if(!res.ok||json.status==='error')throw new Error(json.message||'Unable to complete promotion');
-      modal(false);await load();
+      modal(false);document.dispatchEvent(new CustomEvent('naga:promotion-access-changed'));await load();
     }catch(e){modal(true,e.message||'Unable to complete promotion');}
     finally{if(confirm){confirm.disabled=false;confirm.textContent='Confirm';}}
   }

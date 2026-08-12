@@ -208,6 +208,7 @@
       const extra = (d.requiredTurnover && Number(d.requiredTurnover) > 0) ? (' | Required Turnover: ' + money(d.requiredTurnover)) : ((d.requiredRollover && Number(d.requiredRollover) > 0) ? (' | Required Rollover: ' + money(d.requiredRollover)) : '');
       toast('Claim success. Bonus: ' + money(d.bonusAmount) + extra);
       closeDetail();
+      document.dispatchEvent(new CustomEvent('naga:promotion-access-changed'));
       if(window.MemberAuth && window.MemberAuth.refreshWalletBalance) window.MemberAuth.refreshWalletBalance();
     }catch(err){
       toast(err.message || 'Claim failed');
