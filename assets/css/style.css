@@ -13487,3 +13487,511 @@ body.bank-detail-page .form-status.success{color:#70f3aa;}
 .promotion-access-disabled{opacity:1!important;filter:none!important;pointer-events:auto!important;cursor:pointer!important}
 .provider-transfer-confirm.promotion-confirm-disabled,
 .provider-transfer-confirm:disabled.promotion-confirm-disabled{opacity:.46!important;filter:grayscale(.35);cursor:not-allowed!important;box-shadow:none!important}
+
+
+/* ===== v1.0.102: SLOT mobile banner -> lobby scroll handoff =====
+   Mobile SLOT keeps the provider rail. The page first scrolls naturally until
+   the promotional banner has cleared the sticky header; after that the provider
+   rail + game panel own the remaining vertical scrolling. When either lobby
+   column reaches its top, upward scrolling chains back to the page so the banner
+   can be revealed again. Desktop and Provider-First categories are unchanged. */
+@media (max-width:768px){
+  html:has(body.home-page.mobile-slot-scroll-handoff),
+  body.home-page.mobile-slot-scroll-handoff{
+    width:100%!important;
+    height:auto!important;
+    min-height:100dvh!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff{
+    display:block!important;
+    padding-bottom:var(--mobile-bottom-nav-height,70px)!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .top-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:1200!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .main-layout{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .mobile-top-area{
+    flex:0 0 auto!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .center-content{
+    flex:0 0 auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:calc(100dvh - 69px - var(--mobile-bottom-nav-height,70px))!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:0!important;
+  }
+
+  /* Keep the category strip visible after the banner has scrolled away. */
+  body.home-page.mobile-slot-scroll-handoff .category-slider{
+    position:sticky!important;
+    top:69px!important;
+    z-index:1100!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .game-grid,
+  body.home-page.mobile-slot-scroll-handoff .game-grid.provider-with-rail{
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .provider-lobby-shell{
+    height:var(--provider-lobby-height, calc(100dvh - 210px))!important;
+    min-height:260px!important;
+    max-height:var(--provider-lobby-height, calc(100dvh - 210px))!important;
+    overflow:hidden!important;
+    align-items:stretch!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .provider-side-rail,
+  body.home-page.mobile-slot-scroll-handoff .provider-games-panel{
+    position:static!important;
+    top:auto!important;
+    height:100%!important;
+    min-height:0!important;
+    max-height:100%!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding-bottom:8px!important;
+    scroll-padding-bottom:8px!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .provider-games-list{
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:8px!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    z-index:1300!important;
+  }
+}
+
+/* ===== v1.0.103: SLOT mobile true full-page lobby takeover =====
+   After the banner has completely scrolled away, remove it from the mobile
+   SLOT layout so the category + provider/game lobby occupy the whole usable
+   viewport above the fixed bottom nav. Scrolling back up from the top of the
+   lobby restores the banner. */
+@media (max-width:768px){
+  body.home-page.mobile-slot-scroll-handoff.slot-banner-passed .mobile-top-area{
+    display:none!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff.slot-banner-passed .center-content{
+    min-height:calc(100dvh - 69px - var(--mobile-bottom-nav-height,70px))!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff.slot-banner-passed .game-grid,
+  body.home-page.mobile-slot-scroll-handoff.slot-banner-passed .game-grid.provider-with-rail{
+    flex:1 1 auto!important;
+    min-height:0!important;
+  }
+
+  body.home-page.mobile-slot-scroll-handoff.slot-banner-passed .provider-lobby-shell{
+    height:var(--provider-lobby-height, calc(100dvh - 69px - 58px - var(--mobile-bottom-nav-height,70px)))!important;
+    max-height:var(--provider-lobby-height, calc(100dvh - 69px - 58px - var(--mobile-bottom-nav-height,70px)))!important;
+  }
+}
+
+/* ===== v1.0.104: SLOT mobile unified page scroll =====
+   The banner and game lobby now share one vertical document scroll. As the user
+   scrolls the game list, the banner naturally leaves the viewport. Category and
+   subcategory remain sticky at the top, while the game grid can fill the entire
+   usable screen. The provider rail stays sticky and independently scrollable so
+   all providers remain reachable without trapping the game list. */
+@media (max-width:768px){
+  html:has(body.home-page.mobile-slot-natural-scroll),
+  body.home-page.mobile-slot-natural-scroll{
+    width:100%!important;
+    height:auto!important;
+    min-height:100dvh!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll{
+    display:block!important;
+    padding-bottom:var(--mobile-bottom-nav-height,70px)!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .top-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:1400!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .main-layout{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .mobile-top-area{
+    display:block!important;
+    position:relative!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .center-content,
+  body.home-page.mobile-slot-natural-scroll .game-grid,
+  body.home-page.mobile-slot-natural-scroll .game-grid.provider-with-rail{
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  /* These only stick after the banner has naturally scrolled past them. */
+  body.home-page.mobile-slot-natural-scroll .category-slider{
+    position:sticky!important;
+    top:var(--slot-header-height,69px)!important;
+    z-index:1300!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll #subTabRow{
+    position:sticky!important;
+    top:calc(var(--slot-header-height,69px) + var(--slot-category-height,58px))!important;
+    z-index:1290!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .provider-lobby-shell{
+    display:flex!important;
+    align-items:flex-start!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:calc(100dvh - var(--slot-header-height,69px) - var(--slot-category-height,58px) - var(--slot-subtab-height,0px) - var(--mobile-bottom-nav-height,70px))!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .provider-games-panel,
+  body.home-page.mobile-slot-natural-scroll .provider-games-list{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
+    touch-action:pan-y!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .provider-side-rail{
+    position:sticky!important;
+    top:calc(var(--slot-header-height,69px) + var(--slot-category-height,58px) + var(--slot-subtab-height,0px))!important;
+    height:auto!important;
+    max-height:calc(100dvh - var(--slot-header-height,69px) - var(--slot-category-height,58px) - var(--slot-subtab-height,0px) - var(--mobile-bottom-nav-height,70px))!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    z-index:1500!important;
+  }
+}
+
+/* ===== v1.0.105: SLOT mobile bounded lobby scroll + sticky category/subcategory =====
+   Keep the phone viewport itself locked. The home main-layout is the only
+   vertical scroll viewport between the header and fixed bottom navigation.
+   The banner scrolls away inside that viewport; category and subcategory then
+   stay pinned at its top while SLOT providers/games continue scrolling below. */
+@media (max-width:768px){
+  html:has(body.home-page.mobile-slot-natural-scroll),
+  body.home-page.mobile-slot-natural-scroll{
+    width:100%!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll{
+    display:block!important;
+    padding-bottom:0!important;
+    touch-action:none!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .top-header{
+    position:relative!important;
+    top:auto!important;
+    z-index:1400!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .main-layout{
+    display:block!important;
+    width:100%!important;
+    height:calc(100dvh - var(--slot-header-height,69px) - var(--mobile-bottom-nav-height,70px))!important;
+    min-height:0!important;
+    max-height:calc(100dvh - var(--slot-header-height,69px) - var(--mobile-bottom-nav-height,70px))!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+    scroll-behavior:auto!important;
+    position:relative!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .mobile-top-area{
+    display:block!important;
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:hidden!important;
+    z-index:1!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .center-content{
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:100%!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:0!important;
+  }
+
+  /* Category sticks to the TOP OF THE MOBILE CONTENT VIEWPORT after banner passes. */
+  body.home-page.mobile-slot-natural-scroll .category-slider{
+    position:sticky!important;
+    top:0!important;
+    z-index:1350!important;
+    margin-top:0!important;
+  }
+
+  /* Real BO subcategory row stays directly below category when present. */
+  body.home-page.mobile-slot-natural-scroll #subTabRow{
+    position:sticky!important;
+    top:var(--slot-category-height,58px)!important;
+    z-index:1340!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .game-grid,
+  body.home-page.mobile-slot-natural-scroll .game-grid.provider-with-rail,
+  body.home-page.mobile-slot-natural-scroll .provider-lobby-shell{
+    width:100%!important;
+    height:auto!important;
+    min-height:calc(100% - var(--slot-category-height,58px) - var(--slot-subtab-height,0px))!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .provider-lobby-shell{
+    display:flex!important;
+    align-items:flex-start!important;
+  }
+
+  /* Games follow the main-layout scroll; do not create another nested page. */
+  body.home-page.mobile-slot-natural-scroll .provider-games-panel,
+  body.home-page.mobile-slot-natural-scroll .provider-games-list{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    touch-action:auto!important;
+    overscroll-behavior:auto!important;
+  }
+
+  /* Provider rail stays aligned beneath both sticky bars and can scroll itself. */
+  body.home-page.mobile-slot-natural-scroll .provider-side-rail{
+    position:sticky!important;
+    top:calc(var(--slot-category-height,58px) + var(--slot-subtab-height,0px))!important;
+    height:auto!important;
+    max-height:calc(100dvh - var(--slot-header-height,69px) - var(--mobile-bottom-nav-height,70px) - var(--slot-category-height,58px) - var(--slot-subtab-height,0px))!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    z-index:1500!important;
+  }
+}
+
+/* ===== v1.0.106: SLOT mobile sticky tabs visual shield =====
+   Keep scrolling content visually BELOW the sticky category/subcategory bars.
+   The previous sticky positioning worked, but the bars themselves were
+   transparent, so game cards could be seen sliding underneath/through the gaps. */
+@media (max-width:768px){
+  body.home-page.mobile-slot-natural-scroll .category-slider{
+    position:sticky!important;
+    top:0!important;
+    z-index:1450!important;
+    isolation:isolate!important;
+    background:rgba(215,225,233,.98)!important;
+    backdrop-filter:blur(8px)!important;
+    -webkit-backdrop-filter:blur(8px)!important;
+    overflow:hidden!important;
+    margin-bottom:0!important;
+    padding-bottom:0!important;
+    box-shadow:0 1px 0 rgba(255,255,255,.7), 0 2px 6px rgba(0,0,0,.12)!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .category-row{
+    position:relative!important;
+    z-index:2!important;
+    background:transparent!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll #subTabRow{
+    position:sticky!important;
+    top:var(--slot-category-height,58px)!important;
+    z-index:1440!important;
+    isolation:isolate!important;
+    background:rgba(215,225,233,.98)!important;
+    backdrop-filter:blur(8px)!important;
+    -webkit-backdrop-filter:blur(8px)!important;
+    margin:0!important;
+    padding:4px 0 8px!important;
+    box-shadow:0 1px 0 rgba(255,255,255,.65), 0 2px 5px rgba(0,0,0,.10)!important;
+  }
+
+  /* Ensure lobby content can never paint above the sticky navigation stack. */
+  body.home-page.mobile-slot-natural-scroll .game-grid,
+  body.home-page.mobile-slot-natural-scroll .provider-lobby-shell,
+  body.home-page.mobile-slot-natural-scroll .provider-games-panel,
+  body.home-page.mobile-slot-natural-scroll .provider-games-list{
+    position:relative!important;
+    z-index:1!important;
+  }
+}
+
+/* ===== v1.0.107: SLOT mobile subcategory background follows page =====
+   Keep the sticky subcategory shield behavior, but remove the solid grey panel.
+   Using the same fixed page background makes the row look transparent/seamless
+   while still preventing scrolling game cards from visually crossing the tabs. */
+@media (max-width:768px){
+  body.home-page.mobile-slot-natural-scroll #subTabRow{
+    background-color:transparent!important;
+    background-image:url('../custom/images/background.png')!important;
+    background-position:center top!important;
+    background-size:cover!important;
+    background-attachment:fixed!important;
+    background-repeat:no-repeat!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    box-shadow:none!important;
+    border:0!important;
+  }
+}
+
+/* ===== v1.0.108: SLOT mobile sticky navigation seamless background =====
+   The visible grey strip was coming from the sticky .category-slider shield,
+   not #subTabRow. Keep the paint shield (so game cards cannot scroll over the
+   sticky tabs) but make both sticky layers render the exact same page
+   background/overlay as body, so there is no separate coloured panel. */
+@media (max-width:768px){
+  body.home-page.mobile-slot-natural-scroll .category-slider,
+  body.home-page.mobile-slot-natural-scroll #subTabRow{
+    background-color:transparent!important;
+    background-image:
+      linear-gradient(var(--page-background-overlay),var(--page-background-overlay)),
+      url('../custom/images/background.png')!important;
+    background-repeat:no-repeat!important;
+    background-position:center top!important;
+    background-size:cover!important;
+    background-attachment:fixed!important;
+    background-blend-mode:normal!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    box-shadow:none!important;
+    border:0!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .category-row{
+    background:transparent!important;
+    box-shadow:none!important;
+    border:0!important;
+  }
+}
+
+/* ===== v1.0.109: SLOT mobile sticky subcategory anti-jitter =====
+   Freeze the bounded lobby viewport while scrolling and keep the sticky tab
+   layers on their own compositor layer. Mobile browser UI can continuously
+   change 100dvh/visualViewport while the user reaches the end of the list;
+   that was making the sticky threshold recalculate and visibly shake. */
+@media (max-width:768px){
+  body.home-page.mobile-slot-natural-scroll .main-layout{
+    height:calc(var(--slot-mobile-viewport-height, 100dvh) - var(--slot-header-height,69px) - var(--mobile-bottom-nav-height,70px))!important;
+    max-height:calc(var(--slot-mobile-viewport-height, 100dvh) - var(--slot-header-height,69px) - var(--mobile-bottom-nav-height,70px))!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll .category-slider,
+  body.home-page.mobile-slot-natural-scroll #subTabRow{
+    background-attachment:scroll!important;
+    transform:translate3d(0,0,0)!important;
+    -webkit-transform:translate3d(0,0,0)!important;
+    backface-visibility:hidden!important;
+    -webkit-backface-visibility:hidden!important;
+    will-change:transform!important;
+    contain:paint!important;
+  }
+
+  body.home-page.mobile-slot-natural-scroll #subTabRow{
+    /* Keep the sticky offset on a stable whole-pixel value. */
+    top:var(--slot-category-height,58px)!important;
+  }
+}

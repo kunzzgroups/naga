@@ -2020,6 +2020,9 @@ loadSliderBanners().then(() => {
     if (window.matchMedia('(min-width: 769px)').matches) {
       return q('.provider-games-panel') || q('.game-grid') || document.scrollingElement || document.documentElement;
     }
+    if (document.body.classList.contains('mobile-slot-natural-scroll')) {
+      return q('.main-layout') || document.scrollingElement || document.documentElement;
+    }
     return q('.provider-games-panel') || document.scrollingElement || document.documentElement;
   }
   function ensureBtn(){
@@ -2067,6 +2070,8 @@ loadSliderBanners().then(() => {
 (function(){
   var resizeTimer = 0;
   var observedShell = null;
+  var stableSlotViewportHeight = 0;
+  var stableSlotViewportWidth = 0;
 
   function viewportHeight(){
     return window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -2085,50 +2090,169 @@ loadSliderBanners().then(() => {
     var bottomNav = document.querySelector('.bottom-nav');
     var navTop = bottomNav ? bottomNav.getBoundingClientRect().top : viewportHeight();
     var viewportBottom = Math.min(viewportHeight(), navTop > 0 ? navTop : viewportHeight());
-    var available = Math.floor(viewportBottom - rect.top);
-    var minimum = window.matchMedia('(max-width: 768px)').matches ? 220 : 280;
-    shell.style.setProperty('--provider-lobby-height', Math.max(minimum, available) + 'px');
+    var isMobileSlot = window.matchMedia('(max-width: 768px)').matches && activeCategoryTypeKey() === 'SLOT';
+    var available;
+
+    if(isMobileSlot){
+      // Mobile SLOT now uses one natural document scroll. The banner, category,
+      // subcategory and game list travel in the same scroll flow, so scrolling
+      // the games naturally pushes the banner completely off-screen. Category
+      // and subcategory become sticky only after they reach the top.
+      var header = document.querySelector('.top-header');
+      var category = document.querySelector('.category-slider');
+      var subTabs = document.getElementById('subTabRow');
+      var headerHeight = header ? Math.max(0, header.getBoundingClientRect().height || 0) : 69;
+      var categoryHeight = category ? Math.max(0, category.getBoundingClientRect().height || 0) : 58;
+      var subTabHeight = (subTabs && getComputedStyle(subTabs).display !== 'none') ? Math.max(0, subTabs.getBoundingClientRect().height || 0) : 0;
+
+      // Mobile browsers resize visualViewport/dvh while their address/tool bars
+      // animate. If the bounded SLOT scroller follows those tiny height changes,
+      // the sticky category/subcategory threshold moves back and forth at the
+      // end of the list. Freeze the viewport height for the current orientation
+      // and only recalculate when the layout width actually changes.
+      var layoutWidth = Math.round(document.documentElement.clientWidth || window.innerWidth || 0);
+      if(!stableSlotViewportHeight || Math.abs(layoutWidth - stableSlotViewportWidth) > 2){
+        stableSlotViewportWidth = layoutWidth;
+        stableSlotViewportHeight = Math.round(document.documentElement.clientHeight || window.innerHeight || viewportHeight());
+      }
+
+      // Whole-pixel sticky offsets avoid fractional-pixel oscillation.
+      headerHeight = Math.round(headerHeight);
+      categoryHeight = Math.round(categoryHeight);
+      subTabHeight = Math.round(subTabHeight);
+      document.body.style.setProperty('--slot-mobile-viewport-height', stableSlotViewportHeight + 'px');
+      document.body.style.setProperty('--slot-header-height', headerHeight + 'px');
+      document.body.style.setProperty('--slot-category-height', categoryHeight + 'px');
+      document.body.style.setProperty('--slot-subtab-height', subTabHeight + 'px');
+      document.body.classList.add('mobile-slot-natural-scroll');
+      document.body.classList.remove('mobile-slot-scroll-handoff', 'slot-banner-passed');
+      shell.style.removeProperty('--provider-lobby-height');
+    }else{
+      available = Math.floor(viewportBottom - rect.top);
+      document.body.classList.remove('mobile-slot-natural-scroll', 'mobile-slot-scroll-handoff', 'slot-banner-passed');
+      document.body.style.removeProperty('--slot-mobile-viewport-height');
+      stableSlotViewportHeight = 0;
+      stableSlotViewportWidth = 0;
+      var minimum = window.matchMedia('(max-width: 768px)').matches ? 260 : 280;
+      shell.style.setProperty('--provider-lobby-height', Math.max(minimum, available) + 'px');
+    }
 
     if(observedShell !== shell){
       observedShell = shell;
-      bindScrollArea(shell.querySelector('.provider-side-rail'));
-      bindScrollArea(shell.querySelector('.provider-games-panel'));
+      // Desktop keeps independent provider/game scrolling. Mobile SLOT must not
+      // intercept wheel/touch events because the whole document owns scrolling.
+      if(!isMobileSlot){
+        bindScrollArea(shell.querySelector('.provider-side-rail'));
+        bindScrollArea(shell.querySelector('.provider-games-panel'));
+      }
     }
+  }
+
+  function revealSlotBanner(){
+    if(!document.body.classList.contains('mobile-slot-scroll-handoff')) return;
+    if(!document.body.classList.contains('slot-banner-passed')) return;
+    document.body.classList.remove('slot-banner-passed');
+    // The hidden banner is inserted back above the lobby. Return the document to
+    // the top so the next upward movement naturally reveals the full banner.
+    requestAnimationFrame(function(){ window.scrollTo(0, 0); });
   }
 
   function bindScrollArea(el){
     if(!el || el.dataset.independentScrollBound === '1') return;
     el.dataset.independentScrollBound = '1';
+    var touchStartY = null;
 
-    // Keep wheel/trackpad input inside the hovered column.
+    // Keep wheel/trackpad input inside the hovered column. Once mobile SLOT has
+    // taken over the viewport, an upward gesture at scrollTop=0 explicitly
+    // restores the banner instead of leaving a partial banner strip on screen.
     el.addEventListener('wheel', function(e){
       if(el.scrollHeight <= el.clientHeight) return;
       var atTop = el.scrollTop <= 0;
       var atBottom = Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight;
+      var handoff = document.body.classList.contains('mobile-slot-scroll-handoff');
+      if(handoff && e.deltaY < 0 && atTop){
+        revealSlotBanner();
+        return;
+      }
+      if(handoff && e.deltaY > 0 && atBottom) return;
       if((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)){
         e.preventDefault();
       }
       e.stopPropagation();
     }, {passive:false});
 
-    // Stop touch gestures from bubbling to the page while preserving native momentum.
-    el.addEventListener('touchstart', function(e){ e.stopPropagation(); }, {passive:true});
-    el.addEventListener('touchmove', function(e){ e.stopPropagation(); }, {passive:true});
+    el.addEventListener('touchstart', function(e){
+      if(document.body.classList.contains('mobile-slot-scroll-handoff')){
+        touchStartY = e.touches && e.touches[0] ? e.touches[0].clientY : null;
+        return;
+      }
+      e.stopPropagation();
+    }, {passive:true});
+    el.addEventListener('touchmove', function(e){
+      if(document.body.classList.contains('mobile-slot-scroll-handoff')){
+        if(el.scrollTop <= 0 && touchStartY != null && e.touches && e.touches[0]){
+          var dy = e.touches[0].clientY - touchStartY;
+          if(dy > 18){
+            revealSlotBanner();
+            touchStartY = e.touches[0].clientY;
+          }
+        }
+        return;
+      }
+      e.stopPropagation();
+    }, {passive:true});
+    el.addEventListener('touchend', function(){ touchStartY = null; }, {passive:true});
+  }
+
+  function updateSlotBannerState(){
+    if(!document.body.classList.contains('mobile-slot-scroll-handoff')) return;
+    // While the lobby owns the viewport, keep that state until the user scrolls
+    // back to the top of the provider/game column and explicitly reveals banner.
+    if(document.body.classList.contains('slot-banner-passed')) return;
+    var bannerArea = document.querySelector('.mobile-top-area');
+    var header = document.querySelector('.top-header');
+    var headerBottom = header ? header.getBoundingClientRect().bottom : 69;
+    var passed = !!bannerArea && bannerArea.getBoundingClientRect().bottom <= headerBottom + 2;
+    if(passed){
+      document.body.classList.add('slot-banner-passed');
+      requestAnimationFrame(function(){
+        setLobbyHeight();
+        window.scrollTo(0, 0);
+      });
+    }
   }
 
   function schedule(){
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function(){ requestAnimationFrame(setLobbyHeight); }, 40);
+    resizeTimer = setTimeout(function(){ requestAnimationFrame(function(){ setLobbyHeight(); updateSlotBannerState(); }); }, 40);
   }
 
   var observer = new MutationObserver(schedule);
   function start(){
     observer.observe(document.body, {childList:true, subtree:true});
     setLobbyHeight();
-    window.addEventListener('resize', schedule, {passive:true});
-    window.addEventListener('orientationchange', schedule, {passive:true});
+    updateSlotBannerState();
+    window.addEventListener('scroll', updateSlotBannerState, {passive:true});
+    window.addEventListener('resize', function(){
+      // Ignore height-only mobile browser chrome changes while SLOT is active.
+      // Width/orientation changes still rebuild the frozen viewport normally.
+      var isMobileSlot = window.matchMedia('(max-width: 768px)').matches && activeCategoryTypeKey() === 'SLOT';
+      var currentWidth = Math.round(document.documentElement.clientWidth || window.innerWidth || 0);
+      if(isMobileSlot && stableSlotViewportWidth && Math.abs(currentWidth - stableSlotViewportWidth) <= 2) return;
+      schedule();
+    }, {passive:true});
+    window.addEventListener('orientationchange', function(){
+      stableSlotViewportHeight = 0;
+      stableSlotViewportWidth = 0;
+      schedule();
+    }, {passive:true});
     if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', schedule, {passive:true});
+      window.visualViewport.addEventListener('resize', function(){
+        // visualViewport resize fires repeatedly as mobile browser chrome moves.
+        // Do not let that move an already-sticky SLOT subcategory row.
+        if(window.matchMedia('(max-width: 768px)').matches && activeCategoryTypeKey() === 'SLOT') return;
+        schedule();
+      }, {passive:true});
     }
   }
 
