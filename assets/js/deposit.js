@@ -6,6 +6,8 @@
   const grid=document.querySelector('.payment-grid');
   let paymentMethods=[];
   let selectedIndex=-1;
+  let minimumDeposit=10;
+  const minimumDisplay=document.getElementById('depositMinimumDisplay');
 
   function token(){return localStorage.getItem('member_token')||'';}
   function requireLogin(){ if(!token()){ location.href='login.html?redirect=deposit.html'; return false;} return true; }
@@ -16,6 +18,18 @@
   function setBalance(v){ document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent=money(v)); localStorage.setItem('member_main_wallet_balance', String(Number(v||0))); }
   function extractBalance(json){ const d=(json&&json.data)||json||{}; const list=[d.balance,d.mainWalletBalance,d.walletBalance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of list){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return 0; }
   async function loadBalance(){ const url=String(API.playerMainWalletBalance)+(String(API.playerMainWalletBalance).includes('?')?'&':'?')+'_wallet_ts='+Date.now(); const res=await fetch(url,{cache:'no-store',headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load balance'); setBalance(extractBalance(json)); }
+
+
+  async function loadTransactionLimits(){
+    try{
+      const url=String(API.frontendDisplaySetting)+(String(API.frontendDisplaySetting).includes('?')?'&':'?')+'_limit_ts='+Date.now();
+      const res=await fetch(url,{cache:'no-store'});
+      const json=await res.json().catch(()=>({}));
+      if(res.ok&&json.status!=='error'){ const n=Number((json.data||{}).minDepositAmount); if(Number.isFinite(n)&&n>0) minimumDeposit=n; }
+    }catch(e){}
+    if(input) input.min=String(minimumDeposit);
+    if(minimumDisplay) minimumDisplay.textContent='Minimum Deposit: '+money(minimumDeposit);
+  }
 
   function selectedMethod(){ const m=paymentMethods[selectedIndex]; return m ? (m.methodType || '') : ''; }
   function icon(type){ if(type==='EWALLET') return '📱'; if(type==='CARD') return '💳'; return '🏦'; }
@@ -83,7 +97,7 @@
     if(window.NAGA_LANG&&typeof window.NAGA_LANG.apply==='function') window.NAGA_LANG.apply();
   }
   async function submitDeposit(){
-    if(!requireLogin()) return; const amount=Number(input?.value||0); if(amount<10){ msg('Minimum deposit is MYR 10.00',false); return; }
+    if(!requireLogin()) return; const amount=Number(input?.value||0); if(amount<minimumDeposit){ msg('Minimum deposit is '+money(minimumDeposit),false); return; }
     const method=paymentMethods[selectedIndex]; if(!method){ msg('Please select a payment method',false); return; }
     const fd=new FormData(); fd.append('amount', String(amount)); fd.append('paymentMethod', selectedMethod()); const proof=document.getElementById('depositProof')?.files?.[0]; if(proof) fd.append('proof', proof);
     submit.disabled=true; msg('Submitting deposit request...', true);
@@ -91,5 +105,5 @@
     catch(e){ msg(e.message||'Deposit failed', false); }
     finally{ submit.disabled=false; }
   }
-  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); ensureProof(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
+  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); ensureProof(); loadTransactionLimits(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
 })();

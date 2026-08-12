@@ -638,7 +638,7 @@ function renderMixedCategoryLanding(games){
   if(providerRows.length){
     const providerSection = document.createElement('section');
     providerSection.className = 'category-provider-section';
-    providerSection.innerHTML = '<div class="category-section-title">Providers</div>';
+    // providerSection.innerHTML = '<div class="category-section-title">Providers</div>';
     const cards = document.createElement('div');
     cards.className = 'category-provider-cards';
     providerRows.forEach(row => {
