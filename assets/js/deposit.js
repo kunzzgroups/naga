@@ -31,7 +31,7 @@
     if(minimumDisplay) minimumDisplay.textContent='Minimum Deposit: '+money(minimumDeposit);
   }
 
-  function selectedMethod(){ const m=paymentMethods[selectedIndex]; return m ? (m.methodType || '') : ''; }
+  function selectedMethod(){ const m=paymentMethods[selectedIndex]; return m ? (m.displayName || m.methodType || '') : ''; }
   function icon(type){ if(type==='EWALLET') return '📱'; if(type==='CARD') return '💳'; return '🏦'; }
   function renderMethodButtons(){
     if(!grid) return;
@@ -99,7 +99,7 @@
   async function submitDeposit(){
     if(!requireLogin()) return; const amount=Number(input?.value||0); if(amount<minimumDeposit){ msg('Minimum deposit is '+money(minimumDeposit),false); return; }
     const method=paymentMethods[selectedIndex]; if(!method){ msg('Please select a payment method',false); return; }
-    const fd=new FormData(); fd.append('amount', String(amount)); fd.append('paymentMethod', selectedMethod()); const proof=document.getElementById('depositProof')?.files?.[0]; if(proof) fd.append('proof', proof);
+    const fd=new FormData(); fd.append('amount', String(amount)); if(method.id!=null){ fd.append('paymentMethodId', String(method.id)); fd.append('selectedPaymentMethodId', String(method.id)); } fd.append('paymentMethod', String(method.displayName||method.bankName||method.methodType||selectedMethod())); const proof=document.getElementById('depositProof')?.files?.[0]; if(proof) fd.append('proof', proof);
     submit.disabled=true; msg('Submitting deposit request...', true);
     try{ const res=await fetch(API.memberDeposit,{method:'POST',headers:{Authorization:'Bearer '+token()},body:fd}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Deposit failed'); msg(json.message||'Deposit submitted, waiting BO approval.', true); input.value=''; const proofInput=document.getElementById('depositProof'); if(proofInput){ proofInput.value=''; document.getElementById('paymentProofEmpty')?.removeAttribute('hidden'); document.getElementById('paymentProofPreview')?.setAttribute('hidden','hidden'); } await loadBalance().catch(()=>{}); }
     catch(e){ msg(e.message||'Deposit failed', false); }
