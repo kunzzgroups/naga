@@ -181,6 +181,19 @@
     return isNaN(n) ? '0.00' : n.toFixed(2);
   }
 
+  // Wallet amounts are MYR values with 2 decimal places. Always compare them
+  // as integer cents so a backend decimal such as 67.659999... cannot display
+  // as RM 67.66 but then fail the client-side `amount > balance` check.
+  function moneyCents(value){
+    const n = Number(value || 0);
+    if(!Number.isFinite(n)) return 0;
+    return Math.round((n + Number.EPSILON) * 100);
+  }
+
+  function normalizedMoney(value){
+    return moneyCents(value) / 100;
+  }
+
   function firstValue(){
     for(let i=0;i<arguments.length;i++){
       const value = arguments[i];
@@ -357,7 +370,9 @@
     if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load main wallet balance.');
     const data = json.data || {};
     const balance = Number(data.balance || (data.mainWallet && data.mainWallet.balance) || 0);
-    walletBalanceCache = isNaN(balance) ? 0 : balance;
+    // Keep the same 2-decimal value that is shown to the player. This avoids
+    // the UI showing RM 67.66 while retaining a hidden 67.659999... cache.
+    walletBalanceCache = isNaN(balance) ? 0 : normalizedMoney(balance);
     return walletBalanceCache;
   }
 
@@ -550,7 +565,9 @@
     const amountValue = modal.querySelector('[data-provider-transfer-amount]').value;
     const amount = Number(amountValue || 0);
     if(isNaN(amount) || amount < 0){ setError('Please enter a valid amount.'); return; }
-    if(amount > Number(walletBalanceCache || 0)){ setError('Insufficient main wallet balance.'); return; }
+    // Compare MYR in cents, not raw floating-point numbers. Equal displayed
+    // values (for example RM 67.66 balance and RM 67.66 transfer) must pass.
+    if(moneyCents(amount) > moneyCents(walletBalanceCache)){ setError('Insufficient main wallet balance.'); return; }
 
     const payload = Object.assign({}, pendingLaunch);
     delete payload._display;
