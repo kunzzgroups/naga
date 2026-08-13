@@ -4,6 +4,8 @@
   const token = () => localStorage.getItem('member_token') || '';
   const esc = v => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
   const strip = v => String(v || '').replace(/<[^>]*>/g,'').trim();
+  const tr = (key, fallback) => { const v=window.I18N && typeof window.I18N.t==='function' ? window.I18N.t(key) : ''; return (!v || v===key) ? fallback : v; };
+  const currentLang = () => (window.I18N && window.I18N.current) || localStorage.getItem('site_lang') || 'en';
 
   function toast(msg){
     let t = document.getElementById('promoToast');
@@ -29,22 +31,24 @@
   }
 
   function amountText(p){
-    if(p.bonusType === 'PERCENTAGE') return (p.bonusPercentage || 0) + '% Bonus';
+    if(p.bonusType === 'PERCENTAGE') return (p.bonusPercentage || 0) + '% ' + tr('promotion_bonus_word','Bonus');
     if(p.bonusType === 'RANDOM') return money(p.bonusRandomMin) + ' - ' + money(p.bonusRandomMax);
     return money(p.bonusFixedAmount);
   }
 
   function defaultDetail(p){
     const rows = [];
-    if(p.minTopupAmount) rows.push('✅ Min Deposit ' + money(p.minTopupAmount));
-    if(p.maxTopupAmount) rows.push('✅ Max Deposit ' + money(p.maxTopupAmount));
-    if(p.claimLimit != null) rows.push('✅ Claim Limit ' + p.claimLimit + ' / ' + (p.claimReset || 'NONE'));
-    if(p.rollover) rows.push('✅ Rollover X' + p.rollover);
-    if(p.turnover) rows.push('✅ Turnover X' + p.turnover);
-    if(p.maxWithdraw) rows.push('✅ Max Withdraw ' + money(p.maxWithdraw));
-    if(p.allowedGames) rows.push('✅ Allowed Game / Provider: ' + esc(p.allowedGames));
-    const rowHtml = rows.length ? rows.map(x => `<p>${x}</p>`).join('') : '<p>Check with customer service for requirement.</p>';
-    return `<h2>${esc(p.name || 'Promotion')}</h2><p><b>Bonus:</b> ${esc(amountText(p))}</p><p><b>Requirements:</b></p>${rowHtml}${p.description ? '<hr><div>' + esc(p.description).replace(/\n/g,'<br>') + '</div>' : ''}`;
+    const resetKey=String(p.claimReset||'NONE').toLowerCase();
+    const resetLabel=tr('promotion_reset_'+resetKey, p.claimReset || 'NONE');
+    if(p.minTopupAmount) rows.push('✅ ' + tr('promotion_min_deposit','Min Deposit') + ' ' + money(p.minTopupAmount));
+    if(p.maxTopupAmount) rows.push('✅ ' + tr('promotion_max_deposit','Max Deposit') + ' ' + money(p.maxTopupAmount));
+    if(p.claimLimit != null) rows.push('✅ ' + tr('promotion_claim_limit','Claim Limit') + ' ' + p.claimLimit + ' / ' + resetLabel);
+    if(p.rollover) rows.push('✅ ' + tr('promotion_rollover','Rollover') + ' X' + p.rollover);
+    if(p.turnover) rows.push('✅ ' + tr('promotion_turnover','Turnover') + ' X' + p.turnover);
+    if(p.maxWithdraw) rows.push('✅ ' + tr('promotion_max_withdraw','Max Withdraw') + ' ' + money(p.maxWithdraw));
+    if(p.allowedGames) rows.push('✅ ' + tr('promotion_allowed_game_provider','Allowed Game / Provider') + ': ' + esc(p.allowedGames));
+    const rowHtml = rows.length ? rows.map(x => `<p>${x}</p>`).join('') : '<p>' + esc(tr('promotion_check_customer_service','Check with customer service for requirement.')) + '</p>';
+    return `<h2>${esc(p.name || tr('promotion_default_title','Promotion'))}</h2><p><b>${esc(tr('promotion_bonus_label','Bonus:'))}</b> ${esc(amountText(p))}</p><p><b>${esc(tr('promotion_requirements_label','Requirements:'))}</b></p>${rowHtml}${p.description ? '<hr><div>' + esc(p.description).replace(/\n/g,'<br>') + '</div>' : ''}`;
   }
 
   function closeDetail(){
@@ -61,17 +65,17 @@
     const content = document.querySelector('.bonus-detail-content');
     if(!overlay || !content) return;
 
-    if(title) title.textContent = p.name || 'Promotion Bonus';
+    if(title) title.textContent = p.name || tr('promotion_default_section_title','Promotion Bonus');
     const html = safeDetailHtml(p.detailText) || defaultDetail(p);
     const needsBase = p.claimCondition === 'DEPOSIT' || p.claimCondition === 'FIRST_DEPOSIT' || p.claimCondition === 'DAILY_FIRST_DEPOSIT' || p.bonusType === 'PERCENTAGE';
 
     content.innerHTML = `
       <div class="promo-detail-admin-content">${html}</div>
       <div class="promo-modal-claim-line"></div>
-      ${needsBase ? '<input class="promo-modal-base-input" id="promoModalBaseAmount" type="number" step="0.01" placeholder="Deposit amount">' : ''}
+      ${needsBase ? '<input class="promo-modal-base-input" id="promoModalBaseAmount" type="number" step="0.01" placeholder="' + esc(tr('promotion_deposit_amount','Deposit amount')) + '">' : ''}
       <div class="promo-detail-actions">
-        <button class="promo-modal-claim-btn" id="promoModalClaimBtn" type="button" data-id="${esc(p.id)}">CLAIM NOW</button>
-        <button class="bonus-close-btn" id="promoModalCloseBtn" type="button">Close</button>
+        <button class="promo-modal-claim-btn" id="promoModalClaimBtn" type="button" data-id="${esc(p.id)}">${esc(tr('promotion_claim_now','CLAIM NOW'))}</button>
+        <button class="bonus-close-btn" id="promoModalCloseBtn" type="button">${esc(tr('promotion_close','Close'))}</button>
       </div>`;
 
     overlay.classList.add('show');
@@ -92,7 +96,7 @@
   function titleHtml(group){
     const img = group.titleImageUrl || group.titleImage;
     if(img) return `<img class="bonus-title-img" src="${esc(img)}" alt="${esc(group.title)}">`;
-    return `<h2 class="bonus-text-title">${esc(group.title || 'Promotion')}</h2>`;
+    return `<h2 class="bonus-text-title">${esc(group.title || tr('promotion_default_title','Promotion'))}</h2>`;
   }
 
 
@@ -151,7 +155,7 @@
     const img = p.bonusImageUrl || 'assets/images/bonus/bonus.png';
     const href = p.linkUrl || '#';
     const linkAttr = p.linkUrl ? ' data-external="1"' : '';
-    return `<a class="${cls.join(' ')}" href="${esc(href)}" data-id="${esc(p.id)}" data-title="${esc(p.name || 'Promotion')}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || 'Promotion')}"></a>`;
+    return `<a class="${cls.join(' ')}" href="${esc(href)}" data-id="${esc(p.id)}" data-title="${esc(p.name || tr('promotion_default_title','Promotion'))}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || tr('promotion_default_title','Promotion'))}"></a>`;
   }
 
   function latestLogicalRows(rows){
@@ -175,7 +179,7 @@
     latestLogicalRows(rows).forEach(p => {
       const key = String(p.bonusCategoryTitleId || 'uncategorized');
       if(!map.has(key)) map.set(key, {
-        title: p.bonusCategoryTitleName || 'Promotion Bonus',
+        title: p.bonusCategoryTitleName || tr('promotion_default_section_title','Promotion Bonus'),
         titleImageUrl: p.bonusCategoryTitleImageUrl || '',
         titleImage: p.bonusCategoryTitleImage || '',
         sortOrder: Number(p.bonusCategorySortOrder || 0),
@@ -195,7 +199,7 @@
     }
     const p = (window.__promotionRows || []).find(x => String(x.id) === String(id));
     const baseInput = document.getElementById('promoModalBaseAmount');
-    if(btn){ btn.disabled = true; btn.textContent = 'CLAIMING...'; }
+    if(btn){ btn.disabled = true; btn.textContent = tr('promotion_claiming','CLAIMING...'); }
     try{
       const r = await fetch(api().playerPromotionClaim, {
         method: 'POST',
@@ -203,17 +207,17 @@
         body: JSON.stringify({ id: Number(id), baseAmount: baseInput && baseInput.value ? Number(baseInput.value) : 0 })
       });
       const j = await r.json();
-      if(j.status === 'error') throw new Error(j.message || 'Claim failed');
+      if(j.status === 'error') throw new Error(j.message || tr('promotion_claim_failed','Claim failed'));
       const d = j.data || {};
-      const extra = (d.requiredTurnover && Number(d.requiredTurnover) > 0) ? (' | Required Turnover: ' + money(d.requiredTurnover)) : ((d.requiredRollover && Number(d.requiredRollover) > 0) ? (' | Required Rollover: ' + money(d.requiredRollover)) : '');
-      toast('Claim success. Bonus: ' + money(d.bonusAmount) + extra);
+      const extra = (d.requiredTurnover && Number(d.requiredTurnover) > 0) ? (' | ' + tr('promotion_required_turnover','Required Turnover:') + ' ' + money(d.requiredTurnover)) : ((d.requiredRollover && Number(d.requiredRollover) > 0) ? (' | ' + tr('promotion_required_rollover','Required Rollover:') + ' ' + money(d.requiredRollover)) : '');
+      toast(tr('promotion_claim_success','Claim success. Bonus:') + ' ' + money(d.bonusAmount) + extra);
       closeDetail();
       document.dispatchEvent(new CustomEvent('naga:promotion-access-changed'));
       if(window.MemberAuth && window.MemberAuth.refreshWalletBalance) window.MemberAuth.refreshWalletBalance();
     }catch(err){
-      toast(err.message || 'Claim failed');
+      toast(err.message || tr('promotion_claim_failed','Claim failed'));
     }finally{
-      if(btn){ btn.disabled = false; btn.textContent = 'CLAIM NOW'; }
+      if(btn){ btn.disabled = false; btn.textContent = tr('promotion_claim_now','CLAIM NOW'); }
     }
   }
 
@@ -233,7 +237,8 @@
     });
     try{
       const separator=api().playerPromotionList.includes('?')?'&':'?';
-      const r = await fetch(api().playerPromotionList+separator+'_='+Date.now(), {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
+      const query=new URLSearchParams({lang:currentLang(),_:String(Date.now())});
+      const r = await fetch(api().playerPromotionList+separator+query.toString(), {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
       const j = await r.json();
       if(thisLoad!==promotionLoadSequence) return;
       const rows = Array.isArray(j.data) ? j.data : [];
@@ -285,6 +290,7 @@
   if(overlay) overlay.addEventListener('click', e => { if(e.target === overlay) closeDetail(); });
 
   document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(); });
+  document.addEventListener('i18n:changed', function(){ load(); });
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
 
   window.addEventListener('resize', schedulePromotionGridHeightSync, {passive:true});
