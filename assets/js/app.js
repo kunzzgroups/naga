@@ -441,6 +441,7 @@ function renderCategories(){
     el.className=`cat ${String(cat.id)===String(activeCategoryId)?'active':''}`;
     el.type='button';
     el.dataset.id=cat.id;
+    el.dataset.categoryId=cat.id;
     const icon = getImageUrl(cat, 'assets/images/nav1.png', 'game-category');
     const catName = langText(cat, 'name', 'Category');
     el.innerHTML=`<img src="${icon}" class="cat-icon" alt="${catName}"><span>${catName}</span>`;
@@ -683,6 +684,7 @@ function buildProviderRail(rows){
     btn.type = 'button';
     btn.className = 'provider-rail-card' + (String(row.code) === String(activeProviderCode) ? ' active' : '');
     btn.dataset.providerCode = row.code;
+    if(activeCategoryId != null) btn.dataset.categoryId = activeCategoryId;
     const name = providerNameOf(row.provider);
     const imageUrl = providerImageOf(row.provider);
     btn.innerHTML = imageUrl
@@ -793,6 +795,7 @@ function renderMixedCategoryLanding(games){
       btn.type = 'button';
       btn.className = 'category-provider-card';
       btn.dataset.providerCode = row.code;
+      if(activeCategoryId != null) btn.dataset.categoryId = activeCategoryId;
         const image = providerBrandImageOf(row.provider);
       btn.innerHTML = image
         ? `<img src="${image}" alt="${providerNameOf(row.provider)}" loading="lazy">`
@@ -962,6 +965,11 @@ function createGameCard(item, renderIndex = 0){
   if(launchProviderCode) card.dataset.providerCode = launchProviderCode;
   if(launchGameCode) card.dataset.gameCode = launchGameCode;
   if(gameName) card.dataset.gameName = gameName;
+  try{
+    const ids = gameCategoryIdsOf(item);
+    if(ids && ids.length) card.dataset.categoryIds = ids.join(',');
+    else if(item.categoryId || item.category_id) card.dataset.categoryIds = String(item.categoryId || item.category_id);
+  }catch(_){ if(item.categoryId || item.category_id) card.dataset.categoryIds = String(item.categoryId || item.category_id); }
 
   card.innerHTML=`
     <div class="game-card-img-wrap game-image-loading">

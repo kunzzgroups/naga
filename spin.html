@@ -1,12 +1,47 @@
 <!doctype html>
 <html lang="en" class="page-loading">
 <head>
+  <script id="naga-animation-settings-bootstrap">
+  (function(){
+    try{
+      document.documentElement.classList.add('naga-animation-preflight');
+      var base='https://bo.titanxgaming.com';
+      var url=base+'/api/public/animation-settings';
+      var store=window.__NAGA_EARLY_API__=window.__NAGA_EARLY_API__||{};
+      var key=new URL(url,location.href).toString();
+      if(!store[key]){
+        var controller=typeof AbortController!=='undefined'?new AbortController():null;
+        var timer=controller?setTimeout(function(){try{controller.abort()}catch(_e){}},1800):0;
+        store[key]=fetch(key,{cache:'no-store',credentials:'same-origin',signal:controller?controller.signal:undefined})
+          .then(function(res){if(!res.ok)throw new Error('API error: '+key);return res.json();})
+          .finally(function(){if(timer)clearTimeout(timer);});
+      }
+    }catch(e){}
+  })();
+  </script>
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>NAGA - Spin 2</title>
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.98">
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.99">
   <link rel="stylesheet" href="assets/css/spin2.css?v=1.0.3">
+  <link href="assets/css/animation-effects.css?v=1.0.0" rel="stylesheet">
+  <link href="assets/custom/animation-effects.custom.css?v=20260813-1" rel="stylesheet">
+<script id="page-loader-watchdog">
+(function(){
+  var root=document.documentElement,done=false;
+  function reveal(){
+    if(done)return;done=true;
+    root.classList.remove('page-loading','page-leaving');
+    root.classList.add('page-loaded');
+  }
+  window.__NAGA_FORCE_REVEAL__=reveal;
+  // Hard safety: presentation/loading APIs must never be able to hold the site forever.
+  window.__NAGA_REVEAL_TIMER__=setTimeout(reveal,4000);
+  window.addEventListener('pageshow',function(e){if(e&&e.persisted)reveal();},{once:true});
+})();
+</script>
 </head>
 <body class="spin2-page member-logged-in">
   <header class="spin2-top">
@@ -82,6 +117,8 @@
 <script src="assets/js/config.js?v=1.0.26"></script>
   <script src="assets/js/member-auth.js?v=1.0.14"></script>
   <script src="assets/js/spin2.js?v=1.0.2"></script>
-  <script src="assets/js/page-loader.js?v=1.0.7"></script>
+  <script src="assets/js/page-loader.js?v=1.0.8"></script>
+<script src="assets/js/animation-effects.js?v=1.0.0"></script>
+<script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
 </body>
 </html>

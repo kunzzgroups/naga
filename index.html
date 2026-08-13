@@ -1,8 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>document.documentElement.classList.add('page-loading');try{if(localStorage.getItem('naga_home_bonus_enabled')==='0')document.documentElement.classList.add('home-bonus-disabled');}catch(e){}</script>
-  <style id="page-loader-critical">html{background:#070707}html.page-loading,html.page-loading body{overflow:hidden!important}html.page-loading body{opacity:0}html.page-loading:before{content:"Loading games...";position:fixed;inset:0;z-index:2147483646;display:flex;align-items:calc(50% + 52px);justify-content:center;background:#070707;color:#fff;font:600 14px/1.2 Arial,sans-serif;letter-spacing:.2px}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid rgba(255,255,255,.18);border-top-color:#35f486;border-radius:50%;opacity:0;animation:pageLoaderSpin .65s linear .24s infinite}@keyframes pageLoaderSpin{0%{opacity:0;transform:rotate(0)}1%{opacity:1}100%{opacity:1;transform:rotate(360deg)}}</style>
+  <script>document.documentElement.classList.add('page-loading','naga-animation-preflight');try{if(localStorage.getItem('naga_home_bonus_enabled')==='0')document.documentElement.classList.add('home-bonus-disabled');}catch(e){}</script>
+  <style id="page-loader-critical">html{background:#070707}html.page-loading{overflow:hidden!important}html.page-loading body{opacity:1}html.page-loading:before{content:"Loading games...";position:fixed;inset:0;z-index:2147483646;display:flex;align-items:calc(50% + 52px);justify-content:center;background:#070707;color:#fff;font:600 14px/1.2 Arial,sans-serif;letter-spacing:.2px;pointer-events:none;animation:pageLoaderOverlayFailsafe 4.2s steps(1,end) forwards}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid rgba(255,255,255,.18);border-top-color:#35f486;border-radius:50%;opacity:0;pointer-events:none;animation:pageLoaderSpin .65s linear .24s infinite,pageLoaderOverlayFailsafe 4.2s steps(1,end) forwards}@keyframes pageLoaderSpin{0%{opacity:0;transform:rotate(0)}1%{opacity:1}100%{opacity:1;transform:rotate(360deg)}}@keyframes pageLoaderOverlayFailsafe{0%,99%{visibility:visible}100%{visibility:hidden}}</style>
+<script id="page-loader-watchdog">
+(function(){
+  var root=document.documentElement,done=false;
+  function reveal(){
+    if(done)return;done=true;
+    root.classList.remove('page-loading','page-leaving');
+    root.classList.add('page-loaded');
+  }
+  window.__NAGA_FORCE_REVEAL__=reveal;
+  // Hard safety: presentation/loading APIs must never be able to hold the site forever.
+  window.__NAGA_REVEAL_TIMER__=setTimeout(reveal,4000);
+  window.addEventListener('pageshow',function(e){if(e&&e.persisted)reveal();},{once:true});
+})();
+</script>
+  <script id="naga-animation-settings-bootstrap">
+  (function(){
+    try{
+      document.documentElement.classList.add('naga-animation-preflight');
+      var base='https://bo.titanxgaming.com';
+      var url=base+'/api/public/animation-settings';
+      var store=window.__NAGA_EARLY_API__=window.__NAGA_EARLY_API__||{};
+      var key=new URL(url,location.href).toString();
+      if(!store[key]){
+        var controller=typeof AbortController!=='undefined'?new AbortController():null;
+        var timer=controller?setTimeout(function(){try{controller.abort()}catch(_e){}},1800):0;
+        store[key]=fetch(key,{cache:'no-store',credentials:'same-origin',signal:controller?controller.signal:undefined})
+          .then(function(res){if(!res.ok)throw new Error('API error: '+key);return res.json();})
+          .finally(function(){if(timer)clearTimeout(timer);});
+      }
+    }catch(e){}
+  })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TitanXGaming</title>
@@ -22,7 +54,7 @@
     }catch(e){}
   })();
   </script>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.109" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.99" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -31,12 +63,14 @@
   <style>.promo-static-fallback{display:none!important}</style>
   <link rel="stylesheet" href="assets/css/ad-popup.css?v=1.0.0">
   <link rel="stylesheet" href="assets/css/marquee.css?v=1.0.1">
+  <link href="assets/css/animation-effects.css?v=1.0.0" rel="stylesheet">
+  <link href="assets/custom/animation-effects.custom.css?v=20260813-1" rel="stylesheet">
 </head>
 <body class="home-page">
   <div data-layout-section="home"></div>
   <header class="top-header">
     <div data-layout-section="home-header"></div>
-    <div class="logo-box"><img class="site-logo" src="assets/custom/images/logo.png"/ decoding="async" loading="eager" fetchpriority="high"></div>
+    <div class="logo-box"><img class="site-logo" src="assets/custom/images/logo.png" decoding="async" loading="eager" fetchpriority="high" /></div>
   </header>
 
   <section class="main-layout">
@@ -84,7 +118,7 @@
     </main>
 
     <section class="mobile-bottom-area">
-      <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" / decoding="async" loading="lazy">
+      <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" decoding="async" loading="lazy" />
 
       <div class="action-grid">
         <button class="image-action-btn share-trigger" type="button"><img class="copy-image" src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy"></button>
@@ -261,7 +295,7 @@
   <script src="assets/js/social-links.js?v=1.0.4"></script>
   <script src="assets/js/frontend-display.js?v=1.0.1"></script>
   <script src="assets/js/provider-launch.js?v=1.0.17"></script>
-  <script src="assets/js/app.js?v=1.0.59"></script>
+  <script src="assets/js/app.js?v=1.0.60"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>
   <script src="assets/js/bonus.js?v=1.0.10"></script>
@@ -301,7 +335,7 @@
   })();
   </script>
 
-  <script src="assets/js/layout-section-loader.js?v=1.1.12"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.14"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.19"></script>
   <script src="assets/js/member-auth.js?v=1.0.14"></script>
   <script src="assets/js/bonus-progress.js?v=1.0.4"></script>
@@ -311,7 +345,9 @@
   <script src="assets/js/firebase-config.js?v=1.0.0"></script>
   <script src="assets/js/livechat-widget.js?v=1.0.4"></script>
   <script src="assets/js/livechat-global-notification.js?v=1.0.1"></script>
-  <script src="assets/js/page-loader.js?v=1.0.7"></script>
+  <script src="assets/js/page-loader.js?v=1.0.8"></script>
 <script src="assets/js/marquee.js?v=1.0.1"></script>
+<script src="assets/js/animation-effects.js?v=1.0.0"></script>
+<script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
 </body>
 </html>

@@ -183,6 +183,60 @@
     document.head.appendChild(safetyStyle);
   }
 
+  // BO sidebar HTML is stored as one language-neutral template. It may contain
+  // English fallback text together with data-i18n attributes. Because the Layout
+  // Section request and the language JSON load asynchronously, the sidebar can be
+  // replaced *after* I18N has already translated the page. In that race the raw
+  // English fallback used to remain visible until the user changed language again.
+  // Translate only the freshly inserted sidebar subtree without dispatching another
+  // global i18n:changed event (which would unnecessarily reload language-aware data).
+  function translateLayoutTarget(target, sectionKey) {
+    if (!target || sectionKey !== 'frontend-sidebar') return;
+    if (!window.I18N || typeof window.I18N.t !== 'function' || !window.I18N.dict) return;
+
+    function translated(key) {
+      if (!key) return '';
+      try {
+        const value = window.I18N.t(key);
+        return value == null ? '' : String(value);
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function nodes(selector) {
+      const list = [];
+      if (target.matches && target.matches(selector)) list.push(target);
+      if (target.querySelectorAll) list.push.apply(list, target.querySelectorAll(selector));
+      return list;
+    }
+
+    nodes('[data-i18n]').forEach(function (el) {
+      const value = translated(el.getAttribute('data-i18n'));
+      if (value) el.textContent = value;
+    });
+    nodes('[data-i18n-html]').forEach(function (el) {
+      const value = translated(el.getAttribute('data-i18n-html'));
+      if (value) el.innerHTML = value;
+    });
+    nodes('[data-i18n-placeholder]').forEach(function (el) {
+      const value = translated(el.getAttribute('data-i18n-placeholder'));
+      if (value) el.setAttribute('placeholder', value);
+    });
+    nodes('[data-i18n-alt]').forEach(function (el) {
+      const value = translated(el.getAttribute('data-i18n-alt'));
+      if (value) el.setAttribute('alt', value);
+    });
+    nodes('[data-i18n-title]').forEach(function (el) {
+      const value = translated(el.getAttribute('data-i18n-title'));
+      if (value) el.setAttribute('title', value);
+    });
+    nodes('[data-i18n-aria-label]').forEach(function (el) {
+      const value = translated(el.getAttribute('data-i18n-aria-label'));
+      if (value) el.setAttribute('aria-label', value);
+    });
+  }
+
   function applyCss(sectionKey, css) {
     let style = document.querySelector('style[data-layout-section-css="' + sectionKey + '"]');
     if (!css.trim()) {
@@ -330,6 +384,10 @@
     if (target.innerHTML !== html) target.innerHTML = html;
     target.setAttribute('data-layout-custom-applied', sectionKey);
     keepSectionAuthoritative(target, sectionKey, html);
+    // Important: a fresh/cached BO sidebar can arrive after lang.js has already
+    // translated the page. Re-translate this subtree immediately so its visible
+    // text always follows the persisted language instead of its English fallback.
+    translateLayoutTarget(target, sectionKey);
     return true;
   }
 
@@ -467,6 +525,12 @@
     document.dispatchEvent(new CustomEvent('naga:layout-sections-loaded'));
   }
 
+
+  document.addEventListener('i18n:changed', function () {
+    targetsFor('frontend-sidebar').forEach(function (target) {
+      translateLayoutTarget(target, 'frontend-sidebar');
+    });
+  });
 
   document.addEventListener('naga:custom-assets-ready', function () {
     customAssetsReady = true;
