@@ -13995,3 +13995,13 @@ body.bank-detail-page .form-status.success{color:#70f3aa;}
     top:var(--slot-category-height,58px)!important;
   }
 }
+
+/* VIP 2.0 - configurable tier sub-level progression */
+.vip-tier-progress small.vip-tier-meter-label{display:block;margin-top:7px;color:#98a4ba;font-size:11px;font-weight:800}
+.vip-reward-row h3 small{display:block;margin-top:4px;color:#9ca6b8;font-size:11px;font-style:normal;font-weight:800}
+.vip-reward-box small{margin-top:6px;color:#c4cad7;font-size:11px;line-height:1.35;max-width:92%}
+.vip-reward-box em{margin-top:5px;color:#ffca85;font-size:10px;font-style:normal;font-weight:900}
+.vip-reward-row.vip-level-current{border-color:rgba(255,190,112,.34)!important;box-shadow:0 0 0 1px rgba(255,190,112,.08),0 12px 28px rgba(0,0,0,.18)}
+.vip-reward-row.vip-level-unlocked .vip-reward-box{background:linear-gradient(180deg,rgba(34,71,47,.42),rgba(31,35,40,.94))}
+.vip-reward-row.vip-level-locked{opacity:.72}
+@media(min-width:900px){.vip-panel[data-vip-panel="level"].active{grid-template-columns:320px 1fr!important}.vip-level-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}.vip-reward-box{align-items:center!important;padding:18px!important;text-align:center}.vip-reward-row h3 small{text-align:left}}
