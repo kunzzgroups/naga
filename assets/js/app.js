@@ -1181,10 +1181,12 @@ function renderGames(list){
 const API_MEMORY_CACHE = new Map();
 const API_IN_FLIGHT = new Map();
 const API_CACHE_TTL_MS = 3 * 60 * 1000;
-const GAME_CATALOG_CACHE_VERSION = 'v12-public-catalog';
+const GAME_CATALOG_CACHE_VERSION = 'v13-language-aware-catalog';
 const GAME_CATALOG_FRESH_MS = 2 * 60 * 1000;
 const GAME_CATALOG_MAX_STALE_MS = 24 * 60 * 60 * 1000;
-const GAME_CATALOG_KEY = 'naga_game_catalog_' + GAME_CATALOG_CACHE_VERSION + ':' + currentLangCode();
+function gameCatalogStorageKey(){
+  return 'naga_game_catalog_' + GAME_CATALOG_CACHE_VERSION + ':' + String(currentLangCode() || 'en').toLowerCase();
+}
 const SLOT_IMAGE_PRELOAD_HOLD = [];
 const EARLY_API_REQUESTS = window.__NAGA_EARLY_API__ || {};
 const BOOTSTRAP_CATALOG = window.__NAGA_CATALOG_BOOTSTRAP__ || null;
@@ -1291,10 +1293,10 @@ function normalizeStoredCatalog(value){
 
 function readGameCatalogCache(){
   try{
-    const cached = normalizeStoredCatalog(JSON.parse(localStorage.getItem(GAME_CATALOG_KEY) || 'null'));
+    const cached = normalizeStoredCatalog(JSON.parse(localStorage.getItem(gameCatalogStorageKey()) || 'null'));
     if(!cached) return null;
     if(!cached.savedAt || Date.now() - cached.savedAt > GAME_CATALOG_MAX_STALE_MS){
-      localStorage.removeItem(GAME_CATALOG_KEY);
+      localStorage.removeItem(gameCatalogStorageKey());
       return null;
     }
     return cached;
@@ -1305,7 +1307,7 @@ function readGameCatalogCache(){
 
 function writeGameCatalogCache(catalog){
   try{
-    localStorage.setItem(GAME_CATALOG_KEY, JSON.stringify({
+    localStorage.setItem(gameCatalogStorageKey(), JSON.stringify({
       savedAt: Date.now(),
       catalog: {
         serverVersion: String(catalog.serverVersion || catalog.version || ''),
@@ -1762,15 +1764,48 @@ if(subTabRow){
 }
 
 loadCategories();
+let languageCatalogReloadSequence = 0;
 document.addEventListener('i18n:changed', () => {
-  renderCategories();
-  renderSubTabs();
-  // Do not rebuild the whole game grid after language initialization. Rebuilding
-  // caused a second full-screen flash on slower live servers. Update only the
-  // translated PLAY labels in the already-rendered cards.
-  document.querySelectorAll('.provider-launch-btn').forEach(btn => {
-    btn.textContent = tr('play','PLAY');
+  const reloadSequence = ++languageCatalogReloadSequence;
+  const previousCategoryId = activeCategoryId;
+  const previousSubCategoryId = activeSubCategoryId;
+  const previousProviderCode = activeProviderCode;
+
+  // Category/game images and names are BO-created content. They are localized by
+  // /api/public/game-catalog?lang=XX, so re-rendering the old in-memory catalogue
+  // is not enough after a language switch. Fetch the catalogue for the newly
+  // selected language and repaint it without losing the user's current selection.
+  fetchFullGameCatalog(true).then(catalog => {
+    if(reloadSequence !== languageCatalogReloadSequence) return;
+    applyGameCatalog(catalog);
+
+    if(previousCategoryId && categories.some(item => String(item.id) === String(previousCategoryId))){
+      activeCategoryId = previousCategoryId;
+    }else{
+      activeCategoryId = pickDefaultCategoryId(categories);
+    }
+
+    activeProviderCode = previousProviderCode;
+    subCategories = filteredSubCategoriesFromCatalog();
+    if(previousSubCategoryId && subCategories.some(item => String(item.id) === String(previousSubCategoryId))){
+      activeSubCategoryId = previousSubCategoryId;
+    }else{
+      activeSubCategoryId = pickDefaultSubCategoryId(subCategories);
+    }
+
+    renderCategories();
+    renderSubTabs();
+    renderCatalogState();
+  }).catch(err => {
+    console.warn('Unable to reload translated game catalogue:', err.message);
+    // Keep the current catalogue usable even if the language-specific refresh fails.
+    renderCategories();
+    renderSubTabs();
+    document.querySelectorAll('.provider-launch-btn').forEach(btn => {
+      btn.textContent = tr('play','PLAY');
+    });
   });
+
   if(sliderBannerCache.length){
     document.querySelectorAll('.side-slider').forEach(slider => renderSliderBanners(slider, sliderBannerCache));
     document.querySelectorAll('.side-slider').forEach(initSlider);
