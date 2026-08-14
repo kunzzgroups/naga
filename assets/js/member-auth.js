@@ -85,6 +85,22 @@
     return isNaN(n) ? '-' : 'MYR ' + n.toFixed(2);
   }
 
+  function getStoredBalance(){
+    try{
+      const raw = localStorage.getItem('member_main_wallet_balance');
+      if(raw === null || raw === '') return null;
+      const n = Number(raw);
+      return isNaN(n) ? null : n;
+    }catch(e){ return null; }
+  }
+
+  async function refreshExpiredSession(){
+    if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshMemberToken === 'function') {
+      return window.NAGA_SITE_SHELL.refreshMemberToken();
+    }
+    return {ok:false, terminal:false};
+  }
+
   function setMainWalletBalance(value){
     const text = formatMoney(value);
     document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){
@@ -120,7 +136,7 @@
     return String(url) + separator + '_wallet_ts=' + Date.now();
   }
 
-  async function loadMainWalletBalance(){
+  async function loadMainWalletBalance(retried){
     const token = getToken();
     if(!token){
       setMainWalletBalance(null);
@@ -137,29 +153,47 @@
     });
     const json = await res.json().catch(() => ({}));
 
+    const unauthorized = res.status === 401 || String(json.message || '').toLowerCase() === 'unauthorized';
+    if(unauthorized && !retried){
+      const refreshed = await refreshExpiredSession();
+      if(refreshed && refreshed.ok) return loadMainWalletBalance(true);
+      if(refreshed && refreshed.terminal) clearMember();
+      return getStoredBalance();
+    }
+
     if(!res.ok || json.status === 'error'){
       throw new Error(json.message || 'Unable to load main wallet balance.');
     }
 
     const balance = extractBalance(json);
-    setMainWalletBalance(balance);
-    if(balance === null) localStorage.removeItem('member_main_wallet_balance');
-    else localStorage.setItem('member_main_wallet_balance', String(balance));
+    if(balance !== null){
+      setMainWalletBalance(balance);
+      localStorage.setItem('member_main_wallet_balance', String(balance));
+    }
     return balance;
   }
 
-  async function loadMemberFromApi(){
+  async function loadMemberFromApi(retried){
     const token = getToken();
     if(!token) return null;
 
-    const res = await fetch(API_BASE + '/api/auth/member/me', {
-      headers: {'Authorization': 'Bearer ' + token}
+    const res = await fetch(API_BASE + '/api/auth/member/me?_member_ts=' + Date.now(), {
+      cache: 'no-store',
+      headers: {'Authorization': 'Bearer ' + token, 'Cache-Control':'no-cache, no-store, must-revalidate', 'Pragma':'no-cache'}
     });
     const json = await res.json().catch(() => ({}));
+    const unauthorized = res.status === 401 || String(json.message || '').toLowerCase() === 'unauthorized';
+
+    if(unauthorized && !retried){
+      const refreshed = await refreshExpiredSession();
+      if(refreshed && refreshed.ok) return loadMemberFromApi(true);
+      if(refreshed && refreshed.terminal){ clearMember(); return null; }
+      throw new Error('Connection unavailable while restoring member session.');
+    }
 
     if(!res.ok || json.status === 'error' || !json.data){
-      clearMember();
-      return null;
+      // Non-auth API/network problems must not throw away the remembered login.
+      throw new Error(json.message || 'Unable to restore member session.');
     }
 
     saveMember(json.data);
@@ -180,17 +214,18 @@
     const stored = getStoredMember();
     if(stored && Object.keys(stored).length){
       renderLoggedIn(stored);
-      // Keep the current on-page wallet text while fresh profile/balance data loads.
-      // The HTML starts at '-' so no cached amount is painted on first load.
     }
+    const cachedBalance = getStoredBalance();
+    if(cachedBalance !== null) setMainWalletBalance(cachedBalance);
 
     try{
       const latest = await loadMemberFromApi();
       if(latest){
         renderLoggedIn(latest);
         try{ await loadMainWalletBalance(); }catch(balanceErr){
-          localStorage.removeItem('member_main_wallet_balance');
-          // Keep the last balance already rendered on this page if a refresh fails.
+          // Keep the last confirmed balance while the connection/API recovers.
+          const fallback = getStoredBalance();
+          if(fallback !== null) setMainWalletBalance(fallback);
         }
       }
       else renderLoggedOut();

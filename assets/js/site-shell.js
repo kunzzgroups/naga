@@ -25,6 +25,70 @@
     try{ localStorage.removeItem('member_main_wallet_balance'); }catch(e){}
   }
 
+  function getStoredBalance(){
+    try{
+      var raw = localStorage.getItem('member_main_wallet_balance');
+      if(raw === null || raw === '') return null;
+      var value = Number(raw);
+      return isNaN(value) ? null : value;
+    }catch(e){ return null; }
+  }
+
+  function rememberBalance(value){
+    try{
+      if(value === null || value === undefined || isNaN(Number(value))) localStorage.removeItem('member_main_wallet_balance');
+      else localStorage.setItem('member_main_wallet_balance', String(Number(value)));
+    }catch(e){}
+  }
+
+  var refreshTokenPromise = null;
+  function refreshMemberToken(){
+    var oldToken = getToken();
+    if(!oldToken) return Promise.resolve({ok:false, terminal:true});
+    if(refreshTokenPromise) return refreshTokenPromise;
+
+    var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
+    var base = String((cfg && cfg.baseUrl) || 'https://bo.titanxgaming.com').replace(/\/+$/, '');
+    refreshTokenPromise = fetch(base + '/api/auth/member/refresh', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Authorization': 'Bearer ' + oldToken,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(json){ return {res:res, json:json}; });
+    }).then(function(pair){
+      var token = pair.json && pair.json.token;
+      if(pair.res.ok && pair.json.status !== 'error' && token){
+        try{
+          localStorage.setItem('member_token', token);
+          if(pair.json.data && typeof pair.json.data === 'object'){
+            var current = {};
+            try{ current = JSON.parse(localStorage.getItem('member_info') || '{}') || {}; }catch(e){}
+            localStorage.setItem('member_info', JSON.stringify(Object.assign({}, current, pair.json.data)));
+          }
+        }catch(e){}
+        refreshHeaderAuth();
+        try{ document.dispatchEvent(new CustomEvent('naga:member-session-refreshed')); }catch(e){}
+        return {ok:true, terminal:false};
+      }
+      return {ok:false, terminal:true};
+    }).catch(function(){
+      // Laptop wake-up can briefly have no network. Do not destroy a locally
+      // remembered session just because the first request after resume failed.
+      return {ok:false, terminal:false};
+    }).then(function(result){
+      refreshTokenPromise = null;
+      return result;
+    }, function(err){
+      refreshTokenPromise = null;
+      throw err;
+    });
+    return refreshTokenPromise;
+  }
+
   function noCacheUrl(url){
     var separator = String(url).indexOf('?') >= 0 ? '&' : '?';
     return String(url) + separator + '_wallet_ts=' + Date.now();
@@ -55,7 +119,7 @@
     return api.playerMainWalletBalance || (String(base).replace(/\/+$/, '') + '/api/member/wallet/balance');
   }
 
-  function refreshShellBalance(){
+  function refreshShellBalance(retried){
     if(!getToken()){
       setAllWalletText('-');
       return Promise.resolve(null);
@@ -66,28 +130,41 @@
     })
     .then(function(res){ return res.json().catch(function(){ return {}; }).then(function(json){ return {res:res, json:json}; }); })
     .then(function(pair){
+      var unauthorized = pair.res.status === 401 || String(pair.json && pair.json.message || '').toLowerCase() === 'unauthorized';
+      if(unauthorized && !retried){
+        return refreshMemberToken().then(function(refreshResult){
+          if(refreshResult.ok) return refreshShellBalance(true);
+          if(refreshResult.terminal){
+            doShellLogout();
+            return null;
+          }
+          return getStoredBalance();
+        });
+      }
       if(!pair.res.ok || pair.json.status === 'error') throw new Error(pair.json.message || 'Unable to load wallet balance');
       var balance = extractBalance(pair.json);
-      try{ if(balance === null) localStorage.removeItem('member_main_wallet_balance'); else localStorage.setItem('member_main_wallet_balance', String(balance)); }catch(e){}
-      setAllWalletText(balance);
+      if(balance !== null){
+        rememberBalance(balance);
+        setAllWalletText(balance);
+      }
       return balance;
     })
     .catch(function(){
-      // Keep an already-rendered balance visible on a transient refresh failure.
-      // On first load the HTML placeholder is already '-', so no stale/fake value is introduced.
-      invalidateStoredBalance();
-      return null;
+      // Preserve the last confirmed amount during temporary Wi-Fi/network/API
+      // recovery after laptop sleep instead of replacing it with "-".
+      var cached = getStoredBalance();
+      if(cached !== null) setAllWalletText(cached);
+      return cached;
     });
   }
 
   function scheduleBalanceRefresh(){
-    // Never paint a wallet amount saved by a previous browser session.
-    // Always request the current amount from the API before showing a balance.
-    invalidateStoredBalance();
-    // Do not blank a valid amount while the fresh request is in flight.
-    // Static HTML placeholders are '-' on first load.
-    setTimeout(refreshShellBalance, 0);
-    window.addEventListener('load', function(){ setTimeout(refreshShellBalance, 80); });
+    // Paint the last API-confirmed balance immediately, then refresh silently.
+    // This avoids a "-" flash while a laptop is reconnecting after sleep.
+    var cached = getStoredBalance();
+    if(getToken() && cached !== null) setAllWalletText(cached);
+    setTimeout(function(){ refreshShellBalance(); }, 0);
+    window.addEventListener('load', function(){ setTimeout(function(){ refreshShellBalance(); }, 80); });
     window.addEventListener('pageshow', function(){ refreshShellBalance(); });
     window.addEventListener('focus', function(){ refreshShellBalance(); });
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshShellBalance(); });
@@ -372,8 +449,10 @@
     if(panel) panel.setAttribute('data-layout-section', 'frontend-sidebar');
     refreshHeaderAuth();
     updateSideLangLabel();
-    invalidateStoredBalance();
-    // Re-applying BO header HTML must not make wallet amount flash to '-'.
+    var cached = getStoredBalance();
+    if(getToken() && cached !== null) setAllWalletText(cached);
+    // Re-applying BO header HTML keeps the last confirmed amount while the
+    // current balance is refreshed in the background.
     refreshShellBalance();
     if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
   }
@@ -394,5 +473,5 @@
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
-  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell };
+  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, refreshMemberToken: refreshMemberToken, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell };
 })();

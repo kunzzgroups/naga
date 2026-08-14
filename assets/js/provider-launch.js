@@ -13,6 +13,10 @@
   let providerSettlementPromise = null;
   let activeProviderTab = null;
   let providerLaunchInProgress = false;
+  // Session IDs currently being explicitly settled. Heartbeat must stop immediately
+  // when Exit begins; an already in-flight request is also harmless because Spring
+  // Boot now conditionally updates heartbeat only while DB status is OPEN.
+  const providerClosingSessionIds = new Set();
   const PROVIDER_PAGE_INSTANCE_ID = 'provider-page-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   const PENDING_LAUNCH_LOCK_KEY = 'naga_provider_launch_pending_lock';
   const PENDING_LAUNCH_LOCK_TTL_MS = 45000;
@@ -609,6 +613,7 @@
   async function sendProviderHeartbeat(sessionId){
     const token = getToken();
     if(!token || !sessionId) return null;
+    if(providerClosingSessionIds.has(String(sessionId))) return null;
     const res = await fetch(HEARTBEAT_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -826,17 +831,33 @@
       transferBackAll: opt.transferBackAll !== false
     };
     if(opt.amount != null) payload.amount = Number(opt.amount);
-    const res = await fetch(EXIT_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json().catch(function(){ return {}; });
-    if(!res.ok || json.status === 'error') throw new Error(json.message || json.error || 'Exit provider failed.');
+
+    // Stop provider heartbeat BEFORE starting settlement, not after the HTTP response.
+    // This closes the browser-side race window that previously allowed a late heartbeat
+    // to overlap LOGOUT/BALANCE/WITHDRAW and keep the local session looking active.
     stopProviderMonitor();
+    if(payload.sessionId != null) providerClosingSessionIds.add(String(payload.sessionId));
+
+    let res, json;
+    try{
+      res = await fetch(EXIT_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      json = await res.json().catch(function(){ return {}; });
+      if(!res.ok || json.status === 'error') throw new Error(json.message || json.error || 'Exit provider failed.');
+    }catch(e){
+      // Allow an explicit retry if settlement really failed. The backend remains the
+      // authority and will still reject heartbeat updates once the row is CLOSED.
+      if(payload.sessionId != null) providerClosingSessionIds.delete(String(payload.sessionId));
+      throw e;
+    }
+
     clearStoredProviderSession();
     releasePendingLaunchLock();
     providerLaunchInProgress = false;
+    if(payload.sessionId != null) providerClosingSessionIds.delete(String(payload.sessionId));
     syncLaunchAvailabilityUi();
 
     // The exit response now contains the already-committed main wallet balance.
