@@ -191,7 +191,7 @@
   // Translate only the freshly inserted sidebar subtree without dispatching another
   // global i18n:changed event (which would unnecessarily reload language-aware data).
   function translateLayoutTarget(target, sectionKey) {
-    if (!target || sectionKey !== 'frontend-sidebar') return;
+    if (!target || ['frontend-sidebar','login-page','register-page'].indexOf(sectionKey) < 0) return;
     if (!window.I18N || typeof window.I18N.t !== 'function' || !window.I18N.dict) return;
 
     function translated(key) {
@@ -335,6 +335,37 @@
       message.setAttribute('aria-live', 'polite');
     });
 
+    // BO Layout can replace the complete Login/Register markup. Re-attach
+    // semantic i18n keys to the known auth controls so BO styling/layout remains
+    // authoritative while visible wording still follows the frontend language.
+    function setI18n(selector, attr, key) {
+      const el = template.content.querySelector(selector);
+      if (el && !el.hasAttribute(attr)) el.setAttribute(attr, key);
+    }
+
+    template.content.querySelectorAll('[data-login-tab]').forEach(function (el) {
+      const tab = (el.getAttribute('data-login-tab') || '').toLowerCase();
+      if (tab === 'login' || tab === 'register') el.setAttribute('data-i18n', tab);
+    });
+
+    setI18n('#loginForm input[autocomplete="username"], #loginForm input[type="text"]', 'data-i18n-placeholder', 'username');
+    setI18n('#loginForm input[autocomplete="current-password"], #loginForm input[type="password"]', 'data-i18n-placeholder', 'password');
+    setI18n('#loginForm .forgot-link', 'data-i18n', 'forgot_password');
+    setI18n('#loginForm .submit-login, #loginForm button[type="submit"]', 'data-i18n', 'login');
+
+    setI18n('#registerForm input[autocomplete="name"]', 'data-i18n-placeholder', 'full_name');
+    setI18n('#registerForm input[autocomplete="tel"], #registerForm input[type="phone"], #registerForm input[type="tel"]', 'data-i18n-placeholder', 'mobile_no');
+    setI18n('#registerForm input[autocomplete="new-password"], #registerForm input[type="password"]', 'data-i18n-placeholder', 'password_6_20');
+    setI18n('#registerForm input[autocomplete="off"]', 'data-i18n-placeholder', 'referrer_code_optional');
+    const registerTextInputs = Array.from(template.content.querySelectorAll('#registerForm input[type="text"]'));
+    registerTextInputs.forEach(function (el) {
+      if (el.hasAttribute('data-i18n-placeholder')) return;
+      const ph = (el.getAttribute('placeholder') || '').toLowerCase();
+      if (ph.indexOf('verification') >= 0 || ph.indexOf('code') >= 0) el.setAttribute('data-i18n-placeholder', 'verification_code');
+    });
+    setI18n('#registerForm .verify-btn', 'data-i18n', 'get_code');
+    setI18n('#registerForm .submit-login, #registerForm button[type="submit"]', 'data-i18n', 'register');
+
     return template.innerHTML;
   }
 
@@ -350,6 +381,15 @@
     });
   }
 
+  function isAuthI18nMutation(mutation) {
+    if (!mutation) return false;
+    const el = mutation.target && mutation.target.nodeType === 1
+      ? mutation.target
+      : (mutation.target && mutation.target.parentElement);
+    if (!el) return false;
+    return !!(el.closest && el.closest('[data-i18n],[data-i18n-html],[data-i18n-placeholder],[data-i18n-alt],[data-i18n-title],[data-i18n-aria-label]'));
+  }
+
   function keepSectionAuthoritative(target, sectionKey, html) {
     if (!target || !isAuthoritativePageSection(sectionKey) || !html.trim()) return;
     authoritativeSections.set(sectionKey, html);
@@ -361,7 +401,9 @@
     let restoring = false;
     const observer = new MutationObserver(function (mutations) {
       if (restoring) return;
-      if (mutations && mutations.length && mutations.every(isAuthMessageOnlyMutation)) return;
+      if (mutations && mutations.length && mutations.every(function (mutation) {
+        return isAuthMessageOnlyMutation(mutation) || isAuthI18nMutation(mutation);
+      })) return;
       const expected = authoritativeSections.get(sectionKey);
       if (!expected || target.innerHTML === expected) return;
       restoring = true;
@@ -527,8 +569,10 @@
 
 
   document.addEventListener('i18n:changed', function () {
-    targetsFor('frontend-sidebar').forEach(function (target) {
-      translateLayoutTarget(target, 'frontend-sidebar');
+    ['frontend-sidebar','login-page','register-page'].forEach(function (sectionKey) {
+      targetsFor(sectionKey).forEach(function (target) {
+        translateLayoutTarget(target, sectionKey);
+      });
     });
   });
 

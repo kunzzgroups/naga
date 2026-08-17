@@ -10,6 +10,7 @@
   const note = document.getElementById('bankFirstSetupNote');
   const back = document.getElementById('bankBackLink');
   const token = () => localStorage.getItem('member_token') || '';
+  function t(key, fallback){ return (window.I18N && typeof window.I18N.t==='function') ? window.I18N.t(key) : (fallback || key); }
   function setStatus(message, type){ if(!status) return; status.textContent=message||''; status.className='form-status '+(type||''); }
   function value(id){ return (document.getElementById(id)?.value || '').trim(); }
   function setValue(id,v){ const el=document.getElementById(id); if(el) el.value=v||''; }
@@ -17,7 +18,7 @@
   async function request(url, options){
     const res=await fetch(url,Object.assign({cache:'no-store'},options||{}));
     const json=await res.json().catch(()=>({}));
-    if(!res.ok || json.status==='error') throw new Error(json.message || 'Request failed');
+    if(!res.ok || json.status==='error') throw new Error(json.message || t('request_failed','Request failed'));
     return json;
   }
   function applyVisibility(member){
@@ -39,18 +40,18 @@
     form.addEventListener('submit',async function(e){
       e.preventDefault();
       const bankName=value('bankName'), accountName=value('bankAccountName'), accountNumber=value('bankAccountNumber');
-      if(!bankName || !accountName || !accountNumber){ setStatus('Bank name, account name and account number are required.','error'); return; }
-      if(!validAccountNumber(accountNumber)){ setStatus('Please enter a valid bank account number.','error'); return; }
-      submit.disabled=true; setStatus('Saving bank details...','');
+      if(!bankName || !accountName || !accountNumber){ setStatus(t('bank_required_error','Bank name, account name and account number are required.'),'error'); return; }
+      if(!validAccountNumber(accountNumber)){ setStatus(t('bank_account_invalid','Please enter a valid bank account number.'),'error'); return; }
+      submit.disabled=true; setStatus(t('bank_saving','Saving bank details...'),'');
       try{
         const json=await request(API_BASE+'/api/auth/member/bank-detail',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token()},body:JSON.stringify({bankName,bankAccountName:accountName,bankAccountNumber:accountNumber,bankBsb:value('bankBsb'),payId:value('payId')})});
         const member=Object.assign({}, JSON.parse(localStorage.getItem('member_info')||'{}'), json.data||{});
         localStorage.setItem('member_info',JSON.stringify(member));
-        setStatus('Bank details saved successfully.','success');
+        setStatus(t('bank_saved','Bank details saved successfully.'),'success');
         setTimeout(()=>{ location.href=firstSetup?redirect:'setting.html'; },450);
-      }catch(err){ setStatus(err.message||'Unable to save bank details.','error'); }
+      }catch(err){ setStatus(err.message||t('bank_save_failed','Unable to save bank details.'),'error'); }
       finally{ submit.disabled=false; }
     });
   }
-  load().catch(err=>setStatus(err.message||'Unable to load bank details.','error'));
+  load().catch(err=>setStatus(err.message||t('bank_load_failed','Unable to load bank details.'),'error'));
 })();
