@@ -5,6 +5,7 @@
   // layout-section loading, I18N.apply(), API calls, scrolling or game rendering.
   var deferredPrompt = null;
   var installed = false;
+  var installConfig = null;
 
   function isZh(){
     try {
@@ -13,6 +14,37 @@
     } catch (_) {
       return (document.documentElement.lang || '').toLowerCase().indexOf('zh') === 0;
     }
+  }
+
+  function apiInstallSetting(){
+    return (window.NAGA_API && window.NAGA_API.installAppSetting)
+      || ((window.NAGA_CONFIG&&window.NAGA_CONFIG.api&&window.NAGA_CONFIG.api.baseUrl)||'').replace(/\/$/,'')+'/api/frontend/install-app';
+  }
+
+  function applyInstallConfig(data){
+    if(!data||typeof data!=='object') return;
+    installConfig=data;
+    var displayName=String(data.displayName||'').trim();
+    if(displayName){
+      var meta=document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if(!meta){meta=document.createElement('meta');meta.name='apple-mobile-web-app-title';document.head.appendChild(meta)}
+      meta.content=displayName;
+    }
+    var logo=String(data.logoUrl||'').trim();
+    if(logo){
+      var icon=document.querySelector('link[rel="apple-touch-icon"]');
+      if(!icon){icon=document.createElement('link');icon.rel='apple-touch-icon';document.head.appendChild(icon)}
+      icon.href=logo+(logo.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(data.version||1);
+    }
+  }
+
+  function loadInstallConfig(){
+    var url=apiInstallSetting();
+    if(!url||url.indexOf('/api/')<0) return Promise.resolve();
+    return fetch(url,{method:'GET',credentials:'omit',cache:'default'})
+      .then(function(r){return r.ok?r.json():null})
+      .then(function(j){if(j&&j.status!=='error')applyInstallConfig(j.data||{})})
+      .catch(function(){});
   }
 
   function isStandalone(){
@@ -100,6 +132,13 @@
     } else {
       window.setTimeout(insertButton, 0);
     }
+  }
+
+  // Non-blocking BO install appearance sync. This never participates in layout startup.
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(function(){loadInstallConfig()}, {timeout:1600});
+  } else {
+    window.setTimeout(function(){loadInstallConfig()}, 250);
   }
 
   window.addEventListener('beforeinstallprompt', function(e){

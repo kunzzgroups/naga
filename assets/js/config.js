@@ -56,5 +56,6 @@ window.NAGA_API = {
   layoutSection: window.NAGA_CONFIG.api.baseUrl + '/api/customize/section',
   compliancePolicyList: window.NAGA_CONFIG.api.baseUrl + '/api/compliance-policies',
   frontendDisplaySetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/display-setting',
+  installAppSetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/install-app',
   advertisementPopup: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/ad-popup'
 };
