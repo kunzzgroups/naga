@@ -319,5 +319,7 @@
   "promotion_reset_none": "NONE",
   "promotion_reset_daily": "DAILY",
   "promotion_reset_weekly": "WEEKLY",
-  "promotion_reset_monthly": "MONTHLY"
+  "promotion_reset_monthly": "MONTHLY",
+  "policy.compliance_title": "Compliance Policy",
+  "policy.last_updated": "Last updated"
 }

@@ -320,5 +320,7 @@
   "promotion_reset_none": "无重置",
   "promotion_reset_daily": "每日",
   "promotion_reset_weekly": "每周",
-  "promotion_reset_monthly": "每月"
+  "promotion_reset_monthly": "每月",
+  "policy.compliance_title": "合规政策",
+  "policy.last_updated": "最后更新"
 }
