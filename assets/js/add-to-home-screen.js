@@ -21,30 +21,91 @@
       || ((window.NAGA_CONFIG&&window.NAGA_CONFIG.api&&window.NAGA_CONFIG.api.baseUrl)||'').replace(/\/$/,'')+'/api/frontend/install-app';
   }
 
-  function applyInstallConfig(data){
-    if(!data||typeof data!=='object') return;
-    installConfig=data;
-    var displayName=String(data.displayName||'').trim();
-    if(displayName){
-      var meta=document.querySelector('meta[name="apple-mobile-web-app-title"]');
-      if(!meta){meta=document.createElement('meta');meta.name='apple-mobile-web-app-title';document.head.appendChild(meta)}
-      meta.content=displayName;
-    }
-    var logo=String(data.logoUrl||'').trim();
-    if(logo){
-      var icon=document.querySelector('link[rel="apple-touch-icon"]');
-      if(!icon){icon=document.createElement('link');icon.rel='apple-touch-icon';document.head.appendChild(icon)}
-      icon.href=logo+(logo.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(data.version||1);
+  function versionedLogoUrl(data){
+    var logo=String((data&&data.logoUrl)||'').trim();
+    if(!logo) return '';
+    var version=encodeURIComponent((data&&data.version)||1);
+    // Strip an older v= value first so the URL always has exactly one current version.
+    try {
+      var u=new URL(logo,location.href);
+      u.searchParams.set('v',version);
+      return u.toString();
+    } catch (_) {
+      return logo+(logo.indexOf('?')>=0?'&':'?')+'v='+version;
     }
   }
 
-  function loadInstallConfig(){
+  function applyInstallConfig(data){
+    if(!data||typeof data!=='object') return;
+    installConfig=data;
+
+    var displayName=String(data.displayName||'').trim();
+    if(displayName){
+      var meta=document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if(!meta){
+        meta=document.createElement('meta');
+        meta.name='apple-mobile-web-app-title';
+        document.head.appendChild(meta);
+      }
+      meta.content=displayName;
+    }
+
+    var logo=versionedLogoUrl(data);
+    if(logo){
+      // Update EVERY Apple icon declaration defensively. Older project versions
+      // contained more than one apple-touch-icon and Safari may choose the later one.
+      var icons=document.querySelectorAll('link[rel~="apple-touch-icon"]');
+      if(!icons.length){
+        var icon=document.createElement('link');
+        icon.rel='apple-touch-icon';
+        icon.id='nagaInstallAppleTouchIcon';
+        document.head.appendChild(icon);
+        icons=[icon];
+      }
+      Array.prototype.forEach.call(icons,function(icon){
+        icon.href=logo;
+        icon.setAttribute('sizes','180x180');
+      });
+    }
+  }
+
+  var installConfigPromise=null;
+  function loadInstallConfig(fresh){
+    if(installConfigPromise && !fresh) return installConfigPromise;
     var url=apiInstallSetting();
-    if(!url||url.indexOf('/api/')<0) return Promise.resolve();
-    return fetch(url,{method:'GET',credentials:'omit',cache:'default'})
+    if(!url||url.indexOf('/api/')<0) return Promise.resolve(null);
+
+    if(fresh){
+      url += (url.indexOf('?')>=0?'&':'?') + '_a2hs=' + Date.now();
+    }
+
+    var request=fetch(url,{
+      method:'GET',
+      credentials:'omit',
+      cache:fresh?'no-store':'default',
+      headers:{'Accept':'application/json'}
+    })
       .then(function(r){return r.ok?r.json():null})
-      .then(function(j){if(j&&j.status!=='error')applyInstallConfig(j.data||{})})
-      .catch(function(){});
+      .then(function(j){
+        if(j&&j.status!=='error'){
+          applyInstallConfig(j.data||{});
+          return j.data||{};
+        }
+        return null;
+      })
+      .catch(function(){return null;});
+
+    if(!fresh){
+      installConfigPromise=request;
+      request.finally(function(){installConfigPromise=null;});
+    }
+    return request;
+  }
+
+  function isIos(){
+    var ua=navigator.userAgent||'';
+    return /iPad|iPhone|iPod/i.test(ua) ||
+      (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
   }
 
   function isStandalone(){
@@ -80,15 +141,35 @@
   }
 
   function onInstallClick(e){
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (isStandalone() || installed) return;
-    if (deferredPrompt && typeof deferredPrompt.prompt === 'function') {
-      var p = deferredPrompt;
-      deferredPrompt = null;
+    if(e) { e.preventDefault(); e.stopPropagation(); }
+    if(isStandalone() || installed) return;
+
+    // iOS snapshots apple-touch-icon when the user adds the site.
+    // Fetch the BO setting NOW (cache bypassed) before we tell the user to open
+    // Safari Share -> Add to Home Screen, so the newest BO logo/name is in DOM.
+    if(isIos()){
+      var settled=false;
+      var safety=new Promise(function(resolve){
+        window.setTimeout(function(){ if(!settled) resolve(null); },1200);
+      });
+      Promise.race([loadInstallConfig(true),safety]).then(function(){
+        settled=true;
+        showHelp();
+      });
+      return;
+    }
+
+    // Android/Chromium uses the manifest. The manifest endpoint is no-store and
+    // the icon URL includes the BO install version.
+    if(deferredPrompt && typeof deferredPrompt.prompt==='function'){
+      var p=deferredPrompt;
+      deferredPrompt=null;
       try {
         p.prompt();
         Promise.resolve(p.userChoice).catch(function(){}).then(refreshButton);
-      } catch (_) { showHelp(); }
+      } catch (_) {
+        showHelp();
+      }
     } else {
       showHelp();
     }
@@ -132,13 +213,6 @@
     } else {
       window.setTimeout(insertButton, 0);
     }
-  }
-
-  // Non-blocking BO install appearance sync. This never participates in layout startup.
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(function(){loadInstallConfig()}, {timeout:1600});
-  } else {
-    window.setTimeout(function(){loadInstallConfig()}, 250);
   }
 
   window.addEventListener('beforeinstallprompt', function(e){
