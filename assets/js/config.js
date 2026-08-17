@@ -57,5 +57,6 @@ window.NAGA_API = {
   compliancePolicyList: window.NAGA_CONFIG.api.baseUrl + '/api/compliance-policies',
   frontendDisplaySetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/display-setting',
   installAppSetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/install-app',
-  advertisementPopup: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/ad-popup'
+  advertisementPopup: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/ad-popup',
+  publicLeaderboard: window.NAGA_CONFIG.api.baseUrl + '/api/public/leaderboard'
 };

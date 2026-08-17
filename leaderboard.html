@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html lang="en" class="transaction-scroll-page">
+<html lang="en">
 <head>
   <link rel="manifest" href="https://bo.titanxgaming.com/api/frontend/install-manifest.webmanifest" crossorigin="anonymous">
   <meta name="theme-color" content="#0b1f38">
@@ -46,7 +45,7 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n="deposit_page_title">TitanXGaming - Deposit</title>
+  <title data-i18n="leaderboard_page_title">TitanXGaming - Leaderboard</title>
   <link rel="stylesheet" href="assets/css/style.css?v=1.0.99" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
@@ -56,77 +55,75 @@
   <link rel="stylesheet" href="assets/css/marquee.css?v=1.0.1">
   <link href="assets/css/animation-effects.css?v=1.0.0" rel="stylesheet">
   <link href="assets/custom/animation-effects.custom.css?v=20260813-1" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/leaderboard.css?v=1.0.0">
 </head>
-<body class="deposit-page">
+<body class="leaderboard-page">
   <header class="top-header">
     <div data-layout-section="home-header"></div>
     <div class="logo-box"><img class="site-logo" src="assets/custom/images/logo.png" decoding="async" loading="eager" fetchpriority="high" /></div>
   </header>
 
-  <main class="deposit-main">
-    <section class="deposit-card">
-      <div class="deposit-head">
+  <main class="leaderboard-main">
+    <section class="leaderboard-card">
+      <div class="leaderboard-head">
         <div>
-          <span class="mini-label" data-i18n="wallet_top_up">WALLET TOP UP</span>
-          <h1 data-i18n="deposit_title">Deposit</h1>
+          <h1 class="leaderboard-title" data-i18n="leaderboard">Leaderboard</h1>
+          <p class="leaderboard-subtitle" data-i18n="leaderboard_subtitle">Top casino wins ranked by payout ratio.</p>
         </div>
-        <div class="deposit-balance">
-          <span data-i18n="balance">Balance</span>
-          <strong data-main-wallet-balance>-</strong>
+        <div class="leaderboard-badge"><i class="fa-solid fa-trophy"></i><span data-i18n="leaderboard_casino">Casino Leaderboard</span></div>
+      </div>
+
+      <div class="leaderboard-controls">
+        <div class="leaderboard-period">
+          <button type="button" class="leaderboard-btn active" data-leaderboard-period="today" data-i18n="leaderboard_today">Today</button>
+          <button type="button" class="leaderboard-btn" data-leaderboard-period="yesterday" data-i18n="leaderboard_yesterday">Yesterday</button>
         </div>
+        <select id="leaderboardGame" class="leaderboard-select" aria-label="Game filter" data-i18n-aria-label="leaderboard_game_filter">
+          <option value="ALL" data-i18n="leaderboard_all_game">All Game</option>
+        </select>
+        <button type="button" id="leaderboardRefresh" class="leaderboard-btn leaderboard-refresh"><i class="fa-solid fa-rotate"></i> <span data-i18n="refresh">Refresh</span></button>
       </div>
 
-      <label class="deposit-field">
-        <span data-i18n="deposit_amount">Deposit Amount</span>
-        <input type="number" placeholder="Please enter deposit amount (e.g. 100)" data-i18n-placeholder="deposit_amount_placeholder">
-      </label>
+      <div class="leaderboard-note" data-i18n="leaderboard_note">*Settled bet records may take a short time to appear.</div>
 
-      <div class="quick-amounts">
-        <button type="button">10</button>
-        <button type="button">30</button>
-        <button type="button">50</button>
-        <button type="button">100</button>
-        <button type="button">300</button>
-        <button type="button">500</button>
-      </div>
-
-      <div class="payment-title" data-i18n="select_payment_method">Select Payment Method</div>
-      <div class="payment-grid"><div class="payment-empty">-</div></div>
-
-      <div class="deposit-note">
-        <b id="depositMinimumDisplay">Minimum Deposit: MYR 10.00</b>
-        <p data-i18n="deposit_note_desc">Please check the amount before submitting. Deposit status will be updated after confirmation.</p>
-      </div>
-
-      <div class="deposit-actions">
-        <a href="index.html" class="cancel-btn" data-i18n="cancel">Cancel</a>
-        <button type="button" class="submit-btn" data-i18n="submit_deposit">Submit Deposit</button>
+      <div class="leaderboard-table-wrap">
+        <table class="leaderboard-table">
+          <thead><tr>
+            <th data-i18n="leaderboard_rank">Rank</th>
+            <th data-i18n="leaderboard_player">Player</th>
+            <th data-i18n="game">Game</th>
+            <th data-i18n="leaderboard_bet">Bet</th>
+            <th data-i18n="leaderboard_win">Win</th>
+            <th data-i18n="leaderboard_payout_ratio">Payout Ratio</th>
+          </tr></thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+        <div id="leaderboardStatus" class="leaderboard-loading"><i class="fa-solid fa-spinner fa-spin"></i><span data-i18n="leaderboard_loading">Loading leaderboard...</span></div>
       </div>
     </section>
   </main>
 
   <nav class="bottom-nav">
-    <a href="index.html"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-alt="home" decoding="async" loading="lazy"></a>
-    <a href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-alt="history" decoding="async" loading="lazy"></a>
-    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-alt="bonus" decoding="async" loading="lazy"></a>
-    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-alt="live_chat" decoding="async" loading="lazy"></a>
-    <a href="setting.html"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-alt="setting" decoding="async" loading="lazy"></a>
+    <a href="index.html"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-alt="home" data-i18n-img="img.bottom_home" decoding="async" loading="lazy"></a>
+    <a href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-alt="history" data-i18n-img="img.bottom_history" decoding="async" loading="lazy"></a>
+    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-alt="bonus" data-i18n-img="img.bottom_bonus" decoding="async" loading="lazy"></a>
+    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-alt="live_chat" data-i18n-img="img.bottom_chat" decoding="async" loading="lazy"></a>
+    <a href="setting.html"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-alt="setting" data-i18n-img="img.bottom_setting" decoding="async" loading="lazy"></a>
   </nav>
 
   <div class="lang-overlay" id="langOverlay" aria-hidden="true">
     <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Language selection" data-i18n-aria-label="language_selection">
-      <button class="lang-option active" type="button" data-lang="en" data-i18n="lang_english">English</button>
-      <button class="lang-option" type="button" data-lang="zh" data-i18n="lang_chinese">中文</button>
+      <button class="lang-option active" type="button" data-lang="en"><span data-i18n="lang_english">English</span> <span class="checkmark">✔</span></button>
+      <button class="lang-option" type="button" data-lang="zh"><span data-i18n="lang_chinese">中文</span></button>
     </div>
   </div>
 
     <script src="assets/js/ui-modal.js?v=1.0.0"></script>
-<script src="assets/js/site-shell.js?v=1.0.22"></script>
-  <script src="assets/js/lang.js?v=1.0.10"></script>
-  <script src="assets/js/config.js?v=1.0.28"></script>
+<script src="assets/js/config.js?v=1.0.28"></script>
   <script src="assets/js/layout-section-loader.js?v=1.1.17"></script>
-  <script src="assets/js/member-auth.js?v=1.0.15"></script>
-  <script src="assets/js/deposit.js?v=1.0.5"></script>
+  <script src="assets/js/site-shell.js?v=1.0.22"></script>
+  <script src="assets/js/lang.js?v=1.0.10"></script>
+  <script src="assets/js/leaderboard.js?v=1.0.0"></script>
   <script src="assets/js/custom-asset-cache.js?v=1.0.19"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>

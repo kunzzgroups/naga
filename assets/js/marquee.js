@@ -69,6 +69,13 @@
     .then(function(r){if(!r.ok)throw new Error();return r.json();})
     .then(function(j){
       var d=j&&j.data||{};
+      try{
+        if(Object.prototype.hasOwnProperty.call(d,'leaderboardEnabled')){
+          var lbEnabled=d.leaderboardEnabled===1||d.leaderboardEnabled===true||String(d.leaderboardEnabled).toLowerCase()==='true';
+          localStorage.setItem('naga_leaderboard_enabled',lbEnabled?'1':'0');
+          document.dispatchEvent(new CustomEvent('naga:leaderboard-visibility',{detail:{enabled:lbEnabled}}));
+        }
+      }catch(_e){}
       var enabled=d.marqueeEnabled===1||d.marqueeEnabled===true||String(d.marqueeEnabled).toLowerCase()==='true';
       if(enabled&&plainText(d.marqueeContent))createBar(d.marqueeContent);else hide();
     })
