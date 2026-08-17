@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="manifest" href="manifest.webmanifest?v=2.0.0-isolated">
+  <meta name="theme-color" content="#0b1f38">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TitanX">
+  <link rel="apple-touch-icon" href="assets/icons/app-icon-180.png?v=2.0.0-isolated">
+  <link rel="stylesheet" href="assets/css/add-to-home-screen.css?v=2.0.0-isolated">
+
   <script>document.documentElement.classList.add('page-loading','naga-animation-preflight');try{if(localStorage.getItem('naga_home_bonus_enabled')==='0')document.documentElement.classList.add('home-bonus-disabled');}catch(e){}</script>
   <style id="page-loader-critical">html{background:#070707}html.page-loading{overflow:hidden!important}html.page-loading body{opacity:1}html.page-loading:before{content:"Loading games...";position:fixed;inset:0;z-index:2147483646;display:flex;align-items:calc(50% + 52px);justify-content:center;background:#070707;color:#fff;font:600 14px/1.2 Arial,sans-serif;letter-spacing:.2px;pointer-events:none;animation:pageLoaderOverlayFailsafe 4.2s steps(1,end) forwards}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid rgba(255,255,255,.18);border-top-color:#35f486;border-radius:50%;opacity:0;pointer-events:none;animation:pageLoaderSpin .65s linear .24s infinite,pageLoaderOverlayFailsafe 4.2s steps(1,end) forwards}@keyframes pageLoaderSpin{0%{opacity:0;transform:rotate(0)}1%{opacity:1}100%{opacity:1;transform:rotate(360deg)}}@keyframes pageLoaderOverlayFailsafe{0%,99%{visibility:visible}100%{visibility:hidden}}</style>
 <script id="page-loader-watchdog">
@@ -349,5 +357,6 @@
 <script src="assets/js/marquee.js?v=1.0.1"></script>
 <script src="assets/js/animation-effects.js?v=1.0.0"></script>
 <script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
+  <script src="assets/js/add-to-home-screen.js?v=2.0.0-isolated" defer></script>
 </body>
 </html>
