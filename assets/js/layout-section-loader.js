@@ -191,7 +191,7 @@
   // Translate only the freshly inserted sidebar subtree without dispatching another
   // global i18n:changed event (which would unnecessarily reload language-aware data).
   function translateLayoutTarget(target, sectionKey) {
-    if (!target || ['frontend-sidebar','login-page','register-page'].indexOf(sectionKey) < 0) return;
+    if (!target || ['frontend-header','frontend-sidebar','login-page','register-page'].indexOf(sectionKey) < 0) return;
     if (!window.I18N || typeof window.I18N.t !== 'function' || !window.I18N.dict) return;
 
     function translated(key) {
@@ -253,6 +253,38 @@
     if (sectionKey === GLOBAL_CSS_SECTION) ensureHomeLayoutSafetyCss();
   }
 
+
+  function normalizeShellTextI18nHtml(html, sectionKey) {
+    if (!html || (sectionKey !== 'frontend-header' && sectionKey !== 'frontend-sidebar')) return html;
+
+    const template = document.createElement('template');
+    template.innerHTML = html;
+
+    // BO Layout is allowed to own the visual markup, but authentication wording
+    // still follows the currently selected frontend language. Re-attach semantic
+    // keys even when BO custom HTML omitted data-i18n attributes/classes.
+    const logoutSelectors = [
+      '[data-member-logout]',
+      '.top-logout-btn',
+      '.mobile-menu-list-logout',
+      'button[id*="logout" i]',
+      'a[id*="logout" i]',
+      'button[class*="logout" i]',
+      'a[class*="logout" i]'
+    ];
+    logoutSelectors.forEach(function(selector){
+      template.content.querySelectorAll(selector).forEach(function(el){
+        // Do not replace graphic-only controls; translate their accessibility label instead.
+        if (el.querySelector('img') && !(el.textContent || '').trim()) {
+          el.setAttribute('data-i18n-aria-label', 'logout');
+          return;
+        }
+        el.setAttribute('data-i18n', 'logout');
+      });
+    });
+
+    return template.innerHTML;
+  }
 
   function normalizeAuthImageHtml(html, sectionKey) {
     if (!html || (sectionKey !== 'frontend-header' && sectionKey !== 'frontend-sidebar')) return html;
@@ -366,6 +398,28 @@
     setI18n('#registerForm .verify-btn', 'data-i18n', 'get_code');
     setI18n('#registerForm .submit-login, #registerForm button[type="submit"]', 'data-i18n', 'register');
 
+    // Defensive fallback for BO-authored markup that does not preserve our
+    // standard classes/autocomplete attributes. Match familiar visible wording
+    // and field order, but never change the BO structure/styling itself.
+    function normText(value){ return String(value || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+    template.content.querySelectorAll('button,a').forEach(function(el){
+      const text = normText(el.textContent);
+      if ((text === 'login' || text === 'log in' || text === '登录') && !el.hasAttribute('data-i18n')) el.setAttribute('data-i18n','login');
+      else if ((text === 'register' || text === 'sign up' || text === '注册') && !el.hasAttribute('data-i18n')) el.setAttribute('data-i18n','register');
+      else if ((text.indexOf('forgot password') >= 0 || text.indexOf('忘记密码') >= 0) && !el.hasAttribute('data-i18n')) el.setAttribute('data-i18n','forgot_password');
+      else if ((text === 'get code' || text.indexOf('获取验证码') >= 0) && !el.hasAttribute('data-i18n')) el.setAttribute('data-i18n','get_code');
+    });
+
+    const loginInputs = Array.from(template.content.querySelectorAll('#loginForm input'));
+    if (loginInputs[0] && !loginInputs[0].hasAttribute('data-i18n-placeholder')) loginInputs[0].setAttribute('data-i18n-placeholder','username');
+    if (loginInputs[1] && !loginInputs[1].hasAttribute('data-i18n-placeholder')) loginInputs[1].setAttribute('data-i18n-placeholder','password');
+
+    const regInputs = Array.from(template.content.querySelectorAll('#registerForm input')).filter(function(el){ return (el.type || '').toLowerCase() !== 'hidden'; });
+    const fallbackKeys = ['full_name','mobile_no','password_6_20','referrer_code_optional','verification_code'];
+    regInputs.forEach(function(el,idx){
+      if (idx < fallbackKeys.length && !el.hasAttribute('data-i18n-placeholder')) el.setAttribute('data-i18n-placeholder', fallbackKeys[idx]);
+    });
+
     return template.innerHTML;
   }
 
@@ -420,6 +474,7 @@
   }
 
   function applyHtml(target, html, sectionKey) {
+    html = normalizeShellTextI18nHtml(html, sectionKey);
     html = normalizeAuthImageHtml(html, sectionKey);
     html = normalizeAuthPageHtml(html, sectionKey);
     if (!target || !html.trim()) return false;
@@ -569,7 +624,7 @@
 
 
   document.addEventListener('i18n:changed', function () {
-    ['frontend-sidebar','login-page','register-page'].forEach(function (sectionKey) {
+    ['frontend-header','frontend-sidebar','login-page','register-page'].forEach(function (sectionKey) {
       targetsFor(sectionKey).forEach(function (target) {
         translateLayoutTarget(target, sectionKey);
       });

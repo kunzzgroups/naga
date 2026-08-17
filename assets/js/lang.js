@@ -10,6 +10,7 @@
   var config = Object.assign({}, defaultConfig);
   var cache = {};
   var defaultDict = {};
+  var LANG_ASSET_VERSION = '20260817-perf1';
 
   function isEmpty(value){
     return value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
@@ -45,7 +46,7 @@
   }
 
   function loadConfig(){
-    return fetch('assets/lang/config.json?v=' + Date.now(), {cache:'no-store'})
+    return fetch('assets/lang/config.json?v=' + LANG_ASSET_VERSION, {cache:'default'})
       .then(function(res){ if(!res.ok) throw new Error('Cannot load language config'); return res.json(); })
       .then(function(json){
         json = json || {};
@@ -61,7 +62,7 @@
   function loadDictFile(lang){
     lang = normaliseLang(lang);
     if(cache[lang]) return Promise.resolve(cache[lang]);
-    return fetch('assets/lang/' + lang + '.json?v=' + Date.now(), {cache:'no-store'})
+    return fetch('assets/lang/' + lang + '.json?v=' + LANG_ASSET_VERSION, {cache:'default'})
       .then(function(res){ if(!res.ok) throw new Error('Cannot load language JSON'); return res.json(); })
       .then(function(json){ cache[lang] = json || {}; return cache[lang]; })
       .catch(function(){ cache[lang] = fallbackDict(lang); return cache[lang]; });
@@ -138,6 +139,7 @@
     load: changeLanguage,
     setLanguage: changeLanguage,
     apply: applyLanguage,
+    ready: false,
     resetToDefault: function(){
       try { localStorage.removeItem(getStorageKey()); } catch(e) {}
       return changeLanguage(config.default_lang);
@@ -149,7 +151,11 @@
       window.I18N.current = getSavedLang();
       window.I18N.defaultLang = config.default_lang;
       window.I18N.config = config;
-      return changeLanguage(window.I18N.current);
+      return changeLanguage(window.I18N.current).then(function(dict){
+        window.I18N.ready = true;
+        document.dispatchEvent(new CustomEvent('naga:i18n-ready', {detail:{lang:window.I18N.current}}));
+        return dict;
+      });
     });
 
     var langBtn = document.getElementById('langBtn');

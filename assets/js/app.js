@@ -845,6 +845,7 @@ function renderProviderCards(games){
   if(!rows.length){
     activeProviderCode = null;
     gameGrid.innerHTML = '<div class="empty-state">No provider available for this category</div>';
+    try{ document.dispatchEvent(new CustomEvent('naga:scroll-target-changed')); }catch(_e){}
     return;
   }
 
@@ -1105,6 +1106,8 @@ function renderGames(list){
     // Games wrap row-by-row instead of creating a second/internal scroll area.
     scrollRoot = null;
   }
+
+  try{ document.dispatchEvent(new CustomEvent('naga:scroll-target-changed')); }catch(_e){}
 
   if(!gameList.length){
     const empty = document.createElement('div');
@@ -2099,10 +2102,13 @@ loadSliderBanners().then(() => {
       if(t === document.scrollingElement || t === document.documentElement){ window.scrollTo({top:0, behavior:'smooth'}); }
       else { t.scrollTo({top:0, behavior:'smooth'}); }
     };
-    window.addEventListener('resize', function(){ setTimeout(update, 80); }, {passive:true});
+    var resizeTick=0;
+    window.addEventListener('resize', function(){
+      clearTimeout(resizeTick);
+      resizeTick=setTimeout(update, 100);
+    }, {passive:true});
     window.addEventListener('scroll', update, {passive:true});
-    document.addEventListener('click', function(){ setTimeout(update, 180); }, true);
-    setInterval(update, 1200);
+    document.addEventListener('naga:scroll-target-changed', function(){ requestAnimationFrame(update); });
     setTimeout(update, 300);
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
@@ -2274,10 +2280,15 @@ loadSliderBanners().then(() => {
 
   var observer = new MutationObserver(schedule);
   function start(){
-    observer.observe(document.body, {childList:true, subtree:true});
+    var grid=document.getElementById('gameGrid');
+    if(grid) observer.observe(grid, {childList:true, subtree:false});
     setLobbyHeight();
     updateSlotBannerState();
     window.addEventListener('scroll', updateSlotBannerState, {passive:true});
+    var categoryRowEl=document.getElementById('categoryRow');
+    var subTabRowEl=document.getElementById('subTabRow');
+    if(categoryRowEl) categoryRowEl.addEventListener('click', schedule, {passive:true});
+    if(subTabRowEl) subTabRowEl.addEventListener('click', schedule, {passive:true});
     window.addEventListener('resize', function(){
       // Ignore height-only mobile browser chrome changes while SLOT is active.
       // Width/orientation changes still rebuild the frozen viewport normally.

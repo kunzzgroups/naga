@@ -15,6 +15,7 @@
   var customAssetsReady = false;
   var lobbyReady = !isHomeLobby;
   var authLayoutReady = !isAuthPage;
+  var authLanguageReady = !isAuthPage || !!(window.I18N && window.I18N.ready);
   var revealed = root.classList.contains('page-loaded') && !root.classList.contains('page-loading');
   var maxTimer = null;
 
@@ -47,7 +48,7 @@
 
   function tryReveal() {
     // Animation is intentionally not part of this gate.
-    if (domReady && customAssetsReady && lobbyReady && authLayoutReady) revealPage(false);
+    if (domReady && customAssetsReady && lobbyReady && authLayoutReady && authLanguageReady) revealPage(false);
   }
 
   function onDomReady() { domReady = true; tryReveal(); }
@@ -60,6 +61,10 @@
     var key = event && event.detail && event.detail.sectionKey;
     if (!isAuthPage || key === expectedAuthSection) { authLayoutReady = true; tryReveal(); }
   });
+  document.addEventListener('naga:i18n-ready', function () {
+    authLanguageReady = true;
+    tryReveal();
+  }, { once: true });
 
   maxTimer = setTimeout(function () { revealPage(true); }, MAX_WAIT_MS);
 

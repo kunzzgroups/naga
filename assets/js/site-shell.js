@@ -163,9 +163,10 @@
     // This avoids a "-" flash while a laptop is reconnecting after sleep.
     var cached = getStoredBalance();
     if(getToken() && cached !== null) setAllWalletText(cached);
+    // One initial refresh is enough. The old code also refreshed again on load
+    // and pageshow, which could issue 2-3 identical wallet requests per navigation.
     setTimeout(function(){ refreshShellBalance(); }, 0);
-    window.addEventListener('load', function(){ setTimeout(function(){ refreshShellBalance(); }, 80); });
-    window.addEventListener('pageshow', function(){ refreshShellBalance(); });
+    window.addEventListener('pageshow', function(e){ if(e && e.persisted) refreshShellBalance(); });
     window.addEventListener('focus', function(){ refreshShellBalance(); });
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshShellBalance(); });
   }
@@ -209,6 +210,32 @@
       }
     }catch(e){}
     return fallback || key;
+  }
+
+
+  // Translate only shell-owned DOM. Calling global I18N.apply() from header/sidebar
+  // lifecycle code dispatches i18n:changed and can make data-heavy modules reload.
+  function translateShellScope(root){
+    if(!root || !window.I18N || typeof window.I18N.t !== 'function') return;
+    function nodes(selector){
+      var list=[];
+      if(root.matches && root.matches(selector)) list.push(root);
+      if(root.querySelectorAll) list.push.apply(list, root.querySelectorAll(selector));
+      return list;
+    }
+    function value(key){
+      if(!key) return '';
+      try{
+        var v=window.I18N.t(key);
+        return v == null || v === key ? '' : String(v);
+      }catch(e){ return ''; }
+    }
+    nodes('[data-i18n]').forEach(function(el){ var v=value(el.getAttribute('data-i18n')); if(v) el.textContent=v; });
+    nodes('[data-i18n-html]').forEach(function(el){ var v=value(el.getAttribute('data-i18n-html')); if(v) el.innerHTML=v; });
+    nodes('[data-i18n-placeholder]').forEach(function(el){ var v=value(el.getAttribute('data-i18n-placeholder')); if(v) el.setAttribute('placeholder',v); });
+    nodes('[data-i18n-alt]').forEach(function(el){ var v=value(el.getAttribute('data-i18n-alt')); if(v) el.setAttribute('alt',v); });
+    nodes('[data-i18n-title]').forEach(function(el){ var v=value(el.getAttribute('data-i18n-title')); if(v) el.setAttribute('title',v); });
+    nodes('[data-i18n-aria-label]').forEach(function(el){ var v=value(el.getAttribute('data-i18n-aria-label')); if(v) el.setAttribute('aria-label',v); });
   }
 
   function getCurrentLang(){
@@ -275,7 +302,7 @@
     header.appendChild(actions);
     refreshHeaderAuth();
     watchHeaderAuthReplacement();
-    if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
+    translateShellScope(header);
   }
 
   function refreshHeaderAuth(){
@@ -321,7 +348,7 @@
         queued = false;
         refreshHeaderAuth();
       });
-    }).observe(header, {childList:true, subtree:true});
+    }).observe(header, {childList:true});
     window.addEventListener('pageshow', refreshHeaderAuth);
     window.addEventListener('focus', refreshHeaderAuth);
     window.addEventListener('storage', function(e){
@@ -364,7 +391,7 @@
     const panel = overlay.querySelector('.mobile-menu-panel');
     if(panel) panel.setAttribute('data-layout-section', 'frontend-sidebar');
     updateSideLangLabel();
-    if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
+    translateShellScope(overlay);
   }
 
   function openMenu(){
@@ -436,7 +463,11 @@
       }
     }, true);
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMenu(); });
-    document.addEventListener('i18n:changed', updateSideLangLabel);
+    document.addEventListener('i18n:changed', function(){
+      updateSideLangLabel();
+      translateShellScope(document.querySelector('.top-header'));
+      translateShellScope(document.querySelector('#mobileSideMenu .mobile-menu-panel'));
+    });
   }
 
   function rehydrateShell(){
@@ -454,7 +485,8 @@
     // Re-applying BO header HTML keeps the last confirmed amount while the
     // current balance is refreshed in the background.
     refreshShellBalance();
-    if(window.I18N && typeof window.I18N.apply === 'function') window.I18N.apply();
+    translateShellScope(header);
+    translateShellScope(panel);
   }
 
   function init(){
