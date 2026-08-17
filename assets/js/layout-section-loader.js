@@ -11,6 +11,33 @@
   let shellReadySeen = false;
   let freshHeaderLoaded = false;
   let customAssetsReady = !!window.__NAGA_CUSTOM_ASSETS_READY__;
+  const criticalReadyParts = new Set();
+
+  function isCriticalSection(sectionKey) {
+    return sectionKey === 'home' || sectionKey === 'frontend-header' || sectionKey === 'frontend-sidebar';
+  }
+
+  function criticalSectionHasContent(sectionKey, data) {
+    data = data || {};
+    if (sectionKey === 'frontend-header' || sectionKey === 'frontend-sidebar') {
+      return !!String(data.html || '').trim();
+    }
+    if (sectionKey === 'home') {
+      return !!(String(data.css || '').trim() || String(data.html || '').trim() || String(data.js || '').trim());
+    }
+    return true;
+  }
+
+  function markCriticalPart(sectionKey, data) {
+    if (!isCriticalSection(sectionKey) || !criticalSectionHasContent(sectionKey, data)) return;
+    criticalReadyParts.add(sectionKey);
+    if (criticalReadyParts.has('home') && criticalReadyParts.has('frontend-header')) {
+      if (!window.__NAGA_CRITICAL_LAYOUT_READY__) {
+        window.__NAGA_CRITICAL_LAYOUT_READY__ = true;
+        document.dispatchEvent(new CustomEvent('naga:critical-layout-ready'));
+      }
+    }
+  }
 
   function markHeaderReady() {
     if (!freshHeaderLoaded || !customAssetsReady) return;
@@ -40,7 +67,15 @@
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== 'object') return null;
-      return normalizeData(parsed.data || parsed);
+      const normalized = normalizeData(parsed.data || parsed);
+      // Older builds could cache an HTTP-200 but empty BO response. Never restore
+      // that poisoned entry on a hard refresh; discard it and wait for a valid
+      // last-known-good section instead.
+      if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, normalized)) {
+        try { localStorage.removeItem(cacheKey(sectionKey)); } catch (_) {}
+        return null;
+      }
+      return normalized;
     } catch (_) {
       return null;
     }
@@ -70,32 +105,78 @@
     };
   }
 
-  async function fetchSection(sectionKey, force) {
-    if (!force && sectionPromises.has(sectionKey)) return sectionPromises.get(sectionKey);
+  function wait(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
 
-    const request = fetch(endpoint() + '?key=' + encodeURIComponent(sectionKey) + '&_=' + Date.now(), {
-      method: 'GET',
-      cache: 'no-store',
-      credentials: 'omit',
-      headers: {
-        Accept: 'application/json',
-        'Cache-Control': 'no-cache, no-store, max-age=0',
-        Pragma: 'no-cache'
-      }
-    }).then(async function (response) {
+  async function requestSectionOnce(sectionKey) {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(function () { try { controller.abort(); } catch (_) {} }, 2800) : 0;
+    try {
+      const response = await fetch(endpoint() + '?key=' + encodeURIComponent(sectionKey) + '&_=' + Date.now(), {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'omit',
+        signal: controller ? controller.signal : undefined,
+        headers: {
+          Accept: 'application/json',
+          'Cache-Control': 'no-cache, no-store, max-age=0',
+          Pragma: 'no-cache'
+        }
+      });
       const json = await response.json().catch(function () { return {}; });
       if (!response.ok || (json && json.status === 'error')) {
         throw new Error((json && json.message) || ('Unable to load layout section: ' + sectionKey));
       }
       const normalized = normalizeData(json);
-      writeCachedSection(sectionKey, normalized);
+      // A force refresh can put many requests on the BO at once. In that state
+      // some stacks may answer 200 with an empty/partial payload. Treat an empty
+      // critical shell response as a transient failure, never as a valid update.
+      if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, normalized)) {
+        throw new Error('Incomplete critical layout section: ' + sectionKey);
+      }
       return normalized;
-    }).catch(function (error) {
-      console.warn('[Layout Section]', error && error.message ? error.message : error);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  async function fetchSection(sectionKey, force) {
+    // A startup section must have only one in-flight request. Previously the
+    // DOMContentLoaded initializer and naga:site-shell-ready could start two
+    // forced requests for the same Header/Sidebar; whichever finished last won.
+    if (sectionPromises.has(sectionKey)) return sectionPromises.get(sectionKey);
+
+    const request = (async function () {
+      let lastError = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const normalized = await requestSectionOnce(sectionKey);
+          writeCachedSection(sectionKey, normalized);
+          return normalized;
+        } catch (error) {
+          lastError = error;
+          if (attempt < 2) await wait(attempt === 0 ? 180 : 520);
+        }
+      }
+
+      // Never replace a known-good BO layout with empty fallback markup just
+      // because one refresh hit a transient API/network failure. Use the last
+      // successfully saved BO section and refresh it on the next navigation.
+      const cached = readCachedSection(sectionKey);
+      if (cached) {
+        console.warn('[Layout Section] fresh request failed; using cached', sectionKey,
+          lastError && lastError.message ? lastError.message : lastError);
+        return cached;
+      }
+      console.warn('[Layout Section]', lastError && lastError.message ? lastError.message : lastError);
       return { html: '', css: '', js: '' };
-    });
+    })();
 
     sectionPromises.set(sectionKey, request);
+    request.finally(function () {
+      if (sectionPromises.get(sectionKey) === request) sectionPromises.delete(sectionKey);
+    });
     return request;
   }
 
@@ -520,6 +601,7 @@
       if (applyHtml(target, data.html, sectionKey)) htmlChanged = true;
     });
     if (data.js && data.js.trim()) applyJs(sectionKey, data.js);
+    markCriticalPart(sectionKey, data);
     document.dispatchEvent(new CustomEvent('naga:layout-section-applied', {
       detail: { sectionKey: sectionKey, htmlChanged: htmlChanged, data: data, fromCache: true }
     }));
@@ -528,12 +610,17 @@
 
   async function loadSection(sectionKey, targets, force) {
     const data = await fetchSection(sectionKey, !!force);
+    // Never destructively apply an empty critical result. fetchSection normally
+    // returns cached last-known-good data after failures, but this guard also
+    // protects against future callers and legacy edge cases.
+    if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, data)) return data;
     applyCss(sectionKey, data.css);
     let htmlChanged = false;
     (targets || targetsFor(sectionKey)).forEach(function (target) {
       if (applyHtml(target, data.html, sectionKey)) htmlChanged = true;
     });
     applyJs(sectionKey, data.js);
+    markCriticalPart(sectionKey, data);
 
     document.dispatchEvent(new CustomEvent('naga:layout-section-applied', {
       detail: { sectionKey: sectionKey, htmlChanged: htmlChanged, data: data, fromCache: false }
@@ -593,10 +680,12 @@
       grouped.get(key).push(target);
     });
 
-    // Cached page/sidebar layout is safe, but the header/logo must always come
-    // from the current no-store BO response. Painting an older cached header first
-    // is what caused the logo to flash/change after refresh.
+    // Restore the last-known-good BO shell immediately. A cached Header is much
+    // safer than exposing the hardcoded fallback when a refresh lands during a
+    // brief BO/API/network failure. The fresh request below still updates it when
+    // BO has changed, but transient failures can no longer revert the site shell.
     applyCachedSection(GLOBAL_CSS_SECTION, []);
+    applyCachedSection('frontend-header', targetsFor('frontend-header'));
     applyCachedSection('frontend-sidebar', targetsFor('frontend-sidebar'));
     grouped.forEach(function (targets, key) {
       const applied = applyCachedSection(key, targets);
@@ -638,10 +727,10 @@
 
   document.addEventListener('naga:site-shell-ready', function () {
     shellReadySeen = true;
-    // During normal startup initialize() runs in the same DOMContentLoaded cycle.
-    // Do not issue a second identical header request/replacement. Only support a
-    // genuinely late shell creation after initialization.
-    if (initialized) loadShellSections(true);
+    // initialize() owns normal startup. Starting another forced Header/Sidebar
+    // request after initialization has begun creates an out-of-order race. Only
+    // bootstrap here if the layout loader genuinely has not initialized yet.
+    if (!initialized && document.readyState !== 'loading') loadShellSections(true);
   });
 
   // Do not unconditionally replace the header again at +100ms/+600ms: each
@@ -658,9 +747,17 @@
     // replace the BO Layout Section after it has been applied. Refresh those
     // sections after all late scripts finish, then keep them authoritative.
     ['login-page', 'register-page'].forEach(function (sectionKey) {
-      if (!targetsFor(sectionKey).length) return;
-      setTimeout(function () { loadSection(sectionKey, targetsFor(sectionKey), true); }, 120);
-      setTimeout(function () { loadSection(sectionKey, targetsFor(sectionKey), true); }, 700);
+      const targets = targetsFor(sectionKey);
+      if (!targets.length) return;
+      // keepSectionAuthoritative already restores BO markup if a late auth script
+      // mutates it. Do not make two extra forced BO requests on every auth-page
+      // load; only recover if the section was never applied at all.
+      setTimeout(function () {
+        const missing = targets.some(function (target) {
+          return target.getAttribute('data-layout-custom-applied') !== sectionKey;
+        });
+        if (missing) loadSection(sectionKey, targetsFor(sectionKey), true);
+      }, 180);
     });
   });
 
@@ -670,7 +767,14 @@
     return loadSection(sectionKey, targets, true);
   };
 
-  if (document.readyState === 'loading') {
+  // This file is intentionally loaded near the start of the closing-body script
+  // sequence. At that point all layout targets above it are already parsed, so
+  // start BO Layout immediately instead of waiting for DOMContentLoaded (which
+  // would put app.js/Firebase/other synchronous assets ahead of the critical
+  // Header/Home/Sidebar requests during a hard refresh).
+  if (document.body && (document.querySelector('.top-header') || document.querySelector('[data-layout-section]'))) {
+    initialize();
+  } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize, { once: true });
   } else {
     initialize();

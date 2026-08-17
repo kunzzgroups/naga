@@ -1966,13 +1966,33 @@ function normalizeSliderResponse(response){
 }
 
 let sliderBannerCache = [];
+const SLIDER_STORAGE_KEY = 'naga_slider_banners_v2';
+
+function readSliderBannerCache(){
+  try{
+    const raw = localStorage.getItem(SLIDER_STORAGE_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed && parsed.data) ? parsed.data : [];
+  }catch(_){ return []; }
+}
+
+function writeSliderBannerCache(banners){
+  try{
+    localStorage.setItem(SLIDER_STORAGE_KEY, JSON.stringify({savedAt:Date.now(), data:banners}));
+  }catch(_){}
+}
+
+function usableSliderBanners(data){
+  return normalizeSliderResponse(data)
+    .filter(item => Number(item.status || 1) === 1)
+    .filter(item => item.imageUrl || item.image_url || item.image)
+    .sort((a, b) => (Number(a.sortOrder || a.sort_order || 0) - Number(b.sortOrder || b.sort_order || 0)) || (Number(b.id || 0) - Number(a.id || 0)));
+}
 
 function renderSliderBanners(slider, banners){
   if(!slider || !Array.isArray(banners) || !banners.length) return;
 
-  // Build the complete BO-configured slider off-DOM, then swap once. The
-  // HTML contains no fallback banner, so an outdated hardcoded image can never
-  // flash before the current BO slider data is ready.
   const fragment = document.createDocumentFragment();
   const track = document.createElement('div');
   const dots = document.createElement('div');
@@ -2010,52 +2030,93 @@ function renderSliderBanners(slider, banners){
   slider.setAttribute('aria-busy', 'false');
 }
 
+function mountSliderBanners(banners){
+  if(!Array.isArray(banners) || !banners.length) return;
+  sliderBannerCache = banners;
+  document.querySelectorAll('.side-slider').forEach(slider => {
+    renderSliderBanners(slider, banners);
+    initSlider(slider);
+  });
+}
+
 function preloadSliderBanners(banners){
   return Promise.all(banners.map(item => new Promise(resolve => {
     const image = new Image();
-    image.onload = () => resolve(true);
-    image.onerror = () => resolve(false);
+    let settled = false;
+    const finish = ok => {
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(ok);
+    };
+    const timer = setTimeout(() => finish(false), 2600);
+    image.onload = () => finish(true);
+    image.onerror = () => finish(false);
     image.src = getImageUrl(item, '', 'slider');
-    if(image.decode) image.decode().then(() => resolve(true)).catch(() => {});
+    if(image.decode) image.decode().then(() => finish(true)).catch(() => {});
   })));
 }
 
-function loadSliderBanners(){
-  // index.html starts this request in <head> so BO-configured banners can be
-  // ready before app.js reaches the slider. Reuse that promise when present
-  // instead of making a second request. No HTML/default banner is ever shown.
-  const earlyKey = new URL(SLIDER_API_URL, location.href).toString();
-  const earlyRequest = window.__NAGA_EARLY_API__ && window.__NAGA_EARLY_API__[earlyKey];
-  const request = earlyRequest || fetch(earlyKey, { cache: 'no-store' }).then(res => {
-    if(!res.ok) throw new Error('Slider API error');
-    return res.json();
-  });
-
-  return Promise.resolve(request)
-    .then(async data => {
-      const banners = normalizeSliderResponse(data)
-        .filter(item => Number(item.status || 1) === 1)
-        .filter(item => item.imageUrl || item.image_url || item.image)
-        .sort((a, b) => (Number(a.sortOrder || a.sort_order || 0) - Number(b.sortOrder || b.sort_order || 0)) || (Number(b.id || 0) - Number(a.id || 0)));
-
-      if(!banners.length) return;
-
-      const preloadResults = await preloadSliderBanners(banners);
-      const readyBanners = banners.filter((_, index) => preloadResults[index] !== false);
-      if(!readyBanners.length) return;
-      sliderBannerCache = readyBanners;
-      document.querySelectorAll('.side-slider').forEach(slider => {
-        renderSliderBanners(slider, readyBanners);
-      });
+function fetchSliderJson(url){
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => { try{ controller.abort(); }catch(_){} }, 2800) : 0;
+  return fetch(url, {cache:'no-store', signal:controller ? controller.signal : undefined})
+    .then(res => {
+      if(!res.ok) throw new Error('Slider API error');
+      return res.json();
     })
-    .catch(err => {
-      console.warn('Slider banners unavailable; slider kept hidden:', err.message);
-    });
+    .finally(() => { if(timer) clearTimeout(timer); });
 }
 
-loadSliderBanners().then(() => {
-  document.querySelectorAll('.side-slider').forEach(initSlider);
-});
+async function fetchSliderWithRetry(url){
+  let lastError = null;
+  for(let attempt=0; attempt<3; attempt+=1){
+    try{ return await fetchSliderJson(url); }
+    catch(err){
+      lastError = err;
+      if(attempt < 2) await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 180 : 520));
+    }
+  }
+  throw lastError || new Error('Slider API unavailable');
+}
+
+async function loadSliderBanners(){
+  // Paint the last BO-approved slider immediately. This prevents a transient
+  // slider API/image failure during repeated refreshes from leaving a blank area.
+  const cached = usableSliderBanners(readSliderBannerCache());
+  if(cached.length) mountSliderBanners(cached);
+
+  const earlyKey = new URL(SLIDER_API_URL, location.href).toString();
+  const earlyRequest = window.__NAGA_EARLY_API__ && window.__NAGA_EARLY_API__[earlyKey];
+
+  try{
+    // Reuse an existing early request only if one actually exists; otherwise use
+    // the bounded retry path. A rejected early promise gets one normal retry path.
+    let data;
+    if(earlyRequest){
+      try{ data = await Promise.resolve(earlyRequest); }
+      catch(_){ data = await fetchSliderWithRetry(earlyKey); }
+    }else{
+      data = await fetchSliderWithRetry(earlyKey);
+    }
+
+    const banners = usableSliderBanners(data);
+    if(!banners.length) return;
+
+    const preloadResults = await preloadSliderBanners(banners);
+    const readyBanners = banners.filter((_, index) => preloadResults[index] !== false);
+    if(!readyBanners.length) return;
+
+    writeSliderBannerCache(readyBanners);
+    mountSliderBanners(readyBanners);
+  }catch(err){
+    // Cached banners stay mounted. Do not blank a working slider because one
+    // refresh hit a transient API/network problem.
+    console.warn('Slider banners fresh refresh unavailable; keeping cached slider:', err && err.message ? err.message : err);
+  }
+}
+
+loadSliderBanners();
 
 // Referral sharing is handled by assets/js/referral-share.js.
 

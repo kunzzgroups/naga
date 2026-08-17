@@ -14,6 +14,7 @@
   var domReady = document.readyState !== 'loading';
   var customAssetsReady = false;
   var lobbyReady = !isHomeLobby;
+  var criticalLayoutReady = !isHomeLobby || !!window.__NAGA_CRITICAL_LAYOUT_READY__;
   var authLayoutReady = !isAuthPage;
   var authLanguageReady = !isAuthPage || !!(window.I18N && window.I18N.ready);
   var revealed = root.classList.contains('page-loaded') && !root.classList.contains('page-loading');
@@ -48,7 +49,7 @@
 
   function tryReveal() {
     // Animation is intentionally not part of this gate.
-    if (domReady && customAssetsReady && lobbyReady && authLayoutReady && authLanguageReady) revealPage(false);
+    if (domReady && customAssetsReady && lobbyReady && criticalLayoutReady && authLayoutReady && authLanguageReady) revealPage(false);
   }
 
   function onDomReady() { domReady = true; tryReveal(); }
@@ -57,6 +58,7 @@
 
   document.addEventListener('naga:custom-assets-ready', function () { customAssetsReady = true; tryReveal(); }, { once: true });
   document.addEventListener('naga:lobby-ready', function () { lobbyReady = true; tryReveal(); }, { once: true });
+  document.addEventListener('naga:critical-layout-ready', function () { criticalLayoutReady = true; tryReveal(); }, { once: true });
   document.addEventListener('naga:auth-layout-ready', function (event) {
     var key = event && event.detail && event.detail.sectionKey;
     if (!isAuthPage || key === expectedAuthSection) { authLayoutReady = true; tryReveal(); }
