@@ -6,7 +6,7 @@
   const grid=document.querySelector('.payment-grid');
   let paymentMethods=[];
   let selectedIndex=-1;
-  let minimumDeposit=10;
+  let minimumDeposit=Number(window.NAGA_TRANSACTION_LIMITS&&window.NAGA_TRANSACTION_LIMITS.minDepositAmount)||10;
   const minimumDisplay=document.getElementById('depositMinimumDisplay');
 
   function token(){return localStorage.getItem('member_token')||'';}
@@ -22,8 +22,10 @@
 
   async function loadTransactionLimits(){
     try{
-      const url=String(API.frontendDisplaySetting)+(String(API.frontendDisplaySetting).includes('?')?'&':'?')+'_limit_ts='+Date.now();
-      const res=await fetch(url,{cache:'no-store'});
+      const base=(window.NAGA_CONFIG&&window.NAGA_CONFIG.api&&window.NAGA_CONFIG.api.baseUrl)||'';
+      const endpoint=API.frontendDisplaySetting||(String(base).replace(/\/+$/,'')+'/api/frontend/display-setting');
+      const url=String(endpoint)+(String(endpoint).includes('?')?'&':'?')+'_limit_ts='+Date.now();
+      const res=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache'}});
       const json=await res.json().catch(()=>({}));
       if(res.ok&&json.status!=='error'){ const n=Number((json.data||{}).minDepositAmount); if(Number.isFinite(n)&&n>0) minimumDeposit=n; }
     }catch(e){}
@@ -105,5 +107,7 @@
     catch(e){ msg(e.message||'Deposit failed', false); }
     finally{ submit.disabled=false; }
   }
+  window.addEventListener('naga:transaction-limits',function(e){ const n=Number(e.detail&&e.detail.minDepositAmount); if(Number.isFinite(n)&&n>0){ minimumDeposit=n; if(input) input.min=String(minimumDeposit); if(minimumDisplay) minimumDisplay.textContent='Minimum Deposit: '+money(minimumDeposit); } });
+
   document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); ensureProof(); loadTransactionLimits(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
 })();

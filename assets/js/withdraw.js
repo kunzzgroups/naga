@@ -8,7 +8,7 @@
   const minimumDisplay=document.getElementById('withdrawMinimumDisplay');
   let mainBalance = 0;
   let withdrawalPolicy = null;
-  let globalMinWithdraw = 50;
+  let globalMinWithdraw = Number(window.NAGA_TRANSACTION_LIMITS&&window.NAGA_TRANSACTION_LIMITS.minWithdrawalAmount)||50;
 
   function token(){return localStorage.getItem('member_token')||'';}
   function requireLogin(){ if(!token()){ location.href='login.html?redirect=withdraw.html'; return false;} return true; }
@@ -43,7 +43,7 @@
   async function fetchTransactionLimits(){
     try{
       const url=API.frontendDisplaySetting||(API_BASE.replace(/\/+$/,'')+'/api/frontend/display-setting');
-      const res=await fetch(url+(url.includes('?')?'&':'?')+'_limit_ts='+Date.now(),{cache:'no-store'});
+      const res=await fetch(url+(url.includes('?')?'&':'?')+'_limit_ts='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache'}});
       const json=await res.json().catch(()=>({}));
       if(res.ok&&json.status!=='error'){ const n=Number((json.data||{}).minWithdrawalAmount); if(Number.isFinite(n)&&n>0) globalMinWithdraw=n; }
     }catch(e){}
@@ -107,6 +107,8 @@
     amount.value=btn.textContent.trim()==='MAX'?String(mainBalance||0):btn.textContent.trim();
     amount.focus();
   }));
+
+  window.addEventListener('naga:transaction-limits',function(e){ const n=Number(e.detail&&e.detail.minWithdrawalAmount); if(Number.isFinite(n)&&n>0){ globalMinWithdraw=n; applyWithdrawalPolicy(withdrawalPolicy); } });
 
   document.addEventListener('DOMContentLoaded',async()=>{
     if(!requireLogin()) return;
