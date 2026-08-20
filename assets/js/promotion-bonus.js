@@ -158,25 +158,14 @@
     return `<a class="${cls.join(' ')}" href="${esc(href)}" data-id="${esc(p.id)}" data-title="${esc(p.name || tr('promotion_default_title','Promotion'))}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || tr('promotion_default_title','Promotion'))}"></a>`;
   }
 
-  function latestLogicalRows(rows){
-    const latest=new Map();
-    rows.forEach(raw=>{
-      const p=Object.assign({},raw||{});
-      const category=String(p.bonusCategoryTitleId||'uncategorized');
-      const code=String(p.promotionCode||'').trim().toLowerCase();
-      const name=String(p.name||'').trim().toLowerCase().replace(/\s+/g,' ');
-      // Old active rows with the same category + promotion code/name are historical
-      // records, not separate cards. Keep only the newest database ID.
-      const key=category+'|'+(code?('code:'+code):('name:'+name));
-      const previous=latest.get(key);
-      if(!previous || Number(p.id||0)>Number(previous.id||0)) latest.set(key,p);
-    });
-    return Array.from(latest.values());
-  }
-
   function groupRows(rows){
     const map = new Map();
-    latestLogicalRows(rows).forEach(p => {
+    // The player API is the source of truth for promotion visibility. Every row
+    // returned by the API represents one BO promotion and must render exactly once.
+    // Do not de-duplicate by name/code here, otherwise separate BO rows can silently
+    // disappear from the frontend.
+    rows.forEach(raw => {
+      const p = Object.assign({}, raw || {});
       const key = String(p.bonusCategoryTitleId || 'uncategorized');
       if(!map.has(key)) map.set(key, {
         title: p.bonusCategoryTitleName || tr('promotion_default_section_title','Promotion Bonus'),

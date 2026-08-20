@@ -14005,3 +14005,218 @@ body.bank-detail-page .form-status.success{color:#70f3aa;}
 .vip-reward-row.vip-level-unlocked .vip-reward-box{background:linear-gradient(180deg,rgba(34,71,47,.42),rgba(31,35,40,.94))}
 .vip-reward-row.vip-level-locked{opacity:.72}
 @media(min-width:900px){.vip-panel[data-vip-panel="level"].active{grid-template-columns:320px 1fr!important}.vip-level-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}.vip-reward-box{align-items:center!important;padding:18px!important;text-align:center}.vip-reward-row h3 small{text-align:left}}
+
+
+/* ===== v1.0.110: history/downline back buttons + bank scroll + stable header/language layout ===== */
+.page-back-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  width:100%!important;
+}
+.page-back-link{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+/* Bank Detail used to inherit the desktop lobby's html/body 100vh + overflow:hidden.
+   That clipped the lower fields/button on short desktop windows. This page is a form,
+   so always allow natural document scrolling on every viewport size. */
+html:has(body.bank-detail-page),
+html:has(body.bank-detail-page) body.bank-detail-page{
+  height:auto!important;
+  min-height:100%!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+}
+body.bank-detail-page{
+  display:block!important;
+  padding-bottom:57px!important;
+  touch-action:pan-y!important;
+}
+body.bank-detail-page .bank-detail-main{
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+body.bank-detail-page .bank-detail-card{
+  overflow:visible!important;
+}
+
+/* Keep the header's final desktop geometry from the first rendered frame. The base
+   stylesheet originally starts with justify-content:center; async shell/header markup
+   then changed it to right aligned, producing the visible center -> right jump. */
+.top-header{
+  justify-content:flex-start!important;
+}
+.top-header .logo-box,
+.top-header .mobile-style-logo{
+  margin-right:auto!important;
+  flex:0 0 auto!important;
+}
+.top-header-actions{
+  margin-left:auto!important;
+  flex:0 0 auto!important;
+}
+@media (min-width:769px){
+  .top-header-actions{
+    position:absolute!important;
+    right:28px!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+  }
+}
+@media (max-width:768px){
+  .top-header-actions{
+    position:static!important;
+    transform:none!important;
+    margin-left:auto!important;
+  }
+}
+
+/* Prevent translation reflow/scroll anchoring from nudging Setting while the language
+   popup is being switched. JS also preserves the menu's exact viewport position. */
+body.setting-page,
+body.setting-page .setting-main,
+body.setting-page .setting-shell,
+body.setting-page .setting-card{
+  overflow-anchor:none!important;
+}
+body.setting-page .setting-item > span:nth-child(2){
+  min-width:0!important;
+}
+
+
+/* ===== v1.0.111: integrated back-button placement for Downline + History ===== */
+body.downline-page .downline-head{
+  justify-content:flex-start!important;
+}
+body.downline-page .downline-title-block{
+  min-width:0;
+}
+body.downline-page .downline-head-back{
+  flex:0 0 auto;
+  align-self:center;
+  margin:0 14px 0 0!important;
+  position:relative!important;
+  top:auto!important;
+  left:auto!important;
+}
+body.downline-page .downline-code{
+  margin-left:auto;
+}
+body.history-page .history-tabs{
+  align-items:center;
+}
+body.history-page .history-tabs-back{
+  flex:0 0 auto;
+  margin:0 2px 0 0!important;
+  position:relative!important;
+  top:auto!important;
+  left:auto!important;
+}
+@media (max-width: 700px){
+  body.downline-page .downline-head-back{margin-right:10px!important;}
+  body.history-page .history-tabs{padding-left:14px!important;}
+  body.history-page .history-tabs-back{margin-right:0!important;}
+}
+
+/* ===== v1.0.112: Setting language geometry lock =====
+   English and Chinese use different font fallback metrics. Previously the profile
+   rows/menu buttons only had min-height + normal line-height, so the CJK font made
+   each row a few pixels taller. Across all rows this changed the card height and
+   pushed the Setting panel up/down when switching language. Keep the same physical
+   row/heading/button geometry for every language instead of compensating scroll. */
+body.setting-page .setting-profile-mini-merged{
+  box-sizing:border-box!important;
+  min-height:88px!important;
+  height:88px!important;
+  margin-bottom:16px!important;
+  padding-bottom:16px!important;
+}
+body.setting-page .setting-merged-profile-heading{
+  box-sizing:border-box!important;
+  min-height:47px!important;
+  height:47px!important;
+  margin-bottom:8px!important;
+  display:flex!important;
+  align-items:flex-start!important;
+}
+body.setting-page .setting-merged-profile-heading h1{
+  line-height:24px!important;
+  min-height:24px!important;
+  margin:0!important;
+}
+body.setting-page .setting-merged-profile-heading p{
+  line-height:16px!important;
+  min-height:16px!important;
+  margin:4px 0 0!important;
+}
+body.setting-page .profile-list{
+  margin-top:0!important;
+}
+body.setting-page .profile-row{
+  box-sizing:border-box!important;
+  height:39px!important;
+  min-height:39px!important;
+  padding:0!important;
+  line-height:18px!important;
+}
+body.setting-page .profile-row > span,
+body.setting-page .profile-row > strong{
+  line-height:18px!important;
+  margin:0!important;
+}
+body.setting-page .setting-toggle{
+  box-sizing:border-box!important;
+  height:58px!important;
+  min-height:58px!important;
+  line-height:22px!important;
+}
+body.setting-page .setting-menu{
+  align-items:stretch!important;
+}
+body.setting-page .setting-item{
+  box-sizing:border-box!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  line-height:18px!important;
+  overflow:hidden!important;
+}
+body.setting-page .setting-item > span:nth-child(2){
+  line-height:18px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.setting-page .setting-ico{
+  line-height:1!important;
+}
+body.setting-page .setting-item em{
+  line-height:22px!important;
+}
+
+/* On narrow screens labels can still use the same stable row height. */
+@media (max-width:900px){
+  body.setting-page .setting-profile-mini-merged{
+    min-height:88px!important;
+    height:88px!important;
+  }
+  body.setting-page .profile-row{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:10px!important;
+    height:39px!important;
+    min-height:39px!important;
+  }
+  body.setting-page .profile-row strong{
+    text-align:right!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    max-width:56vw!important;
+  }
+}

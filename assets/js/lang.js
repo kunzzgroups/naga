@@ -118,6 +118,10 @@
 
   function changeLanguage(lang){
     lang = normaliseLang(lang);
+
+    // Setting geometry is locked in CSS so language changes update text only;
+    // no scroll compensation is needed (and none should be applied).
+
     return Promise.all([loadDictFile(config.default_lang), loadDictFile(lang)]).then(function(result){
       defaultDict = result[0] || {};
       window.I18N.current = lang;
@@ -126,6 +130,7 @@
       window.I18N.config = config;
       setSavedLang(lang);
       applyLanguage();
+
       return window.I18N.dict;
     });
   }
