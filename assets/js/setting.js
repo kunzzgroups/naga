@@ -18,7 +18,24 @@
     return '';
   }
   function setText(selector, value){ const el=document.querySelector(selector); if(el) el.textContent = value == null || String(value).trim()==='' ? '-' : String(value); }
-  function setBadge(member){ setText('[data-profile-vip]', firstValue(member, ['vipName','vip_name','vipLevelName','vip_level_name','vipLevel','vip_level'])); }
+  function setBadge(member){
+    const el=document.querySelector('[data-profile-vip]'); if(!el) return;
+    const name=firstValue(member,['vipName','vip_name','vipLevelName','vip_level_name','vipLevel','vip_level']);
+    el.textContent=name||'-';
+  }
+  function currentLang(){ try{return (localStorage.getItem('site_lang')||(window.I18N&&window.I18N.current)||'en').trim().toLowerCase().replace('_','-');}catch(e){return 'en';} }
+  async function loadVipBadge(){
+    const el=document.querySelector('[data-profile-vip]'); if(!el||!token()) return;
+    try{
+      const res=await fetch(API_BASE+'/api/player/vip?lang='+encodeURIComponent(currentLang())+'&_profile_vip_ts='+Date.now(),{cache:'no-store',headers:{'Authorization':'Bearer '+token(),'Cache-Control':'no-cache'}});
+      const json=await res.json().catch(()=>({})); const data=json&&json.data||{}; const levels=Array.isArray(data.levels)?data.levels:[]; const idx=Math.max(0,Math.min(Number(data.currentLevelIndex||0),Math.max(0,levels.length-1))); const level=levels[idx];
+      if(!level){el.textContent='-';return;}
+      const image=String(level.imageUrl||'').trim(); const icon=String(level.iconClass||'fa-solid fa-crown').trim();
+      el.classList.add('profile-vip-badge-rich');
+      el.innerHTML=(image?'<img src="'+esc(image)+'" alt="">':'<i class="'+esc(icon)+'"></i>')+'<span>'+esc(level.name||'VIP')+'</span>';
+      el.title=(level.name||'VIP')+' · '+Number(data.experience||0).toLocaleString()+' EXP';
+    }catch(e){ /* retain profile fallback */ }
+  }
   function renderSummary(member){
     const name = firstValue(member, ['fullName','full_name','name','username']);
     const mobile = firstValue(member, ['mobile','phoneNumber','phone_number','phone']);
@@ -73,6 +90,7 @@
     try {
       const member = JSON.parse(localStorage.getItem('member_info') || 'null');
       if(member) render(member);
+      loadVipBadge();
     } catch(e) {}
   });
 
@@ -82,6 +100,6 @@
     renderSummary({});
     if(list) render({});
     if(!requireLogin()) return;
-    loadProfile().catch(e => { renderSummary({}); if(list) render({}); console.warn('Setting profile unavailable:', e && e.message ? e.message : e); });
+    loadProfile().then(loadVipBadge).catch(e => { renderSummary({}); if(list) render({}); console.warn('Setting profile unavailable:', e && e.message ? e.message : e); });
   });
 })();

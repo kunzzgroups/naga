@@ -14220,3 +14220,269 @@ body.setting-page .setting-item em{
     max-width:56vw!important;
   }
 }
+
+/* VIP milestone artwork + profile badge v2.1.0 */
+body.vip-page .vip-reward-box.vip-milestone-reward{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;min-width:260px!important}
+body.vip-page .vip-milestone-image{width:78px!important;height:64px!important;object-fit:contain!important;display:block!important;flex:0 0 auto!important;filter:drop-shadow(0 5px 10px rgba(0,0,0,.24))}
+body.vip-page .vip-milestone-copy{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:3px!important;min-width:0!important}
+body.vip-page .vip-milestone-copy strong{white-space:nowrap!important}
+body.vip-page .vip-milestone-copy small{max-width:210px!important;line-height:1.25!important;color:#d7d1c8!important;text-align:left!important}
+body.vip-page .vip-milestone-copy em{font-style:normal!important;font-size:11px!important;line-height:1.25!important;color:#ffca6b!important;text-align:left!important}
+body.setting-page .setting-profile-mini-merged .profile-badge.profile-vip-badge-rich{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;min-width:0!important;max-width:128px!important;padding:5px 9px!important;border-radius:999px!important;overflow:hidden!important}
+body.setting-page .profile-vip-badge-rich img{width:25px!important;height:25px!important;object-fit:contain!important;flex:0 0 25px!important}
+body.setting-page .profile-vip-badge-rich i{width:auto!important;font-size:14px!important;color:#ffd75d!important;flex:0 0 auto!important}
+body.setting-page .profile-vip-badge-rich span{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:11px!important;font-weight:900!important}
+@media(max-width:760px){body.vip-page .vip-reward-box.vip-milestone-reward{min-width:210px!important;gap:8px!important}body.vip-page .vip-milestone-image{width:62px!important;height:52px!important}body.vip-page .vip-milestone-copy small{max-width:150px!important}}
+
+
+/* VIP manual milestone claim v2.2.0 */
+body.vip-page .vip-claim-button{cursor:pointer!important;pointer-events:auto!important;opacity:1!important;position:relative!important;overflow:hidden!important;box-shadow:0 0 18px rgba(255,190,72,.28)!important;animation:vipClaimPulse 1.8s ease-in-out infinite!important}
+body.vip-page .vip-claim-button:hover{transform:translateY(-1px) scale(1.03)!important}
+body.vip-page .vip-claim-button.is-claiming{cursor:wait!important;animation:none!important;opacity:.82!important}
+body.vip-page .vip-claimed-button{opacity:.82!important}
+body.vip-page .vip-level-unlocked .vip-milestone-image,body.vip-page .vip-level-current .vip-milestone-image{filter:drop-shadow(0 6px 14px rgba(255,190,72,.34))!important}
+@keyframes vipClaimPulse{0%,100%{box-shadow:0 0 10px rgba(255,190,72,.18)}50%{box-shadow:0 0 24px rgba(255,190,72,.50)}}
+@media(prefers-reduced-motion:reduce){body.vip-page .vip-claim-button{animation:none!important}}
+body.vip-page .vip-reward-history-row .vip-history-claim{border:1px solid rgba(255,197,89,.72);border-radius:10px;padding:8px 13px;background:linear-gradient(180deg,#ffcf69,#e99b22);font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 5px 15px rgba(0,0,0,.2)}
+body.vip-page .vip-reward-history-row .vip-history-claim:hover{transform:translateY(-1px)}
+body.vip-page .vip-reward-history-row .vip-history-claim:disabled{opacity:.7;cursor:wait}
+
+
+/* VIP dual milestone artwork/perks v2.3.0 */
+body.vip-page .vip-reward-box.vip-milestone-reward{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:18px!important;min-width:360px!important;flex-wrap:wrap!important}
+body.vip-page .vip-milestone-perk{display:flex!important;align-items:center!important;gap:9px!important;min-width:135px!important}
+body.vip-page .vip-milestone-perk+.vip-milestone-perk{padding-left:16px!important;border-left:1px solid rgba(255,255,255,.10)!important}
+body.vip-page .vip-perk-label{font-size:10px!important;line-height:1!important;text-transform:uppercase!important;letter-spacing:.3px!important;color:#aaa49d!important;white-space:nowrap!important}
+body.vip-page .vip-deposit-stack{width:58px!important;height:58px!important;border-radius:14px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:linear-gradient(145deg,#5f2d8b,#9a4dd1)!important;color:#ffd862!important;font-size:27px!important;box-shadow:0 5px 14px rgba(0,0,0,.23)!important}
+body.vip-page .vip-deposit-bonus-image{width:78px!important;height:64px!important}
+body.vip-page .vip-milestone-note{flex-basis:100%!important;font-size:11px!important;color:#d7d1c8!important;line-height:1.3!important;text-align:left!important}
+@media(max-width:760px){body.vip-page .vip-reward-box.vip-milestone-reward{min-width:230px!important;gap:10px!important}body.vip-page .vip-milestone-perk+.vip-milestone-perk{padding-left:10px!important}body.vip-page .vip-milestone-note{width:100%!important}}
+
+/* VIP per-step turnover artwork */
+body.vip-page .vip-turnover-stack{width:78px!important;height:64px!important;display:grid!important;place-items:center!important;flex:0 0 auto!important;font-size:30px!important;color:#f3c86a!important;background:radial-gradient(circle,rgba(255,207,92,.18),transparent 70%)!important}
+body.vip-page .vip-turnover-image{object-fit:contain!important}
+
+/* VIP milestone perks v2.5.0: artwork above, label/value below to prevent horizontal overflow */
+body.vip-page .vip-reward-box.vip-milestone-reward{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:start!important;
+  justify-content:stretch!important;
+  gap:14px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+body.vip-page .vip-milestone-perk{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  min-width:0!important;
+  width:100%!important;
+  padding:0 8px!important;
+  box-sizing:border-box!important;
+  text-align:center!important;
+}
+body.vip-page .vip-milestone-perk+.vip-milestone-perk{
+  padding-left:8px!important;
+  border-left:1px solid rgba(255,255,255,.10)!important;
+}
+body.vip-page .vip-milestone-copy{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:3px!important;
+  width:100%!important;
+  min-width:0!important;
+  text-align:center!important;
+}
+body.vip-page .vip-milestone-copy small,
+body.vip-page .vip-milestone-copy strong,
+body.vip-page .vip-milestone-copy em{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  text-align:center!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+body.vip-page .vip-milestone-copy strong{
+  white-space:normal!important;
+  line-height:1.2!important;
+}
+body.vip-page .vip-milestone-image,
+body.vip-page .vip-coin-stack,
+body.vip-page .vip-deposit-stack,
+body.vip-page .vip-turnover-stack{
+  margin:0 auto!important;
+  flex:0 0 auto!important;
+}
+body.vip-page .vip-milestone-note{
+  grid-column:1 / -1!important;
+  width:100%!important;
+  min-width:0!important;
+  text-align:center!important;
+}
+@media(max-width:760px){
+  body.vip-page .vip-reward-box.vip-milestone-reward{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+    min-width:0!important;
+  }
+  body.vip-page .vip-milestone-perk{padding:0 4px!important;gap:5px!important}
+  body.vip-page .vip-milestone-perk+.vip-milestone-perk{padding-left:4px!important}
+  body.vip-page .vip-milestone-image,
+  body.vip-page .vip-coin-stack,
+  body.vip-page .vip-deposit-stack,
+  body.vip-page .vip-turnover-stack{width:54px!important;height:48px!important}
+  body.vip-page .vip-milestone-copy small{font-size:10px!important}
+  body.vip-page .vip-milestone-copy strong{font-size:13px!important}
+}
+@media(max-width:430px){
+  body.vip-page .vip-reward-box.vip-milestone-reward{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.vip-page .vip-milestone-note{grid-column:1 / -1!important}
+}
+
+/* VIP milestone column sizing v2.6.0: keep artwork + label + value fully visible */
+body.vip-page .vip-level-list{
+  align-items:stretch!important;
+}
+body.vip-page .vip-reward-row{
+  height:100%!important;
+  align-content:start!important;
+}
+body.vip-page .vip-reward-box.vip-milestone-reward{
+  height:auto!important;
+  min-height:164px!important;
+  padding:16px 14px 18px!important;
+  align-items:stretch!important;
+  overflow:visible!important;
+  grid-auto-rows:auto!important;
+}
+body.vip-page .vip-milestone-perk{
+  min-height:124px!important;
+  justify-content:flex-start!important;
+  padding:0 10px!important;
+}
+body.vip-page .vip-milestone-image,
+body.vip-page .vip-coin-stack,
+body.vip-page .vip-deposit-stack,
+body.vip-page .vip-turnover-stack{
+  width:72px!important;
+  height:62px!important;
+  max-width:100%!important;
+}
+body.vip-page .vip-milestone-copy{
+  margin-top:2px!important;
+  min-height:44px!important;
+}
+body.vip-page .vip-milestone-copy small{
+  min-height:14px!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+}
+body.vip-page .vip-milestone-copy strong{
+  min-height:20px!important;
+  font-size:14px!important;
+  line-height:1.35!important;
+  overflow:visible!important;
+}
+body.vip-page .vip-milestone-note{
+  margin-top:2px!important;
+  padding-top:8px!important;
+  border-top:1px solid rgba(255,255,255,.08)!important;
+}
+@media(max-width:760px){
+  body.vip-page .vip-reward-box.vip-milestone-reward{
+    min-height:150px!important;
+    padding:14px 8px 16px!important;
+  }
+  body.vip-page .vip-milestone-perk{
+    min-height:112px!important;
+    padding:0 4px!important;
+  }
+  body.vip-page .vip-milestone-image,
+  body.vip-page .vip-coin-stack,
+  body.vip-page .vip-deposit-stack,
+  body.vip-page .vip-turnover-stack{
+    width:58px!important;
+    height:52px!important;
+  }
+}
+@media(max-width:430px){
+  body.vip-page .vip-reward-box.vip-milestone-reward{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+/* VIP milestone spacing v2.6.1: tighten level cards/perk spacing */
+body.vip-page .vip-level-list{
+  gap:10px!important;
+  row-gap:10px!important;
+  column-gap:10px!important;
+}
+body.vip-page .vip-reward-row{
+  padding:13px!important;
+}
+body.vip-page .vip-reward-box.vip-milestone-reward{
+  gap:8px!important;
+  padding:14px 10px 15px!important;
+}
+body.vip-page .vip-milestone-perk{
+  gap:4px!important;
+  padding:0 6px!important;
+}
+body.vip-page .vip-milestone-copy{
+  gap:2px!important;
+  margin-top:0!important;
+}
+@media(max-width:760px){
+  body.vip-page .vip-level-list{gap:8px!important}
+  body.vip-page .vip-reward-row{padding:11px!important}
+  body.vip-page .vip-reward-box.vip-milestone-reward{gap:6px!important;padding:12px 7px 13px!important}
+}
+
+/* VIP mobile perk row v2.6.2: always keep Level Bonus / Deposit Bonus / Turnover on one row */
+@media(max-width:760px){
+  body.vip-page .vip-reward-box.vip-milestone-reward{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:2px!important;
+    padding:12px 4px 13px!important;
+  }
+  body.vip-page .vip-milestone-perk{
+    min-width:0!important;
+    width:100%!important;
+    min-height:112px!important;
+    padding:0 2px!important;
+  }
+  body.vip-page .vip-milestone-perk+.vip-milestone-perk{
+    padding-left:2px!important;
+  }
+  body.vip-page .vip-milestone-image,
+  body.vip-page .vip-coin-stack,
+  body.vip-page .vip-deposit-stack,
+  body.vip-page .vip-turnover-stack{
+    width:52px!important;
+    height:48px!important;
+  }
+  body.vip-page .vip-milestone-copy small{
+    font-size:9px!important;
+    line-height:1.15!important;
+    white-space:normal!important;
+  }
+  body.vip-page .vip-milestone-copy strong{
+    font-size:13px!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+  }
+}
+@media(max-width:430px){
+  body.vip-page .vip-reward-box.vip-milestone-reward{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}

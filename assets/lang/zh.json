@@ -359,7 +359,7 @@
   "vip_faq_progression_q": "VIP 如何升级？",
   "vip_faq_progression_a": "每个 VIP 等级可以包含多个阶段。会员必须按顺序完成所有已启用阶段，才能进入下一个等级，EXP 不会跳过已设定的升级流程。",
   "vip_faq_reward_q": "每个阶段可以获得什么？",
-  "vip_faq_reward_a": "每个阶段都可以独立设置现金奖励、流水要求、最高提款和奖励说明。完成阶段后，奖励只会发放一次。",
+  "vip_faq_reward_a": "每个里程碑都可设置现金奖励、流水要求、最高提款与奖励图片。达到有奖励的里程碑后会开放“领取”按钮；只有玩家主动领取后奖励才会进入钱包，流水也从领取时间开始计算。",
   "vip_faq_final_q": "完成最后一个阶段后会怎样？",
   "vip_faq_final_a": "完成当前等级的最后一个阶段后，会员会进入下一个 VIP 等级，并从该等级的第一个阶段继续。",
   "vip_exp_history": "我的 EXP 记录",
@@ -410,5 +410,13 @@
   "leaderboard_payout_ratio": "派彩倍数",
   "leaderboard_loading": "正在载入排行榜...",
   "leaderboard_empty": "此时段暂无符合条件的赌场记录。",
-  "leaderboard_error": "无法载入排行榜，请重试。"
+  "leaderboard_error": "无法载入排行榜，请重试。",
+  "vip_withdraw_after_turnover": "完成流水后才可提款",
+  "vip_claim": "领取",
+  "vip_claiming": "领取中...",
+  "vip_ready_to_claim": "可领取",
+  "vip_claim_success": "VIP 奖励领取成功！",
+  "vip_claim_failed": "无法领取 VIP 奖励。",
+  "vip_level_bonus": "等级奖励",
+  "vip_deposit_bonus": "存款奖励"
 }

@@ -358,7 +358,7 @@
   "vip_faq_progression_q": "How does VIP progression work?",
   "vip_faq_progression_a": "Every VIP tier can contain multiple steps. You must complete every enabled step in order before moving to the next tier. EXP never skips the configured progression.",
   "vip_faq_reward_q": "What do I receive at each step?",
-  "vip_faq_reward_a": "Each step can have its own cash bonus, turnover requirement, maximum withdrawal and reward description. Rewards are credited once when the step is completed.",
+  "vip_faq_reward_a": "Each milestone can have its own cash bonus, turnover requirement, maximum withdrawal and reward image. When you reach a rewarded milestone, Claim becomes available. Your wallet is credited only after you claim, and turnover starts from the claim time.",
   "vip_faq_final_q": "What happens after the final step?",
   "vip_faq_final_a": "After the last step in a tier is completed, you enter the next VIP tier and continue from its first step.",
   "vip_exp_history": "My EXP History",
@@ -409,5 +409,13 @@
   "leaderboard_payout_ratio": "Payout Ratio",
   "leaderboard_loading": "Loading leaderboard...",
   "leaderboard_empty": "No qualifying casino records for this period.",
-  "leaderboard_error": "Unable to load leaderboard. Please try again."
+  "leaderboard_error": "Unable to load leaderboard. Please try again.",
+  "vip_withdraw_after_turnover": "Withdrawal unlocks after turnover",
+  "vip_claim": "Claim",
+  "vip_claiming": "Claiming...",
+  "vip_ready_to_claim": "Ready to claim",
+  "vip_claim_success": "VIP reward claimed successfully!",
+  "vip_claim_failed": "Unable to claim VIP reward.",
+  "vip_level_bonus": "Level Bonus",
+  "vip_deposit_bonus": "Deposit Bonus"
 }

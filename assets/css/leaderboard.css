@@ -37,3 +37,12 @@
   .leaderboard-refresh{margin-left:0}
   .leaderboard-note{padding:0 16px 12px}
 }
+
+/* v1.0.1: integrated Leaderboard back button, matching Downline/History */
+.leaderboard-head{justify-content:flex-start}
+.leaderboard-head-back{flex:0 0 auto;align-self:center;margin:0 14px 0 0!important;position:relative!important;top:auto!important;left:auto!important}
+.leaderboard-title-block{min-width:0}
+.leaderboard-badge{margin-left:auto}
+@media(max-width:768px){
+  .leaderboard-head-back{margin-right:10px!important}
+}
