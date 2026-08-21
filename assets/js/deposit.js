@@ -6,7 +6,10 @@
   const grid=document.querySelector('.payment-grid');
   let paymentMethods=[];
   let selectedIndex=-1;
-  let minimumDeposit=Number(window.NAGA_TRANSACTION_LIMITS&&window.NAGA_TRANSACTION_LIMITS.minDepositAmount)||10;
+  const PAYMENT_CACHE_KEY='naga_payment_methods_v1:'+location.host;
+  function readPaymentCache(){try{const x=JSON.parse(localStorage.getItem(PAYMENT_CACHE_KEY)||'[]');return Array.isArray(x)?x:[];}catch(e){return [];}}
+  function writePaymentCache(rows){try{localStorage.setItem(PAYMENT_CACHE_KEY,JSON.stringify(rows||[]));}catch(e){}}
+  let minimumDeposit=Number(window.NAGA_TRANSACTION_LIMITS&&window.NAGA_TRANSACTION_LIMITS.minDepositAmount)||null;
   const minimumDisplay=document.getElementById('depositMinimumDisplay');
 
   function token(){return localStorage.getItem('member_token')||'';}
@@ -15,9 +18,9 @@
   function money(v){const n=Number(v||0); return 'MYR '+(Number.isFinite(n)?n.toFixed(2):'0.00');}
   function fileUrl(name){ if(!name) return ''; if(/^https?:\/\//i.test(name)) return name; return UPLOAD_BASE.replace(/\/+$/,'') + '/payment/' + name; }
   function msg(text, ok){ let box=document.getElementById('depositMsg'); if(!box){ box=document.createElement('div'); box.id='depositMsg'; box.className='deposit-note'; document.querySelector('.deposit-actions')?.before(box); } box.style.color=ok?'#19ff5a':'#ff4040'; box.textContent=text; }
-  function setBalance(v){ document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent=money(v)); localStorage.setItem('member_main_wallet_balance', String(Number(v||0))); }
-  function extractBalance(json){ const d=(json&&json.data)||json||{}; const list=[d.balance,d.mainWalletBalance,d.walletBalance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of list){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return 0; }
-  async function loadBalance(){ const url=String(API.playerMainWalletBalance)+(String(API.playerMainWalletBalance).includes('?')?'&':'?')+'_wallet_ts='+Date.now(); const res=await fetch(url,{cache:'no-store',headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load balance'); setBalance(extractBalance(json)); }
+  function setBalance(v){ const n=Number(v); if(!Number.isFinite(n)) return; document.querySelectorAll('[data-main-wallet-balance]').forEach(el=>el.textContent=money(n)); localStorage.setItem('member_main_wallet_balance', String(n)); localStorage.setItem('member_main_wallet_balance_confirmed_at', String(Date.now())); }
+  function extractBalance(json){ const d=(json&&json.data)||json||{}; const list=[d.balance,d.mainWalletBalance,d.walletBalance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of list){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return null; }
+  async function loadBalance(){ const url=String(API.playerMainWalletBalance)+(String(API.playerMainWalletBalance).includes('?')?'&':'?')+'_wallet_ts='+Date.now(); const res=await fetch(url,{cache:'no-store',headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}}); const json=await res.json().catch(()=>({})); if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load balance'); const b=extractBalance(json); if(b!==null) setBalance(b); }
 
 
   async function loadTransactionLimits(){
@@ -29,8 +32,7 @@
       const json=await res.json().catch(()=>({}));
       if(res.ok&&json.status!=='error'){ const n=Number((json.data||{}).minDepositAmount); if(Number.isFinite(n)&&n>0) minimumDeposit=n; }
     }catch(e){}
-    if(input) input.min=String(minimumDeposit);
-    if(minimumDisplay) minimumDisplay.textContent='Minimum Deposit: '+money(minimumDeposit);
+    if(minimumDeposit!=null){ if(input) input.min=String(minimumDeposit); if(minimumDisplay) minimumDisplay.textContent='Minimum Deposit: '+money(minimumDeposit); }
   }
 
   function selectedMethod(){ const m=paymentMethods[selectedIndex]; return m ? (m.displayName || m.methodType || '') : ''; }
@@ -39,7 +41,7 @@
     if(!grid) return;
     if(!paymentMethods.length){
       selectedIndex=-1;
-      grid.innerHTML='<div class="payment-empty">-</div>';
+      grid.innerHTML='<div class="payment-empty" aria-hidden="true">&nbsp;</div>';
       renderPaymentInfo();
       return;
     }
@@ -54,14 +56,20 @@
     renderPaymentInfo();
   }
   async function loadPaymentMethods(){
-    paymentMethods=[]; selectedIndex=-1;
+    if(!paymentMethods.length){
+      paymentMethods=readPaymentCache().filter(m=>Number(m&&m.status==null?1:m.status)!==0);
+      if(paymentMethods.length) renderMethodButtons();
+    }
     try{
       const url=String(API.paymentMethodList)+(String(API.paymentMethodList).includes('?')?'&':'?')+'_payment_ts='+Date.now();
       const res=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}});
       const json=await res.json().catch(()=>({}));
       if(res.ok&&json.status!=='error'){
         const rows=(json.data&&json.data.content)||json.data||[];
-        if(Array.isArray(rows)) paymentMethods=rows.filter(m=>Number(m&&m.status==null?1:m.status)!==0);
+        if(Array.isArray(rows)){
+          paymentMethods=rows.filter(m=>Number(m&&m.status==null?1:m.status)!==0);
+          writePaymentCache(paymentMethods);
+        }
       }
     }catch(e){}
     renderMethodButtons();
@@ -69,7 +77,7 @@
   function renderPaymentInfo(){
     let box=document.getElementById('paymentInfoBox'); if(!box){ box=document.createElement('div'); box.id='paymentInfoBox'; box.className='deposit-note payment-config-box'; grid?.after(box); }
     const m=paymentMethods[selectedIndex]||null;
-    if(!m){ box.innerHTML='<b>-</b>'; return; }
+    if(!m){ box.innerHTML=''; return; }
     const rows=[];
     if(m.bankName) rows.push(`<div><b>Bank Name</b><span>${esc(m.bankName)}</span></div>`);
     if(m.accountName) rows.push(`<div><b>Account Name</b><span>${esc(m.accountName)}</span></div>`);
@@ -99,7 +107,7 @@
     if(window.NAGA_LANG&&typeof window.NAGA_LANG.apply==='function') window.NAGA_LANG.apply();
   }
   async function submitDeposit(){
-    if(!requireLogin()) return; const amount=Number(input?.value||0); if(amount<minimumDeposit){ msg('Minimum deposit is '+money(minimumDeposit),false); return; }
+    if(!requireLogin()) return; if(minimumDeposit==null){ msg('Deposit setting is still loading from BO. Please try again.',false); return; } const amount=Number(input?.value||0); if(amount<minimumDeposit){ msg('Minimum deposit is '+money(minimumDeposit),false); return; }
     const method=paymentMethods[selectedIndex]; if(!method){ msg('Please select a payment method',false); return; }
     const fd=new FormData(); fd.append('amount', String(amount)); if(method.id!=null){ fd.append('paymentMethodId', String(method.id)); fd.append('selectedPaymentMethodId', String(method.id)); } fd.append('paymentMethod', String(method.displayName||method.bankName||method.methodType||selectedMethod())); const proof=document.getElementById('depositProof')?.files?.[0]; if(proof) fd.append('proof', proof);
     submit.disabled=true; msg('Submitting deposit request...', true);
@@ -109,5 +117,5 @@
   }
   window.addEventListener('naga:transaction-limits',function(e){ const n=Number(e.detail&&e.detail.minDepositAmount); if(Number.isFinite(n)&&n>0){ minimumDeposit=n; if(input) input.min=String(minimumDeposit); if(minimumDisplay) minimumDisplay.textContent='Minimum Deposit: '+money(minimumDeposit); } });
 
-  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; localStorage.removeItem('member_main_wallet_balance'); ensureProof(); loadTransactionLimits(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
+  document.addEventListener('DOMContentLoaded',()=>{ if(!requireLogin()) return; ensureProof(); loadTransactionLimits(); loadPaymentMethods(); loadBalance().catch(()=>{}); submit?.addEventListener('click',submitDeposit); });
 })();

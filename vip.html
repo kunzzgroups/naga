@@ -66,38 +66,7 @@
 
     <section class="vip-hero-shell">
       <button class="vip-slide-btn vip-prev" type="button" data-i18n-aria-label="vip_previous_level" aria-label="Previous VIP level"><i class="fa-solid fa-chevron-left"></i></button>
-      <div class="vip-level-slider" id="vipLevelSlider" aria-live="polite">
-        <article class="vip-level-card active" data-level="bronze" data-index="0">
-          <div class="vip-orbit"><span></span><span></span><span></span></div>
-          <div class="vip-medal bronze"><i class="fa-solid fa-chess-pawn"></i></div>
-          <h2>Bronze</h2>
-          <p>Current Level</p>
-        </article>
-        <article class="vip-level-card" data-level="silver" data-index="1">
-          <div class="vip-orbit"><span></span><span></span><span></span></div>
-          <div class="vip-medal silver"><i class="fa-solid fa-shield-halved"></i></div>
-          <h2>Silver</h2>
-          <p>500 EXP Required</p>
-        </article>
-        <article class="vip-level-card" data-level="gold" data-index="2">
-          <div class="vip-orbit"><span></span><span></span><span></span></div>
-          <div class="vip-medal gold"><i class="fa-solid fa-crown"></i></div>
-          <h2>Gold</h2>
-          <p>1,500 EXP Required</p>
-        </article>
-        <article class="vip-level-card" data-level="platinum" data-index="3">
-          <div class="vip-orbit"><span></span><span></span><span></span></div>
-          <div class="vip-medal platinum"><i class="fa-solid fa-gem"></i></div>
-          <h2>Platinum</h2>
-          <p>5,000 EXP Required</p>
-        </article>
-        <article class="vip-level-card" data-level="diamond" data-index="4">
-          <div class="vip-orbit"><span></span><span></span><span></span></div>
-          <div class="vip-medal diamond"><i class="fa-solid fa-diamond"></i></div>
-          <h2>Diamond</h2>
-          <p>12,000 EXP Required</p>
-        </article>
-      </div>
+      <div class="vip-level-slider" id="vipLevelSlider" aria-live="polite"></div>
       <button class="vip-slide-btn vip-next" type="button" data-i18n-aria-label="vip_next_level" aria-label="Next VIP level"><i class="fa-solid fa-chevron-right"></i></button>
       <div class="vip-dots" id="vipDots" aria-label="VIP level pagination"></div>
     </section>
@@ -109,51 +78,22 @@
         <button type="button" data-vip-tab="faq" role="tab" aria-selected="false" data-i18n="vip_tab_faq">FAQ</button>
       </nav>
 
-      <section class="vip-panel active" data-vip-panel="level" role="tabpanel">
-        <div class="vip-progress-card">
-          <div>
-            <b>VIP 1</b>
-            <span>50 EXP until VIP 1 <i class="fa-regular fa-circle-question"></i></span>
-          </div>
-          <button type="button" disabled><i class="fa-solid fa-lock"></i> Upgrade</button>
-          <div class="vip-progress-line"><span style="width:18%"></span></div>
-        </div>
+      <section class="vip-panel active" data-vip-panel="level" role="tabpanel"></section>
 
-        <div class="vip-level-list">
-          <article class="vip-reward-row active"><div class="vip-timeline-dot"></div><h3>VIP 1</h3><button disabled><i class="fa-solid fa-lock"></i> Upgrade</button><div class="vip-reward-box"><span class="vip-coin-stack">VIP</span><strong>MYR 4.07</strong></div></article>
-          <article class="vip-reward-row"><div class="vip-timeline-dot"></div><h3>VIP 2</h3><button disabled><i class="fa-solid fa-lock"></i> Upgrade</button><div class="vip-reward-box"><span class="vip-coin-stack">VIP</span><strong>MYR 10.17</strong></div></article>
-          <article class="vip-reward-row"><div class="vip-timeline-dot"></div><h3>VIP 3</h3><button disabled><i class="fa-solid fa-lock"></i> Upgrade</button><div class="vip-reward-box"><span class="vip-coin-stack">VIP</span><strong>MYR 20.35</strong></div></article>
-          <article class="vip-reward-row"><div class="vip-timeline-dot"></div><h3>VIP 4</h3><button disabled><i class="fa-solid fa-lock"></i> Upgrade</button><div class="vip-reward-box"><span class="vip-coin-stack">VIP</span><strong>MYR 40.70</strong></div></article>
-          <article class="vip-reward-row"><div class="vip-timeline-dot"></div><h3>VIP 5</h3><button disabled><i class="fa-solid fa-lock"></i> Upgrade</button><div class="vip-reward-box"><span class="vip-coin-stack">VIP</span><strong>MYR 81.40</strong></div></article>
-        </div>
-      </section>
+      <section class="vip-panel" data-vip-panel="perks" role="tabpanel"></section>
 
-      <section class="vip-panel" data-vip-panel="perks" role="tabpanel">
-        <div class="vip-perk-grid">
-          <article><i class="fa-solid fa-gift"></i><b>Monthly Gift</b><span>Claim monthly VIP reward based on your latest level.</span></article>
-          <article><i class="fa-solid fa-bolt"></i><b>Faster Upgrade</b><span>Higher levels unlock better bonus and member benefits.</span></article>
-          <article><i class="fa-solid fa-headset"></i><b>Priority Support</b><span>VIP members receive faster service response.</span></article>
-          <article><i class="fa-solid fa-coins"></i><b>Extra Cashback</b><span>Enjoy better cashback rates when your level increases.</span></article>
-        </div>
-      </section>
-
-      <section class="vip-panel" data-vip-panel="faq" role="tabpanel">
-        <div class="vip-faq-list">
-          <details open><summary>How to upgrade VIP?</summary><p>Collect EXP from valid gameplay and activities. When EXP reaches the target, the next level can be unlocked.</p></details>
-          <details><summary>When can I claim the bonus?</summary><p>Level bonus and monthly perks are available according to the displayed level rules.</p></details>
-          <details><summary>Can VIP rules change?</summary><p>The platform may update VIP rewards, EXP requirements, and rules based on activity settings.</p></details>
-        </div>
-      </section>
+      <section class="vip-panel" data-vip-panel="faq" role="tabpanel"></section>
     </section>
   </main>
 
     <script src="assets/js/ui-modal.js?v=1.0.0"></script>
-<script src="assets/js/config.js?v=1.0.28"></script>
-  <script src="assets/js/layout-section-loader.js?v=1.1.17"></script>
-  <script src="assets/js/site-shell.js?v=1.0.22"></script>
+<script src="assets/js/config.js?v=1.0.29"></script>
+<script src="assets/js/brand-runtime.js?v=20260821-livechatfix2"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.18"></script>
+  <script src="assets/js/site-shell.js?v=1.0.23"></script>
   <script src="assets/js/lang.js?v=1.0.10"></script>
-  <script src="assets/js/vip.js?v=2.1.1"></script>
-  <script src="assets/js/page-loader.js?v=1.0.10"></script>
+  <script src="assets/js/vip.js?v=2.1.2"></script>
+  <script src="assets/js/page-loader.js?v=1.0.11"></script>
 <script src="assets/js/animation-effects.js?v=1.0.0"></script>
 <script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
     

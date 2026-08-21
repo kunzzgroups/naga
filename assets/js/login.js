@@ -39,7 +39,7 @@
   function saveMemberAuth(json){
     // A previous login/browser session may have left an outdated wallet value.
     // Remove it before redirecting so the next page must load the current API balance.
-    localStorage.removeItem('member_main_wallet_balance');
+    localStorage.removeItem('member_main_wallet_balance'); localStorage.removeItem('member_main_wallet_balance_confirmed_at');
     localStorage.setItem('member_token', json.token || '');
     localStorage.setItem('member_info', JSON.stringify(json.data || {}));
   }

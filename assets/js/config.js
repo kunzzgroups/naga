@@ -10,15 +10,15 @@ window.NAGA_CONFIG = {
 };
 
 window.NAGA_API = {
-  sliderList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/slider/list',
+  sliderList: window.NAGA_CONFIG.api.baseUrl + '/api/public/slider/list',
 
   bonusCategoryTitleList: window.NAGA_CONFIG.api.baseUrl + '/api/bonus-category-title',
   bonusCategoryItemList: window.NAGA_CONFIG.api.baseUrl + '/api/bonus-category-item',
 
-  gameCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-category/list',
-  gameSubCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-sub-category/list',
-  gameProviderList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-provider/list',
-  gameList: window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list',
+  gameCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog',
+  gameSubCategoryList: window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog',
+  gameProviderList: window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog',
+  gameList: window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog',
   publicGameCatalog: window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog',
   publicGameCatalogVersion: window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog/version',
 
@@ -51,9 +51,10 @@ window.NAGA_API = {
   paymentMethodList: window.NAGA_CONFIG.api.baseUrl + '/api/payment-method/list',
   socialLinkList: window.NAGA_CONFIG.api.baseUrl + '/api/social/list',
 
-  siteCustomizeTranslation: window.NAGA_CONFIG.api.baseUrl + '/api/admin/language/translation',
+  siteCustomizeTranslation: window.NAGA_CONFIG.api.baseUrl + '/api/public/translation',
   // BO Layout Section CSS/HTML/JS. CSS saved under the `home` key is loaded globally.
   layoutSection: window.NAGA_CONFIG.api.baseUrl + '/api/customize/section',
+  mainLayoutCustomize: window.NAGA_CONFIG.api.baseUrl + '/api/customize/main-layout',
   compliancePolicyList: window.NAGA_CONFIG.api.baseUrl + '/api/compliance-policies',
   frontendDisplaySetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/display-setting',
   installAppSetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/install-app',

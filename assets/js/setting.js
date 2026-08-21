@@ -24,17 +24,52 @@
     el.textContent=name||'-';
   }
   function currentLang(){ try{return (localStorage.getItem('site_lang')||(window.I18N&&window.I18N.current)||'en').trim().toLowerCase().replace('_','-');}catch(e){return 'en';} }
+  const VIP_CACHE_KEY='naga_setting_vip_badge_v1:'+location.host;
+  function memberIdentity(member){
+    return String(firstValue(member,['id','memberId','member_id','username','mobile','phoneNumber','phone_number'])||'').trim();
+  }
+  function readStoredMember(){ try{ const m=JSON.parse(localStorage.getItem('member_info')||'null'); return m&&typeof m==='object'?m:null; }catch(e){return null;} }
+  function readVipCache(member){
+    try{
+      const c=JSON.parse(localStorage.getItem(VIP_CACHE_KEY)||'null');
+      if(!c||typeof c!=='object'||!c.level) return null;
+      const id=memberIdentity(member);
+      if(id && c.memberIdentity && String(c.memberIdentity)!==id) return null;
+      if(c.lang && String(c.lang)!==currentLang()) return null;
+      return c;
+    }catch(e){return null;}
+  }
+  function writeVipCache(member, level, experience){
+    try{
+      localStorage.setItem(VIP_CACHE_KEY,JSON.stringify({
+        memberIdentity:memberIdentity(member),lang:currentLang(),
+        level:{name:level.name||'VIP',imageUrl:level.imageUrl||'',iconClass:level.iconClass||'fa-solid fa-crown'},
+        experience:Number(experience||0),savedAt:Date.now()
+      }));
+    }catch(e){}
+  }
+  function renderVipLevel(level, experience){
+    const el=document.querySelector('[data-profile-vip]'); if(!el||!level) return false;
+    const image=String(level.imageUrl||'').trim(); const icon=String(level.iconClass||'fa-solid fa-crown').trim();
+    el.classList.add('profile-vip-badge-rich');
+    el.innerHTML=(image?'<img src="'+esc(image)+'" alt="" decoding="async" loading="eager" fetchpriority="high">':'<i class="'+esc(icon)+'"></i>')+'<span>'+esc(level.name||'VIP')+'</span>';
+    el.title=(level.name||'VIP')+' · '+Number(experience||0).toLocaleString()+' EXP';
+    return true;
+  }
+  function markProfileReady(){
+    window.__NAGA_PROFILE_READY__=true;
+    try{ document.dispatchEvent(new CustomEvent('naga:profile-ready')); }catch(e){}
+  }
   async function loadVipBadge(){
     const el=document.querySelector('[data-profile-vip]'); if(!el||!token()) return;
     try{
       const res=await fetch(API_BASE+'/api/player/vip?lang='+encodeURIComponent(currentLang())+'&_profile_vip_ts='+Date.now(),{cache:'no-store',headers:{'Authorization':'Bearer '+token(),'Cache-Control':'no-cache'}});
       const json=await res.json().catch(()=>({})); const data=json&&json.data||{}; const levels=Array.isArray(data.levels)?data.levels:[]; const idx=Math.max(0,Math.min(Number(data.currentLevelIndex||0),Math.max(0,levels.length-1))); const level=levels[idx];
-      if(!level){el.textContent='-';return;}
-      const image=String(level.imageUrl||'').trim(); const icon=String(level.iconClass||'fa-solid fa-crown').trim();
-      el.classList.add('profile-vip-badge-rich');
-      el.innerHTML=(image?'<img src="'+esc(image)+'" alt="">':'<i class="'+esc(icon)+'"></i>')+'<span>'+esc(level.name||'VIP')+'</span>';
-      el.title=(level.name||'VIP')+' · '+Number(data.experience||0).toLocaleString()+' EXP';
-    }catch(e){ /* retain profile fallback */ }
+      if(!level){ markProfileReady(); return; }
+      renderVipLevel(level,data.experience);
+      writeVipCache(readStoredMember()||{},level,data.experience);
+      markProfileReady();
+    }catch(e){ markProfileReady(); /* retain last confirmed profile/VIP */ }
   }
   function renderSummary(member){
     const name = firstValue(member, ['fullName','full_name','name','username']);
@@ -83,7 +118,7 @@
     const logout = e.target.closest && e.target.closest('.setting-item.logout');
     if(!logout) return;
     e.preventDefault();
-    localStorage.removeItem('member_token'); localStorage.removeItem('member_info'); localStorage.removeItem('member_main_wallet_balance');
+    localStorage.removeItem('member_token'); localStorage.removeItem('member_info'); localStorage.removeItem('member_main_wallet_balance'); localStorage.removeItem('member_main_wallet_balance_confirmed_at');
     location.href = 'index.html';
   });
   document.addEventListener('i18n:changed', function(){
@@ -95,11 +130,22 @@
   });
 
 
+  function bootstrapConfirmedProfile(){
+    const member=readStoredMember();
+    if(member&&Object.keys(member).length) render(member);
+    const cachedVip=readVipCache(member||{});
+    if(cachedVip&&renderVipLevel(cachedVip.level,cachedVip.experience)) markProfileReady();
+    return !!member;
+  }
+  // setting.js is loaded at the end of <body>, so restore the last confirmed API
+  // profile before the browser reveals the page. Never replace good cache with "-".
+  bootstrapConfirmedProfile();
+
   document.addEventListener('DOMContentLoaded', () => {
-    const list=document.getElementById('memberProfileList');
-    renderSummary({});
-    if(list) render({});
     if(!requireLogin()) return;
-    loadProfile().then(loadVipBadge).catch(e => { renderSummary({}); if(list) render({}); console.warn('Setting profile unavailable:', e && e.message ? e.message : e); });
+    loadProfile().then(loadVipBadge).catch(e => {
+      markProfileReady();
+      console.warn('Setting profile unavailable:', e && e.message ? e.message : e);
+    });
   });
 })();

@@ -288,8 +288,11 @@
    * ============================================================
    */
   let refreshPromise = null;
+  let lastPayload = null;
+  let lastSuccessAt = 0;
+  const REFRESH_DEDUPE_MS = 1500;
 
-  async function refresh(){
+  async function refresh(options){
     /*
      * Prevent duplicate simultaneous requests.
      *
@@ -298,6 +301,11 @@
      */
     if(refreshPromise){
       return refreshPromise;
+    }
+
+    const force = !!(options && options.force);
+    if(!force && lastPayload && (Date.now() - lastSuccessAt) < REFRESH_DEDUPE_MS){
+      return lastPayload;
     }
 
     if(!API_URL){
@@ -340,6 +348,8 @@
           'api'
         );
 
+        lastPayload = payload;
+        lastSuccessAt = Date.now();
         return payload;
 
       }catch(error){

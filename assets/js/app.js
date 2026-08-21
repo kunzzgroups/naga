@@ -11,13 +11,13 @@
 
 const API = window.NAGA_API || {};
 const GAME_CATEGORY_API_URL =
-  API.gameCategoryList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-category/list' : 'https://bo.titanxgaming.com/api/admin/game-category/list');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
 const GAME_SUB_CATEGORY_API_URL =
-  API.gameSubCategoryList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-sub-category/list' : 'https://bo.titanxgaming.com/api/admin/game-sub-category/list');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
 const GAME_API_URL =
-  API.gameList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game/list' : 'https://bo.titanxgaming.com/api/admin/game/list');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
 const GAME_PROVIDER_API_URL =
-  API.gameProviderList || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/admin/game-provider/list' : 'https://bo.titanxgaming.com/api/admin/game-provider/list');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
 const PUBLIC_GAME_CATALOG_API_URL =
   API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
 const PUBLIC_GAME_CATALOG_VERSION_URL =
@@ -679,7 +679,7 @@ function buildProviderRail(rows){
   });
   rail.appendChild(allBtn);
 
-  rows.forEach(row => {
+  rows.forEach((row, rowIndex) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'provider-rail-card' + (String(row.code) === String(activeProviderCode) ? ' active' : '');
@@ -688,7 +688,7 @@ function buildProviderRail(rows){
     const name = providerNameOf(row.provider);
     const imageUrl = providerImageOf(row.provider);
     btn.innerHTML = imageUrl
-      ? `<img src="${imageUrl}" alt="${name}" loading="lazy">`
+      ? `<img src="${imageUrl}" alt="${name}" loading="${rowIndex < 8 ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${rowIndex < 6 ? 'high' : 'auto'}">`
       : `<div class="provider-rail-initial">${providerInitials(name)}</div>`;
     btn.addEventListener('click', () => {
       if(String(activeProviderCode) === String(row.code)) return;
@@ -790,7 +790,7 @@ function renderMixedCategoryLanding(games){
     // providerSection.innerHTML = '<div class="category-section-title">Providers</div>';
     const cards = document.createElement('div');
     cards.className = 'category-provider-cards';
-    providerRows.forEach(row => {
+    providerRows.forEach((row, rowIndex) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'category-provider-card';
@@ -798,7 +798,7 @@ function renderMixedCategoryLanding(games){
       if(activeCategoryId != null) btn.dataset.categoryId = activeCategoryId;
         const image = providerBrandImageOf(row.provider);
       btn.innerHTML = image
-        ? `<img src="${image}" alt="${providerNameOf(row.provider)}" loading="lazy">`
+        ? `<img src="${image}" alt="${providerNameOf(row.provider)}" loading="${rowIndex < 8 ? 'eager' : 'lazy'}" decoding="async" fetchpriority="${rowIndex < 6 ? 'high' : 'auto'}">`
         : `<span class="provider-letter">${providerInitials(providerNameOf(row.provider))}</span>`;
       btn.addEventListener('click', () => {
         // Provider First is a single drill-down only: keep the selected top
@@ -1404,12 +1404,11 @@ function fetchFullGameCatalog(forceRefresh = false){
       return catalog;
     })
     .catch(publicError => {
-      console.warn('Public catalog unavailable; using legacy endpoints:', publicError.message);
-      return fetchLegacyGameCatalog(forceRefresh).then(catalog => {
-        if(!catalog.categories.length && !catalog.games.length) throw publicError;
-        writeGameCatalogCache(catalog);
-        return catalog;
-      });
+      // Do not fall back to protected /api/admin endpoints. Brand security intentionally
+      // rejects those calls from the public frontend; keep the last BO-confirmed catalog instead.
+      const cached = readGameCatalogCache();
+      if(cached) return cached;
+      throw publicError;
     })
     .finally(() => {
       if(catalogRefreshPromise === request) catalogRefreshPromise = null;
@@ -1652,10 +1651,37 @@ function renderCatalogState(){
   renderMixedCategoryLanding(list);
 }
 
+let lobbyReadyImageWaitStarted = false;
 function signalLobbyReady(){
-  if(document.documentElement.classList.contains('lobby-ready')) return;
-  document.documentElement.classList.add('lobby-ready');
-  document.dispatchEvent(new CustomEvent('naga:lobby-ready'));
+  if(document.documentElement.classList.contains('lobby-ready') || lobbyReadyImageWaitStarted) return;
+  lobbyReadyImageWaitStarted = true;
+
+  // Do not reveal the lobby while its first visible BO/catalog artwork is still blank.
+  // Only wait for the above-fold subset and cap the wait, preserving performance.
+  const critical = Array.from(document.querySelectorAll(
+    '.cat img, .category-provider-card img, .provider-side-rail img, .game-grid .provider-launch-img, .side-slider .slide.active'
+  )).filter(img => !img.complete).slice(0, 18);
+
+  const finish = () => {
+    if(document.documentElement.classList.contains('lobby-ready')) return;
+    document.documentElement.classList.add('lobby-ready');
+    document.dispatchEvent(new CustomEvent('naga:lobby-ready'));
+  };
+
+  if(!critical.length){ finish(); return; }
+  let pending = critical.length;
+  let settled = false;
+  const done = () => {
+    if(settled) return;
+    pending -= 1;
+    if(pending <= 0){ settled = true; finish(); }
+  };
+  critical.forEach(img => {
+    try{ if(!img.loading || img.loading === 'lazy') img.loading = 'eager'; }catch(_){}
+    img.addEventListener('load', done, {once:true});
+    img.addEventListener('error', done, {once:true});
+  });
+  setTimeout(() => { if(!settled){ settled = true; finish(); } }, 450);
 }
 
 function paintInitialCatalog(catalog){
@@ -1957,7 +1983,7 @@ function initSlider(slider){
 // app.js
 const SLIDER_API_URL =
   (window.NAGA_API && window.NAGA_API.sliderList)
-  || 'https://bo.titanxgaming.com/api/admin/slider/list';
+  || 'https://bo.titanxgaming.com/api/public/slider/list';
 function normalizeSliderResponse(response){
   if(Array.isArray(response)) return response;
   if(response && Array.isArray(response.data)) return response.data;
@@ -1966,7 +1992,7 @@ function normalizeSliderResponse(response){
 }
 
 let sliderBannerCache = [];
-const SLIDER_STORAGE_KEY = 'naga_slider_banners_v2';
+const SLIDER_STORAGE_KEY = 'naga_slider_banners_v3:' + String((location.hostname || 'default').toLowerCase());
 
 function readSliderBannerCache(){
   try{
@@ -2081,8 +2107,10 @@ async function fetchSliderWithRetry(url){
 }
 
 async function loadSliderBanners(){
-  // Paint the last BO-approved slider immediately. This prevents a transient
-  // slider API/image failure during repeated refreshes from leaving a blank area.
+  // Performance-first: paint the last BO-confirmed slider immediately. This is
+  // still BO data (never hardcoded HTML), so a hard refresh does not wait for a
+  // network round trip before the banner area becomes useful. Fresh BO data is
+  // fetched below and replaces it only when it actually changed.
   const cached = usableSliderBanners(readSliderBannerCache());
   if(cached.length) mountSliderBanners(cached);
 
@@ -2103,16 +2131,26 @@ async function loadSliderBanners(){
     const banners = usableSliderBanners(data);
     if(!banners.length) return;
 
-    const preloadResults = await preloadSliderBanners(banners);
-    const readyBanners = banners.filter((_, index) => preloadResults[index] !== false);
-    if(!readyBanners.length) return;
+    // Avoid rebuilding the slider if the fresh BO response is identical to the
+    // BO-confirmed cache already on screen. This saves image decoding + DOM work.
+    const signature = list => (list || []).map(item => [
+      item.id || '', item.updatedAt || item.updated_at || '',
+      item.imageUrl || item.image_url || item.image || '',
+      item.linkUrl || item.link_url || '', item.sortOrder || item.sort_order || 0
+    ].join('|')).join('||');
+    const unchanged = cached.length && signature(cached) === signature(banners);
+    writeSliderBannerCache(banners);
+    if(unchanged) return;
 
-    writeSliderBannerCache(readyBanners);
-    mountSliderBanners(readyBanners);
+    // Only the first slide is critical for first paint. Remaining slides already
+    // use loading=lazy and can decode after the slider is mounted.
+    const firstReady = await preloadSliderBanners(banners.slice(0, 1));
+    if(firstReady.length && firstReady[0] === false && !cached.length) return;
+    mountSliderBanners(banners);
   }catch(err){
-    // Cached banners stay mounted. Do not blank a working slider because one
-    // refresh hit a transient API/network problem.
-    console.warn('Slider banners fresh refresh unavailable; keeping cached slider:', err && err.message ? err.message : err);
+    // Only use the last BO-confirmed slider if the live BO read is temporarily unavailable.
+    if(cached.length) mountSliderBanners(cached);
+    console.warn('Slider banners fresh refresh unavailable; using last BO-confirmed slider:', err && err.message ? err.message : err);
   }
 }
 

@@ -9,7 +9,8 @@
   let unsubscribeMessages = null;
   let pendingFiles = [];
 
-  document.addEventListener('DOMContentLoaded', init);
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
+  else init();
 
   function init(){
     if(!initFirebase()) return;

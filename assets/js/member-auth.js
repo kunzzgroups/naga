@@ -38,6 +38,7 @@
     localStorage.removeItem('member_token');
     localStorage.removeItem('member_info');
     localStorage.removeItem('member_main_wallet_balance');
+    localStorage.removeItem('member_main_wallet_balance_confirmed_at');
     setMainWalletBalance(null);
     if(window.NAGA_SITE_SHELL && typeof window.NAGA_SITE_SHELL.refreshHeaderAuth === 'function'){
       try{ window.NAGA_SITE_SHELL.refreshHeaderAuth(); }catch(e){}
@@ -90,8 +91,18 @@
       const raw = localStorage.getItem('member_main_wallet_balance');
       if(raw === null || raw === '') return null;
       const n = Number(raw);
-      return isNaN(n) ? null : n;
+      if(isNaN(n)) return null;
+      const confirmedAt = Number(localStorage.getItem('member_main_wallet_balance_confirmed_at') || 0);
+      if(!confirmedAt && n === 0) return null;
+      return n;
     }catch(e){ return null; }
+  }
+
+  function confirmBalance(value){
+    localStorage.setItem('member_main_wallet_balance', String(value));
+    localStorage.setItem('member_main_wallet_balance_confirmed_at', String(Date.now()));
+    window.__NAGA_WALLET_READY__ = true;
+    try{ document.dispatchEvent(new CustomEvent('naga:wallet-ready')); }catch(e){}
   }
 
   async function refreshExpiredSession(){
@@ -139,7 +150,9 @@
   async function loadMainWalletBalance(retried){
     const token = getToken();
     if(!token){
-      setMainWalletBalance(null);
+      setMainWalletBalance('');
+      window.__NAGA_WALLET_READY__ = true;
+      try{ document.dispatchEvent(new CustomEvent('naga:wallet-ready')); }catch(e){}
       return null;
     }
 
@@ -168,7 +181,7 @@
     const balance = extractBalance(json);
     if(balance !== null){
       setMainWalletBalance(balance);
-      localStorage.setItem('member_main_wallet_balance', String(balance));
+      confirmBalance(balance);
     }
     return balance;
   }
@@ -207,7 +220,9 @@
     const token = getToken();
     if(!token){
       renderLoggedOut();
-      setMainWalletBalance(null);
+      setMainWalletBalance('');
+      window.__NAGA_WALLET_READY__ = true;
+      try{ document.dispatchEvent(new CustomEvent('naga:wallet-ready')); }catch(e){}
       return;
     }
 
@@ -216,7 +231,11 @@
       renderLoggedIn(stored);
     }
     const cachedBalance = getStoredBalance();
-    if(cachedBalance !== null) setMainWalletBalance(cachedBalance);
+    if(cachedBalance !== null){
+      setMainWalletBalance(cachedBalance);
+      window.__NAGA_WALLET_READY__ = true;
+      try{ document.dispatchEvent(new CustomEvent('naga:wallet-ready')); }catch(e){}
+    }
 
     try{
       const latest = await loadMemberFromApi();

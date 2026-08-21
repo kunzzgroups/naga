@@ -21,8 +21,16 @@
     document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){ el.textContent = text; });
   }
 
+  var BALANCE_CONFIRMED_AT_KEY = 'member_main_wallet_balance_confirmed_at';
+
+  function signalWalletReady(){
+    window.__NAGA_WALLET_READY__ = true;
+    try{ document.dispatchEvent(new CustomEvent('naga:wallet-ready')); }catch(e){}
+  }
+
   function invalidateStoredBalance(){
     try{ localStorage.removeItem('member_main_wallet_balance'); }catch(e){}
+    try{ localStorage.removeItem(BALANCE_CONFIRMED_AT_KEY); }catch(e){}
   }
 
   function getStoredBalance(){
@@ -30,14 +38,23 @@
       var raw = localStorage.getItem('member_main_wallet_balance');
       if(raw === null || raw === '') return null;
       var value = Number(raw);
-      return isNaN(value) ? null : value;
+      if(isNaN(value)) return null;
+      var confirmedAt = Number(localStorage.getItem(BALANCE_CONFIRMED_AT_KEY) || 0);
+      // Migrate old caches safely: a legacy non-zero balance is useful for first paint,
+      // but legacy 0.00 may have been written by the old missing-field fallback.
+      if(!confirmedAt && value === 0) return null;
+      return value;
     }catch(e){ return null; }
   }
 
   function rememberBalance(value){
     try{
-      if(value === null || value === undefined || isNaN(Number(value))) localStorage.removeItem('member_main_wallet_balance');
-      else localStorage.setItem('member_main_wallet_balance', String(Number(value)));
+      if(value === null || value === undefined || isNaN(Number(value))){
+        invalidateStoredBalance();
+        return;
+      }
+      localStorage.setItem('member_main_wallet_balance', String(Number(value)));
+      localStorage.setItem(BALANCE_CONFIRMED_AT_KEY, String(Date.now()));
     }catch(e){}
   }
 
@@ -121,7 +138,8 @@
 
   function refreshShellBalance(retried){
     if(!getToken()){
-      setAllWalletText('-');
+      setAllWalletText('');
+      signalWalletReady();
       return Promise.resolve(null);
     }
     return fetch(noCacheUrl(walletBalanceUrl()), {
@@ -147,6 +165,7 @@
         rememberBalance(balance);
         setAllWalletText(balance);
       }
+      signalWalletReady();
       return balance;
     })
     .catch(function(){
@@ -154,6 +173,7 @@
       // recovery after laptop sleep instead of replacing it with "-".
       var cached = getStoredBalance();
       if(cached !== null) setAllWalletText(cached);
+      signalWalletReady();
       return cached;
     });
   }
@@ -162,7 +182,8 @@
     // Paint the last API-confirmed balance immediately, then refresh silently.
     // This avoids a "-" flash while a laptop is reconnecting after sleep.
     var cached = getStoredBalance();
-    if(getToken() && cached !== null) setAllWalletText(cached);
+    if(getToken() && cached !== null){ setAllWalletText(cached); signalWalletReady(); }
+    else if(!getToken()) signalWalletReady();
     // One initial refresh is enough. The old code also refreshed again on load
     // and pageshow, which could issue 2-3 identical wallet requests per navigation.
     setTimeout(function(){ refreshShellBalance(); }, 0);
@@ -172,28 +193,40 @@
   }
 
   var presenceTimer = null;
+  var lastPresenceAt = 0;
+  var PRESENCE_INTERVAL_MS = 60000;
+  var PRESENCE_MIN_GAP_MS = 15000;
   function presenceBase(){ var cfg=window.NAGA_CONFIG&&window.NAGA_CONFIG.api; return String((cfg&&cfg.baseUrl)||'https://bo.titanxgaming.com').replace(/\/+$/,''); }
   function sendPresence(path, keepalive){
     var token=getToken(); if(!token) return Promise.resolve();
     return fetch(presenceBase()+path,{method:'POST',keepalive:!!keepalive,cache:'no-store',headers:{'Authorization':'Bearer '+token,'Cache-Control':'no-store'}}).catch(function(){});
   }
-  function heartbeatPresence(){ if(getToken()) sendPresence('/api/auth/member/presence/heartbeat', false); }
+  function heartbeatPresence(force){
+    if(!getToken()) return;
+    var now=Date.now();
+    if(!force && now-lastPresenceAt<PRESENCE_MIN_GAP_MS) return;
+    lastPresenceAt=now;
+    sendPresence('/api/auth/member/presence/heartbeat', false);
+  }
   function startPresence(){
     if(presenceTimer) clearInterval(presenceTimer);
-    heartbeatPresence();
-    presenceTimer=setInterval(heartbeatPresence,5000);
-    document.addEventListener('visibilitychange',function(){ if(!document.hidden) heartbeatPresence(); });
-    window.addEventListener('focus',heartbeatPresence);
+    heartbeatPresence(true);
+    // One minute is enough for online presence and avoids 12 heartbeat requests
+    // per minute per player. Focus/visibility wakeups are also de-duplicated.
+    presenceTimer=setInterval(function(){ heartbeatPresence(false); },PRESENCE_INTERVAL_MS);
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) heartbeatPresence(false); });
+    window.addEventListener('focus',function(){ heartbeatPresence(false); });
   }
 
   function doShellLogout(){
     if(getToken()) sendPresence('/api/auth/member/presence/offline', true);
     try{ localStorage.removeItem('member_token'); }catch(e){}
     try{ localStorage.removeItem('member_info'); }catch(e){}
-    try{ localStorage.removeItem('member_main_wallet_balance'); }catch(e){}
+    invalidateStoredBalance();
     ['token','user','member','memberInfo','auth_token','access_token','jwt','main_wallet_balance'].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
     document.body.classList.remove('member-logged-in');
-    setAllWalletText('-');
+    setAllWalletText('');
+    signalWalletReady();
     refreshHeaderAuth();
     try{ document.dispatchEvent(new CustomEvent('naga:member-logout')); }catch(e){}
     closeMenu();
@@ -295,7 +328,7 @@
 
     const member = document.createElement('div');
     member.className = 'top-member-actions';
-    member.innerHTML = '<a class="top-wallet-pill" href="deposit.html"><span data-main-wallet-balance>-</span></a><button type="button" class="top-logout-btn" data-member-logout data-i18n="logout">Logout</button>';
+    member.innerHTML = '<a class="top-wallet-pill" href="deposit.html"><span data-main-wallet-balance>&nbsp;</span></a><button type="button" class="top-logout-btn" data-member-logout data-i18n="logout">Logout</button>';
 
     actions.appendChild(guest);
     actions.appendChild(member);
@@ -371,7 +404,7 @@
             <a href="login.html" class="mobile-login-btn auth-image-link" aria-label="Login"><img class="sidebar-auth-image sidebar-login-image" src="assets/custom/images/login.png" alt="LOGIN" decoding="async" loading="eager"></a>
             <a href="register.html" class="mobile-register-btn auth-image-link" aria-label="Register"><img class="sidebar-auth-image sidebar-register-image" src="assets/custom/images/register.png" alt="REGISTER" decoding="async" loading="eager"></a>
           </div>
-          <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>-</span></div></div>
+          <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>&nbsp;</span></div></div>
         </div>
         <div class="mobile-menu-list">
           <a href="index.html"><i class="fa-solid fa-house mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_home">Home</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>

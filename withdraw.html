@@ -71,12 +71,12 @@
         </div>
         <div class="withdraw-balance">
           <span data-i18n="available_balance">Available Balance</span>
-          <strong data-main-wallet-balance>-</strong>
+          <strong data-main-wallet-balance>&nbsp;</strong>
         </div>
       </div>
 
       <div class="withdraw-info-grid">
-        <div><span data-i18n="minimum_withdraw">Minimum Withdraw</span><b id="withdrawMinimumDisplay">MYR 50.00</b></div>
+        <div><span data-i18n="minimum_withdraw">Minimum Withdraw</span><b id="withdrawMinimumDisplay">—</b></div>
         <div><span data-i18n="processing_time">Processing Time</span><b data-i18n="processing_time_value">5 - 30 mins</b></div>
         <div><span data-i18n="bank_name">Bank Name</span><b>PayID</b></div>
       </div>
@@ -124,11 +124,11 @@
   </main>
 
   <nav class="bottom-nav">
-    <a href="index.html"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-alt="home" decoding="async" loading="lazy"></a>
-    <a href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-alt="history" decoding="async" loading="lazy"></a>
-    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-alt="bonus" decoding="async" loading="lazy"></a>
-    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-alt="live_chat" decoding="async" loading="lazy"></a>
-    <a href="setting.html"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-alt="setting" decoding="async" loading="lazy"></a>
+    <a href="index.html"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-alt="home" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-alt="history" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-alt="bonus" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-alt="live_chat" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="setting.html"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-alt="setting" decoding="async" loading="eager" fetchpriority="high"></a>
   </nav>
 
   <div class="lang-overlay" id="langOverlay" aria-hidden="true">
@@ -139,22 +139,18 @@
   </div>
 
     <script src="assets/js/ui-modal.js?v=1.0.0"></script>
-<script src="assets/js/site-shell.js?v=1.0.22"></script>
+<script src="assets/js/site-shell.js?v=1.0.23"></script>
   <script src="assets/js/lang.js?v=1.0.10"></script>
-  <script src="assets/js/config.js?v=1.0.28"></script>
-  <script src="assets/js/transaction-limits.js?v=1.0.2"></script>
-  <script src="assets/js/layout-section-loader.js?v=1.1.17"></script>
-  <script src="assets/js/member-auth.js?v=1.0.15"></script>
-  <script src="assets/js/withdraw.js?v=1.0.5"></script>
-  <script src="assets/js/custom-asset-cache.js?v=1.0.19"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
-  <script src="assets/js/firebase-config.js?v=1.0.0"></script>
-  <script src="assets/js/livechat-widget.js?v=1.0.4"></script>
-  <script src="assets/js/livechat-global-notification.js?v=1.0.1"></script>
-  <script src="assets/js/page-loader.js?v=1.0.10"></script>
-<script src="assets/js/marquee.js?v=1.0.1"></script>
+  <script src="assets/js/config.js?v=1.0.29"></script>
+<script src="assets/js/brand-runtime.js?v=20260821-livechatfix2"></script>
+  <script src="assets/js/transaction-limits.js?v=1.0.3"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.18"></script>
+  <script src="assets/js/member-auth.js?v=1.0.16"></script>
+  <script src="assets/js/withdraw.js?v=1.0.6"></script>
+  <script src="assets/js/custom-asset-cache.js?v=1.0.20"></script>
+  <script src="assets/js/livechat-lazy-loader.js?v=1.0.0"></script>
+  <script src="assets/js/page-loader.js?v=1.0.11"></script>
+<script src="assets/js/marquee.js?v=1.0.2"></script>
 <script src="assets/js/animation-effects.js?v=1.0.0"></script>
 <script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
     

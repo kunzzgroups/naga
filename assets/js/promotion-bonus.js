@@ -6,6 +6,68 @@
   const strip = v => String(v || '').replace(/<[^>]*>/g,'').trim();
   const tr = (key, fallback) => { const v=window.I18N && typeof window.I18N.t==='function' ? window.I18N.t(key) : ''; return (!v || v===key) ? fallback : v; };
   const currentLang = () => (window.I18N && window.I18N.current) || localStorage.getItem('site_lang') || 'en';
+  const PROMO_CACHE_PREFIX = 'naga_promotion_rows_v2';
+  let promotionReadySignalled = false;
+  let promotionLoadPromise = null;
+  let promotionLastStartedAt = 0;
+  let promotionInitialCacheRestored = false;
+
+  function promotionIdentity(){
+    try{
+      const member=JSON.parse(localStorage.getItem('member_info')||'null')||{};
+      return String(member.id||member.memberId||member.member_id||member.username||member.mobile||member.phoneNumber||member.phone_number||(token()?'member':'guest')).trim()||'guest';
+    }catch(_){ return token()?'member':'guest'; }
+  }
+
+  function promotionCacheKey(){
+    const host=String(location.hostname||'default').toLowerCase();
+    const lang=String(currentLang()||'en').toLowerCase().replace('_','-');
+    return PROMO_CACHE_PREFIX+':'+host+':'+lang+':'+promotionIdentity();
+  }
+
+  function readPromotionCache(){
+    try{
+      const raw=localStorage.getItem(promotionCacheKey());
+      if(raw===null) return null;
+      const parsed=JSON.parse(raw);
+      if(!parsed || !Array.isArray(parsed.rows)) return null;
+      return parsed;
+    }catch(_){ return null; }
+  }
+
+  function writePromotionCache(rows){
+    try{ localStorage.setItem(promotionCacheKey(), JSON.stringify({savedAt:Date.now(),rows:Array.isArray(rows)?rows:[]})); }catch(_){}
+  }
+
+  function signalPromotionReady(){
+    if(promotionReadySignalled) return;
+    promotionReadySignalled=true;
+    window.__NAGA_BONUS_READY__=true;
+    try{ document.dispatchEvent(new CustomEvent('naga:bonus-ready')); }catch(_){}
+  }
+
+  function waitForPromotionImages(root, maxWait){
+    const scope=root&&root.querySelectorAll?root:document;
+    const imgs=Array.from(scope.querySelectorAll('.promo-dynamic-section .bonus-title-img, .promo-dynamic-section .promo-card img')).slice(0,4);
+    if(!imgs.length) return Promise.resolve();
+    imgs.forEach((img,index)=>{
+      img.loading='eager';
+      img.decoding='async';
+      if(index<2) img.setAttribute('fetchpriority','high');
+    });
+    const waits=imgs.map(img=>{
+      if(img.complete && img.naturalWidth>0) return Promise.resolve();
+      return new Promise(resolve=>{
+        const done=()=>resolve();
+        img.addEventListener('load',done,{once:true});
+        img.addEventListener('error',done,{once:true});
+      });
+    });
+    return Promise.race([
+      Promise.all(waits).then(()=>undefined),
+      new Promise(resolve=>setTimeout(resolve,Math.max(0,Number(maxWait)||0)))
+    ]);
+  }
 
   function toast(msg){
     let t = document.getElementById('promoToast');
@@ -95,7 +157,7 @@
 
   function titleHtml(group){
     const img = group.titleImageUrl || group.titleImage;
-    if(img) return `<img class="bonus-title-img" src="${esc(img)}" alt="${esc(group.title)}">`;
+    if(img) return `<img class="bonus-title-img" src="${esc(img)}" alt="${esc(group.title)}" loading="eager" decoding="async">`;
     return `<h2 class="bonus-text-title">${esc(group.title || tr('promotion_default_title','Promotion'))}</h2>`;
   }
 
@@ -155,7 +217,7 @@
     const img = p.bonusImageUrl || 'assets/images/bonus/bonus.png';
     const href = p.linkUrl || '#';
     const linkAttr = p.linkUrl ? ' data-external="1"' : '';
-    return `<a class="${cls.join(' ')}" href="${esc(href)}" data-id="${esc(p.id)}" data-title="${esc(p.name || tr('promotion_default_title','Promotion'))}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || tr('promotion_default_title','Promotion'))}"></a>`;
+    return `<a class="${cls.join(' ')}" href="${esc(href)}" data-id="${esc(p.id)}" data-title="${esc(p.name || tr('promotion_default_title','Promotion'))}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || tr('promotion_default_title','Promotion'))}" loading="eager" decoding="async"></a>`;
   }
 
   function groupRows(rows){
@@ -210,55 +272,109 @@
     }
   }
 
-  let promotionLoadSequence=0;
-  async function load(){
-    const thisLoad=++promotionLoadSequence;
-    if(window.NAGA_HOME_BONUS_ENABLED === false) return;
-    const boxes = Array.from(document.querySelectorAll('#dynamicPromotionBox, [data-promotion-box]'));
-    if(!boxes.length || !api().playerPromotionList) return;
+  function promotionBoxes(){
+    return Array.from(document.querySelectorAll('#dynamicPromotionBox, [data-promotion-box]'));
+  }
 
-    // Never render bundled/static promotion cards. The visible layout must come only
-    // from the latest database response. Clear first so refresh cannot flash old data.
+  function hideBundledPromotionFallback(boxes){
     boxes.forEach(box=>{
-      box.innerHTML='';
       const container=box.closest('.bonus-container');
       if(container) container.querySelectorAll('.promo-static-fallback, :scope > .bonus-section:not(.promo-dynamic-section)').forEach(el=>{ el.hidden=true; el.style.display='none'; });
     });
-    try{
-      const separator=api().playerPromotionList.includes('?')?'&':'?';
-      const query=new URLSearchParams({lang:currentLang(),_:String(Date.now())});
-      const r = await fetch(api().playerPromotionList+separator+query.toString(), {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
-      const j = await r.json();
-      if(thisLoad!==promotionLoadSequence) return;
-      const rows = Array.isArray(j.data) ? j.data : [];
-      if(!rows.length){ const loading=document.getElementById('bonusLoading'); if(loading) loading.style.display='none'; return; }
-      window.__promotionRows = rows;
-      const groups = groupRows(rows);
-      const html = groups.map(g => {
-        const first = g.items[0] || {};
-        // Section values are already synchronized by the API. Render the exact
-        // database values from the first ordered item; each card keeps its own span.
-        const desktopColumns = Math.max(1, Math.min(6, Number(first.desktopColumns ?? 2)));
-        const mobileColumns = Math.max(1, Math.min(3, Number(first.mobileColumns ?? 1)));
-        // single-left is meaningful only when the category contains one visible card.
-        const singleLeft = g.items.length === 1 && Number(first.singleLeft) === 1;
-        const gridCls = 'bonus-grid ' + clsNum('d-cols-', desktopColumns, 2, 6) + ' ' + clsNum('m-cols-', mobileColumns, 1, 3) + (singleLeft ? ' single-left' : '');
-        return `<div class="bonus-section promo-dynamic-section">${titleHtml(g)}<div class="${gridCls}">${g.items.map(cardHtml).join('')}</div></div>`;
-      }).join('');
+  }
 
-      boxes.forEach(box => {
-        box.innerHTML = html;
-        const container = box.closest('.bonus-container');
-        if(container) Array.from(container.children).forEach(el => { if(el !== box && el.classList && el.classList.contains('bonus-section')) el.style.display = 'none'; });
-      });
-      syncPromotionTitleSpacing(document);
-      syncPromotionGridHeights(document);
-      requestAnimationFrame(() => { syncPromotionTitleSpacing(document); syncPromotionGridHeights(document); });
-      const loading = document.getElementById('bonusLoading');
-      if(loading) loading.style.display = 'none';
-    }catch(e){
-      console.warn('Promotion load failed', e);
+  function renderPromotionRows(rows, boxes){
+    rows=Array.isArray(rows)?rows:[];
+    window.__promotionRows=rows;
+    hideBundledPromotionFallback(boxes);
+
+    if(!rows.length){
+      boxes.forEach(box=>{ box.innerHTML='<div class="bonus-empty promo-confirmed-empty">No bonus available.</div>'; });
+      const loading=document.getElementById('bonusLoading');
+      if(loading) loading.style.display='none';
+      return;
     }
+
+    const groups = groupRows(rows);
+    const html = groups.map(g => {
+      const first = g.items[0] || {};
+      const desktopColumns = Math.max(1, Math.min(6, Number(first.desktopColumns ?? 2)));
+      const mobileColumns = Math.max(1, Math.min(3, Number(first.mobileColumns ?? 1)));
+      const singleLeft = g.items.length === 1 && Number(first.singleLeft) === 1;
+      const gridCls = 'bonus-grid ' + clsNum('d-cols-', desktopColumns, 2, 6) + ' ' + clsNum('m-cols-', mobileColumns, 1, 3) + (singleLeft ? ' single-left' : '');
+      return `<div class="bonus-section promo-dynamic-section">${titleHtml(g)}<div class="${gridCls}">${g.items.map(cardHtml).join('')}</div></div>`;
+    }).join('');
+
+    boxes.forEach(box => {
+      box.innerHTML = html || '<div class="bonus-empty promo-confirmed-empty">No bonus available.</div>';
+      const container = box.closest('.bonus-container');
+      if(container) Array.from(container.children).forEach(el => { if(el !== box && el.classList && el.classList.contains('bonus-section')) el.style.display = 'none'; });
+    });
+    syncPromotionTitleSpacing(document);
+    syncPromotionGridHeights(document);
+    requestAnimationFrame(() => { syncPromotionTitleSpacing(document); syncPromotionGridHeights(document); });
+    const loading = document.getElementById('bonusLoading');
+    if(loading) loading.style.display = 'none';
+  }
+
+  async function refreshPromotionRows(boxes){
+    if(!api().playerPromotionList) { signalPromotionReady(); return; }
+    const separator=api().playerPromotionList.includes('?')?'&':'?';
+    const query=new URLSearchParams({lang:currentLang(),_:String(Date.now())});
+    const r = await fetch(api().playerPromotionList+separator+query.toString(), {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
+    const j = await r.json();
+    if(!r.ok || j.status==='error') throw new Error(j.message||('Promotion API '+r.status));
+    const rows = Array.isArray(j.data) ? j.data : [];
+    writePromotionCache(rows);
+    renderPromotionRows(rows, boxes);
+    await waitForPromotionImages(document, 360);
+    signalPromotionReady();
+  }
+
+  function restoreConfirmedPromotionRows(boxes){
+    const cached=readPromotionCache();
+    if(!cached) return false;
+    renderPromotionRows(cached.rows, boxes);
+    // Cached BO-confirmed data owns the first frame. Images are normally in browser
+    // cache as well; give the first visible artwork only a tiny head start.
+    waitForPromotionImages(document, 180).finally(signalPromotionReady);
+    return true;
+  }
+
+  function load(force){
+    if(window.NAGA_HOME_BONUS_ENABLED === false){
+      const boxes=promotionBoxes();
+      hideBundledPromotionFallback(boxes);
+      boxes.forEach(box=>{box.innerHTML='';});
+      signalPromotionReady();
+      return Promise.resolve();
+    }
+    const boxes=promotionBoxes();
+    if(!boxes.length){ signalPromotionReady(); return Promise.resolve(); }
+
+    hideBundledPromotionFallback(boxes);
+    const restored=promotionInitialCacheRestored || restoreConfirmedPromotionRows(boxes);
+    promotionInitialCacheRestored=false;
+    const now=Date.now();
+    if(!force && promotionLoadPromise && now-promotionLastStartedAt<1800) return promotionLoadPromise;
+    promotionLastStartedAt=now;
+    promotionLoadPromise=refreshPromotionRows(boxes).catch(e=>{
+      console.warn('Promotion load failed', e);
+      // Never erase last-confirmed BO content because of a temporary network issue.
+      if(!restored){
+        boxes.forEach(box=>{box.innerHTML='<div class="bonus-empty">Unable to load bonus list.</div>';});
+        signalPromotionReady();
+      }
+    }).finally(()=>{ promotionLoadPromise=null; });
+    return promotionLoadPromise;
+  }
+
+  // The script is loaded after the page markup, so restore the last confirmed BO
+  // promotion snapshot immediately, before page-loader.js decides to reveal.
+  const initialBoxes=promotionBoxes();
+  if(initialBoxes.length){
+    hideBundledPromotionFallback(initialBoxes);
+    promotionInitialCacheRestored=restoreConfirmedPromotionRows(initialBoxes);
   }
 
   document.addEventListener('click', e => {
@@ -278,9 +394,9 @@
   const overlay = document.getElementById('bonusDetailOverlay');
   if(overlay) overlay.addEventListener('click', e => { if(e.target === overlay) closeDetail(); });
 
-  document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(); });
-  document.addEventListener('i18n:changed', function(){ load(); });
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
+  document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(true); });
+  document.addEventListener('i18n:changed', function(){ promotionReadySignalled=false; window.__NAGA_BONUS_READY__=false; load(true); });
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ load(false); }, {once:true}); else load(false);
 
   window.addEventListener('resize', schedulePromotionGridHeightSync, {passive:true});
   window.addEventListener('orientationchange', schedulePromotionGridHeightSync, {passive:true});

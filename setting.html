@@ -70,30 +70,30 @@
         <div class="setting-wallet-hero">
           <div>
             <p data-i18n="total_balance">Total Balance</p>
-            <h2 data-main-wallet-balance>-</h2>
+            <h2 data-main-wallet-balance>&nbsp;</h2>
           </div>
           <div class="setting-wallet-glow"><i class="fa-solid fa-wallet"></i></div>
         </div>
         <div class="setting-wallet-actions setting-wallet-image-actions">
-          <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="Deposit" decoding="async" loading="lazy"></button>
-          <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="Withdraw" decoding="async" loading="lazy"></button>
-          <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="Refresh" decoding="async" loading="lazy"></button>
+          <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="Deposit" decoding="async" loading="eager" fetchpriority="high"></button>
+          <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="Withdraw" decoding="async" loading="eager" fetchpriority="high"></button>
+          <button type="button" aria-label="Refresh" onclick="window.NAGA_MEMBER_AUTH && window.NAGA_MEMBER_AUTH.refreshBalance && window.NAGA_MEMBER_AUTH.refreshBalance()"><img src="assets/custom/images/refresh.png" alt="Refresh" decoding="async" loading="eager" fetchpriority="high"></button>
         </div>
         <div class="setting-wallet-actions setting-wallet-image-actions setting-wallet-referral-actions">
-          <button type="button" class="share-trigger" data-referral-share aria-label="Share referral link"><img src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy"></button>
-          <button type="button" class="copy-trigger" data-referral-copy aria-label="Copy referral link"><img src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy"></button>
-          <button type="button" aria-label="Downline" onclick="location.href='downline.html'"><img src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy"></button>
+          <button type="button" class="share-trigger" data-referral-share aria-label="Share referral link"><img src="assets/custom/images/share.png" alt="Share" decoding="async" loading="eager" fetchpriority="high"></button>
+          <button type="button" class="copy-trigger" data-referral-copy aria-label="Copy referral link"><img src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="eager" fetchpriority="high"></button>
+          <button type="button" aria-label="Downline" onclick="location.href='downline.html'"><img src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="eager" fetchpriority="high"></button>
         </div>
         <!-- <div class="setting-social-image-links" id="settingSocialLinks" data-social-links hidden></div> -->
         <div class="setting-wallet-limits">
-          <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b data-min-deposit-display>MYR 10.00</b></p>
-          <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b data-min-withdraw-display>MYR 50.00</b></p>
+          <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b data-min-deposit-display>&nbsp;</b></p>
+          <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b data-min-withdraw-display>&nbsp;</b></p>
         </div>
         <div class="bonus-progress-widget setting-bonus-progress-widget" id="bonusProgressWidget" data-bonus-progress-widget hidden>
-          <div class="bonus-progress-head"><span>Active Bonus</span><strong id="bonusProgressStatus">0%</strong></div>
-          <div class="bonus-progress-name" id="bonusProgressName">-</div>
+          <div class="bonus-progress-head"><span>Active Bonus</span><strong id="bonusProgressStatus">&nbsp;</strong></div>
+          <div class="bonus-progress-name" id="bonusProgressName">&nbsp;</div>
           <div class="bonus-progress-bar" aria-label="Bonus turnover progress"><span id="bonusProgressBar"></span></div>
-          <div class="bonus-progress-meta"><span id="bonusProgressCurrent">MYR 0.00</span><span id="bonusProgressRequired">MYR 0.00</span></div>
+          <div class="bonus-progress-meta"><span id="bonusProgressCurrent">&nbsp;</span><span id="bonusProgressRequired">&nbsp;</span></div>
           <div class="bonus-progress-note" id="bonusProgressNote">Turnover progress</div>
           <button type="button" class="bonus-progress-complete" id="bonusProgressComplete" hidden>Complete Promotion</button>
         </div>
@@ -111,13 +111,13 @@
 
       <article class="profile-card game-glass-card setting-merged-profile" id="profileDetails">
         <div class="setting-profile-mini setting-profile-mini-merged">
-          <div class="setting-profile-avatar" data-profile-avatar>-</div>
+          <div class="setting-profile-avatar" data-profile-avatar>&nbsp;</div>
           <div class="setting-profile-summary-text">
-            <h2 data-profile-name>-</h2>
-            <p><i class="fa-solid fa-mobile-screen-button"></i> <span data-profile-mobile>-</span></p>
-            <p><i class="fa-solid fa-location-dot"></i> <span data-profile-country>-</span></p>
+            <h2 data-profile-name>&nbsp;</h2>
+            <p><i class="fa-solid fa-mobile-screen-button"></i> <span data-profile-mobile>&nbsp;</span></p>
+            <p><i class="fa-solid fa-location-dot"></i> <span data-profile-country>&nbsp;</span></p>
           </div>
-          <span class="profile-badge" data-profile-vip>-</span>
+          <span class="profile-badge" data-profile-vip>&nbsp;</span>
         </div>
         <div class="card-heading setting-merged-profile-heading">
           <div>
@@ -149,11 +149,11 @@
   </main>
 
   <nav class="bottom-nav">
-    <a class="active" href="#"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-img="img.bottom_home" data-i18n-alt="home" decoding="async" loading="lazy"></a>
-    <a href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-img="img.bottom_history" data-i18n-alt="history" decoding="async" loading="lazy"></a>
-    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-img="img.bottom_bonus" data-i18n-alt="bonus" decoding="async" loading="lazy"></a>
-    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-img="img.bottom_chat" data-i18n-alt="live_chat" decoding="async" loading="lazy"></a>
-    <a class="active" href="#"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-img="img.bottom_setting" data-i18n-alt="setting" decoding="async" loading="lazy"></a>
+    <a class="active" href="#"><img src="assets/custom/images/home.png" alt="HOME" data-i18n-img="img.bottom_home" data-i18n-alt="home" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" data-i18n-img="img.bottom_history" data-i18n-alt="history" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" data-i18n-img="img.bottom_bonus" data-i18n-alt="bonus" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" data-i18n-img="img.bottom_chat" data-i18n-alt="live_chat" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a class="active" href="#"><img src="assets/custom/images/setting.png" alt="SETTING" data-i18n-img="img.bottom_setting" data-i18n-alt="setting" decoding="async" loading="eager" fetchpriority="high"></a>
   </nav>
 
   <div class="copy-overlay" id="copyOverlay" aria-hidden="true">
@@ -182,27 +182,23 @@
   </div>
 
     <script src="assets/js/ui-modal.js?v=1.0.0"></script>
-<script src="assets/js/config.js?v=1.0.28"></script>
-  <script src="assets/js/layout-section-loader.js?v=1.1.17"></script>
-  <script src="assets/js/transaction-limits.js?v=1.0.2"></script>
-  <script src="assets/js/social-links.js?v=1.0.4"></script>
-  <script src="assets/js/site-shell.js?v=1.0.22"></script>
+<script src="assets/js/config.js?v=1.0.29"></script>
+<script src="assets/js/brand-runtime.js?v=20260821-livechatfix2"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.18"></script>
+  <script src="assets/js/transaction-limits.js?v=1.0.3"></script>
+  <script src="assets/js/social-links.js?v=1.0.5"></script>
+  <script src="assets/js/site-shell.js?v=1.0.23"></script>
   <script src="assets/js/lang.js?v=1.0.12"></script>
-  <script src="assets/js/member-auth.js?v=1.0.15"></script>
+  <script src="assets/js/member-auth.js?v=1.0.16"></script>
   <script src="assets/js/bonus-progress.js?v=1.0.4"></script>
-  <script src="assets/js/setting.js?v=1.0.9"></script>
+  <script src="assets/js/setting.js?v=1.0.10"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>
-  <script src="assets/js/custom-asset-cache.js?v=1.0.19"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
-  <script src="assets/js/firebase-config.js?v=1.0.0"></script>
-  <script src="assets/js/livechat-widget.js?v=1.0.4"></script>
-  <script src="assets/js/promotion-bonus.js?v=1.0.14"></script>
-  <script src="assets/js/livechat-global-notification.js?v=1.0.1"></script>
-  <script src="assets/js/page-loader.js?v=1.0.10"></script>
-<script src="assets/js/marquee.js?v=1.0.1"></script>
+  <script src="assets/js/custom-asset-cache.js?v=1.0.20"></script>
+  <script src="assets/js/livechat-lazy-loader.js?v=1.0.0"></script>
+  <script src="assets/js/promotion-bonus.js?v=1.0.15"></script>
+  <script src="assets/js/page-loader.js?v=1.0.11"></script>
+<script src="assets/js/marquee.js?v=1.0.2"></script>
 <script src="assets/js/animation-effects.js?v=1.0.0"></script>
 <script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
     

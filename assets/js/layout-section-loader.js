@@ -43,18 +43,23 @@
     if (!freshHeaderLoaded || !customAssetsReady) return;
     const root = document.documentElement;
     const header = document.querySelector('.top-header');
-    if (!header) { root.classList.add('naga-header-ready'); return; }
-    const logo = header.querySelector('.site-logo, .logo-box img');
-    if (!logo || logo.complete) { root.classList.add('naga-header-ready'); return; }
-    let done = false;
+    let sent = root.classList.contains('naga-header-ready');
     const finish = function () {
-      if (done) return;
-      done = true;
       root.classList.add('naga-header-ready');
+      if (!sent) {
+        sent = true;
+        window.__NAGA_HEADER_READY__ = true;
+        try { document.dispatchEvent(new CustomEvent('naga:header-ready')); } catch (_) {}
+      }
     };
+    if (!header) { finish(); return; }
+    const logo = header.querySelector('.site-logo, .logo-box img');
+    if (!logo) { finish(); return; }
+    try { logo.loading = 'eager'; logo.fetchPriority = 'high'; } catch (_) {}
+    if (logo.complete) { finish(); return; }
     logo.addEventListener('load', finish, { once: true });
     logo.addEventListener('error', finish, { once: true });
-    setTimeout(finish, 800);
+    setTimeout(finish, 550);
   }
 
   function cacheKey(sectionKey) {
@@ -602,6 +607,14 @@
     });
     if (data.js && data.js.trim()) applyJs(sectionKey, data.js);
     markCriticalPart(sectionKey, data);
+    // A cached frontend header is already the last BO-confirmed header. Treat it
+    // as display-ready immediately instead of hiding its logo until the network
+    // revalidation finishes. The fresh request below can still replace it if BO
+    // has changed, but the user never sees an empty header during refresh.
+    if (sectionKey === 'frontend-header') {
+      freshHeaderLoaded = true;
+      markHeaderReady();
+    }
     document.dispatchEvent(new CustomEvent('naga:layout-section-applied', {
       detail: { sectionKey: sectionKey, htmlChanged: htmlChanged, data: data, fromCache: true }
     }));

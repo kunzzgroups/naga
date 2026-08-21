@@ -29,7 +29,10 @@
     }
     member = getChatIdentity();
     conversationId = getConversationId(member);
-    startChat();
+    startChat().catch(function(error){
+      console.error('[Naga livechat] startup failed:', error);
+      showSystem('Unable to start live chat. ' + (error && error.message ? error.message : 'Please try again.'));
+    });
   }
 
   function initFirebase(){
@@ -97,7 +100,9 @@
   async function ensureConversation(){
     const ref = db.collection('conversations').doc(conversationId);
     const now = firebase.firestore.FieldValue.serverTimestamp();
-    await ref.set({
+    const brandData=(window.NAGA_BRAND&&window.NAGA_BRAND.data)||{};
+    const brandDomain=String(location.hostname||'').toLowerCase();
+    const payload={
       conversationId: conversationId,
       memberId: member.id || member.memberId || '',
       memberName: memberName(member),
@@ -106,8 +111,12 @@
       status: 'open',
       lastMessage: 'New chat opened',
       updatedAt: now,
-      createdAt: now
-    }, {merge:true});
+      createdAt: now,
+      brandDomain: brandDomain
+    };
+    if(Number(brandData.id)>0) payload.brandId=Number(brandData.id);
+    if(brandData.code) payload.brandCode=String(brandData.code);
+    await ref.set(payload, {merge:true});
   }
 
   async function submitChat(){
@@ -167,7 +176,7 @@
       attachments: attachments,
       createdAt: now
     });
-    await db.collection('conversations').doc(conversationId).set({
+    const conversationUpdate={
       lastMessage: text || (attachments.length ? '[Attachment]' : ''),
       lastSenderType: 'member',
       updatedAt: now,
@@ -175,8 +184,13 @@
       memberName: memberName(member),
       memberUsername: member.username || member.mobile || '',
       guest: !!member.isGuest,
-      adminUnreadCount: firebase.firestore.FieldValue.increment(1)
-    }, {merge:true});
+      adminUnreadCount: firebase.firestore.FieldValue.increment(1),
+      brandDomain: String(location.hostname||'').toLowerCase()
+    };
+    const brandData=(window.NAGA_BRAND&&window.NAGA_BRAND.data)||{};
+    if(Number(brandData.id)>0) conversationUpdate.brandId=Number(brandData.id);
+    if(brandData.code) conversationUpdate.brandCode=String(brandData.code);
+    await db.collection('conversations').doc(conversationId).set(conversationUpdate, {merge:true});
   }
 
   async function markMemberRead(){

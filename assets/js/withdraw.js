@@ -6,17 +6,17 @@
   const submit=document.querySelector('.submit-btn');
   const quickButtons=[...document.querySelectorAll('.withdraw-quick button')];
   const minimumDisplay=document.getElementById('withdrawMinimumDisplay');
-  let mainBalance = 0;
+  let mainBalance = null;
   let withdrawalPolicy = null;
-  let globalMinWithdraw = Number(window.NAGA_TRANSACTION_LIMITS&&window.NAGA_TRANSACTION_LIMITS.minWithdrawalAmount)||50;
+  let globalMinWithdraw = Number(window.NAGA_TRANSACTION_LIMITS&&window.NAGA_TRANSACTION_LIMITS.minWithdrawalAmount)||null;
 
   function token(){return localStorage.getItem('member_token')||'';}
   function requireLogin(){ if(!token()){ location.href='login.html?redirect=withdraw.html'; return false;} return true; }
   function money(v){ const n=Number(v||0); return 'MYR '+(isNaN(n)?0:n).toFixed(2); }
   function numeric(v){ const n=Number(v); return Number.isFinite(n)?n:0; }
-  function setBalance(v){ mainBalance=numeric(v); localStorage.setItem('member_main_wallet_balance', String(mainBalance)); document.querySelectorAll('[data-main-wallet-balance], .withdraw-balance strong').forEach(el=>el.textContent=money(mainBalance)); }
+  function setBalance(v){ const n=Number(v); if(!Number.isFinite(n)) return; mainBalance=n; localStorage.setItem('member_main_wallet_balance', String(mainBalance)); localStorage.setItem('member_main_wallet_balance_confirmed_at', String(Date.now())); document.querySelectorAll('[data-main-wallet-balance], .withdraw-balance strong').forEach(el=>el.textContent=money(mainBalance)); }
   function msg(text, ok){ let box=document.getElementById('withdrawMsg'); if(!box){ box=document.createElement('div'); box.id='withdrawMsg'; box.className='withdraw-note'; document.querySelector('.deposit-actions')?.before(box); } box.style.color=ok?'#19ff5a':'#ff4040'; box.textContent=text; }
-  function getBalanceFromJson(json){ const d=(json&&json.data)||json||{}; const arr=[d.balance,d.mainWalletBalance,d.main_wallet_balance,d.walletBalance,d.wallet_balance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of arr){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return 0; }
+  function getBalanceFromJson(json){ const d=(json&&json.data)||json||{}; const arr=[d.balance,d.mainWalletBalance,d.main_wallet_balance,d.walletBalance,d.wallet_balance,d.mainWallet&&d.mainWallet.balance,d.wallet&&d.wallet.balance]; for(const v of arr){ if(v!==undefined&&v!==null&&v!==''){ const n=Number(v); if(!isNaN(n)) return n; } } return null; }
 
   function exactPromotionAmount(){
     if(!withdrawalPolicy || withdrawalPolicy.restricted!==true || withdrawalPolicy.exactAmountRequired!==true) return null;
@@ -34,8 +34,7 @@
       msg('Promotion withdrawal is fixed at '+money(fixed)+'. After BO approval, any remaining promotion balance will be cleared.', true);
       return;
     }
-    if(minimumDisplay) minimumDisplay.textContent=money(globalMinWithdraw);
-    if(amount){ amount.readOnly=false; amount.min=String(globalMinWithdraw); amount.removeAttribute('max'); }
+    if(globalMinWithdraw!=null){ if(minimumDisplay) minimumDisplay.textContent=money(globalMinWithdraw); if(amount){ amount.readOnly=false; amount.min=String(globalMinWithdraw); amount.removeAttribute('max'); } }
     quickButtons.forEach(btn=>{ btn.disabled=false; btn.removeAttribute('aria-disabled'); });
   }
 
@@ -57,7 +56,7 @@
     const res=await fetch(freshUrl,{cache:'no-store',headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-cache, no-store, must-revalidate',Pragma:'no-cache'}});
     const json=await res.json().catch(()=>({}));
     if(!res.ok||json.status==='error') throw new Error(json.message||'Unable to load wallet balance');
-    const b=getBalanceFromJson(json); setBalance(b); return b;
+    const b=getBalanceFromJson(json); if(b!==null) setBalance(b); return b;
   }
 
   async function fetchWithdrawalPolicy(){
@@ -88,6 +87,7 @@
     const val=Number(amount?.value||0);
     const fixed=exactPromotionAmount();
     if(fixed!==null && Math.abs(val-fixed)>0.000001){ msg('Promotion withdrawal amount is fixed at '+money(fixed)+'.',false); return; }
+    if(fixed===null && globalMinWithdraw==null){ msg('Withdrawal setting is still loading from BO. Please try again.',false); return; }
     if(fixed===null && val<globalMinWithdraw){msg('Minimum withdraw is '+money(globalMinWithdraw),false);return;}
     submit.disabled=true; msg('Submitting withdraw request...',true);
     try{
@@ -104,7 +104,7 @@
 
   quickButtons.forEach(btn=>btn.addEventListener('click',()=>{
     if(!amount || btn.disabled) return;
-    amount.value=btn.textContent.trim()==='MAX'?String(mainBalance||0):btn.textContent.trim();
+    amount.value=btn.textContent.trim()==='MAX'?(mainBalance==null?'':String(mainBalance)):btn.textContent.trim();
     amount.focus();
   }));
 
@@ -112,7 +112,6 @@
 
   document.addEventListener('DOMContentLoaded',async()=>{
     if(!requireLogin()) return;
-    localStorage.removeItem('member_main_wallet_balance');
     await Promise.allSettled([loadMe(),fetchMainBalance(),fetchTransactionLimits()]);
     fetchWithdrawalPolicy().catch(e=>msg(e.message,false));
     submit?.addEventListener('click',submitWithdraw);

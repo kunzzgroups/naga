@@ -90,12 +90,12 @@
 
       <div data-layout-section="home-before-referral"></div>
 
-      <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" decoding="async" loading="lazy">
+      <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" decoding="async" loading="eager" fetchpriority="high">
 
       <div class="action-grid">
-        <button class="image-action-btn share-trigger" type="button"><img class="copy-image" src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy"></button>
-        <a class="image-action-btn" href="downline.html"><img class="copy-image" src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy"></a>
-        <button class="image-action-btn copy-trigger" type="button"><img class="copy-image" src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy"></button>
+        <button class="image-action-btn share-trigger" type="button"><img class="copy-image" src="assets/custom/images/share.png" alt="Share" decoding="async" loading="eager" fetchpriority="high"></button>
+        <a class="image-action-btn" href="downline.html"><img class="copy-image" src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="eager" fetchpriority="high"></a>
+        <button class="image-action-btn copy-trigger" type="button"><img class="copy-image" src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="eager" fetchpriority="high"></button>
       </div>
 
       <div data-layout-section="home-before-social-media"></div>
@@ -125,12 +125,12 @@
     </main>
 
     <section class="mobile-bottom-area">
-      <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" decoding="async" loading="lazy" />
+      <img class="promo-img" src="assets/custom/images/referral.png" alt="Referrer Bonus" decoding="async" loading="eager" / fetchpriority="high">
 
       <div class="action-grid">
-        <button class="image-action-btn share-trigger" type="button"><img class="copy-image" src="assets/custom/images/share.png" alt="Share" decoding="async" loading="lazy"></button>
-        <a class="image-action-btn" href="downline.html"><img class="copy-image" src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="lazy"></a>
-        <button class="image-action-btn copy-trigger" type="button"><img class="copy-image" src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="lazy"></button>
+        <button class="image-action-btn share-trigger" type="button"><img class="copy-image" src="assets/custom/images/share.png" alt="Share" decoding="async" loading="eager" fetchpriority="high"></button>
+        <a class="image-action-btn" href="downline.html"><img class="copy-image" src="assets/custom/images/downline.png" alt="Downline" decoding="async" loading="eager" fetchpriority="high"></a>
+        <button class="image-action-btn copy-trigger" type="button"><img class="copy-image" src="assets/custom/images/copylink.png" alt="Copy Link" decoding="async" loading="eager" fetchpriority="high"></button>
       </div>
 
       <div class="dynamic-social-image-links" data-social-links hidden></div>
@@ -147,28 +147,28 @@
         <div class="balance-box">
           <div class="balance-text">
             <p data-i18n="balance_label">Balance:</p>
-            <h3 data-main-wallet-balance>-</h3>
-            <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b data-min-deposit-display>MYR 10.00</b></p>
-            <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b data-min-withdraw-display>MYR 50.00</b></p>
+            <h3 data-main-wallet-balance>&nbsp;</h3>
+            <p><span data-i18n="minimum_deposit">Minimum Deposit:</span> <b data-min-deposit-display>&nbsp;</b></p>
+            <p><span data-i18n="minimum_withdrawal">Minimum Withdrawal:</span> <b data-min-withdraw-display>&nbsp;</b></p>
           </div>
           <div class="money-btns">
-            <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="DEPOSIT" decoding="async" loading="lazy"></button>
-            <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="WITHDRAW" decoding="async" loading="lazy"></button>
-            <button type="button" aria-label="Refresh"><img src="assets/custom/images/refresh.png" alt="REFRESH" decoding="async" loading="lazy"></button>
+            <button type="button" aria-label="Deposit" onclick="location.href='deposit.html'"><img src="assets/custom/images/deposit.png" alt="DEPOSIT" decoding="async" loading="eager" fetchpriority="high"></button>
+            <button type="button" aria-label="Withdraw" onclick="location.href='withdraw.html'"><img src="assets/custom/images/withdraw.png" alt="WITHDRAW" decoding="async" loading="eager" fetchpriority="high"></button>
+            <button type="button" aria-label="Refresh"><img src="assets/custom/images/refresh.png" alt="REFRESH" decoding="async" loading="eager" fetchpriority="high"></button>
           </div>
         </div>
         <div class="bonus-progress-widget" id="bonusProgressWidget" data-bonus-progress-widget hidden>
           <div class="bonus-progress-head">
             <span>Active Bonus</span>
-            <strong id="bonusProgressStatus">0%</strong>
+            <strong id="bonusProgressStatus">&nbsp;</strong>
           </div>
-          <div class="bonus-progress-name" id="bonusProgressName">-</div>
+          <div class="bonus-progress-name" id="bonusProgressName">&nbsp;</div>
           <div class="bonus-progress-bar" aria-label="Bonus winover progress">
             <span id="bonusProgressBar"></span>
           </div>
           <div class="bonus-progress-meta">
-            <span id="bonusProgressCurrent">MYR 0.00</span>
-            <span id="bonusProgressRequired">MYR 0.00</span>
+            <span id="bonusProgressCurrent">&nbsp;</span>
+            <span id="bonusProgressRequired">&nbsp;</span>
           </div>
           <div class="bonus-progress-note" id="bonusProgressNote">Winover progress</div>
           <button type="button" class="bonus-progress-complete" id="bonusProgressComplete" hidden>Complete Promotion</button>
@@ -213,11 +213,11 @@
   </section>
 
   <nav class="bottom-nav">
-    <a href="#"><img src="assets/custom/images/home.png" alt="HOME" decoding="async" loading="lazy"></a>
-    <a class="active" href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" decoding="async" loading="lazy"></a>
-    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" decoding="async" loading="lazy"></a>
-    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" decoding="async" loading="lazy"></a>
-    <a href="setting.html"><img src="assets/custom/images/setting.png" alt="SETTING" decoding="async" loading="lazy"></a>
+    <a href="#"><img src="assets/custom/images/home.png" alt="HOME" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a class="active" href="index.html"><img src="assets/custom/images/history.png" alt="HISTORY" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="bonus.html"><img src="assets/custom/images/bonus.png" alt="BONUS" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="chat.html"><img src="assets/custom/images/livechat.png" alt="LIVE CHAT" decoding="async" loading="eager" fetchpriority="high"></a>
+    <a href="setting.html"><img src="assets/custom/images/setting.png" alt="SETTING" decoding="async" loading="eager" fetchpriority="high"></a>
   </nav>
 
 
@@ -295,20 +295,21 @@
   </div>
 
     <script src="assets/js/ui-modal.js?v=1.0.0"></script>
-<script src="assets/js/site-shell.js?v=1.0.22"></script>
+<script src="assets/js/site-shell.js?v=1.0.23"></script>
   <script src="assets/js/lang.js?v=1.0.10"></script>
-  <script src="assets/js/config.js?v=1.0.28"></script>
-  <script src="assets/js/transaction-limits.js?v=1.0.2"></script>
-  <script src="assets/js/layout-section-loader.js?v=1.1.17"></script>
+  <script src="assets/js/config.js?v=1.0.29"></script>
+<script src="assets/js/brand-runtime.js?v=20260821-livechatfix2"></script>
+  <script src="assets/js/transaction-limits.js?v=1.0.3"></script>
+  <script src="assets/js/layout-section-loader.js?v=1.1.18"></script>
   <script src="assets/js/ad-popup.js?v=1.0.0"></script>
-  <script src="assets/js/social-links.js?v=1.0.4"></script>
-  <script src="assets/js/frontend-display.js?v=1.0.2"></script>
+  <script src="assets/js/social-links.js?v=1.0.5"></script>
+  <script src="assets/js/frontend-display.js?v=1.0.3"></script>
   <script src="assets/js/provider-launch.js?v=1.0.18"></script>
-  <script src="assets/js/app.js?v=1.0.62"></script>
+  <script src="assets/js/app.js?v=1.0.63"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
   <script src="assets/js/referral-share-click.js?v=1.0.14"></script>
   <script src="assets/js/bonus.js?v=1.0.10"></script>
-  <script src="assets/js/promotion-bonus.js?v=1.0.14"></script>
+  <script src="assets/js/promotion-bonus.js?v=1.0.15"></script>
 
 
   <script id="right-panel-wheel-fix-v2">
@@ -343,17 +344,12 @@
     else bindRightPanelWheel();
   })();
   </script>
-  <script src="assets/js/custom-asset-cache.js?v=1.0.19"></script>
-  <script src="assets/js/member-auth.js?v=1.0.15"></script>
+  <script src="assets/js/custom-asset-cache.js?v=1.0.20"></script>
+  <script src="assets/js/member-auth.js?v=1.0.16"></script>
   <script src="assets/js/bonus-progress.js?v=1.0.4"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
-  <script src="assets/js/firebase-config.js?v=1.0.0"></script>
-  <script src="assets/js/livechat-widget.js?v=1.0.4"></script>
-  <script src="assets/js/livechat-global-notification.js?v=1.0.1"></script>
-  <script src="assets/js/page-loader.js?v=1.0.10"></script>
-<script src="assets/js/marquee.js?v=1.0.1"></script>
+  <script src="assets/js/livechat-lazy-loader.js?v=1.0.0"></script>
+  <script src="assets/js/page-loader.js?v=1.0.11"></script>
+<script src="assets/js/marquee.js?v=1.0.2"></script>
 <script src="assets/js/animation-effects.js?v=1.0.0"></script>
 <script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
     
