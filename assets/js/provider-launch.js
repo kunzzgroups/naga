@@ -2,7 +2,7 @@
   const API = window.NAGA_API || {};
   const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || 'http://localhost:8080';
   const LAUNCH_API_URL = API.playerProviderLaunch || (API_BASE.replace(/\/+$/, '') + '/api/player/provider/launch');
-  const WALLET_BALANCE_URL = API.playerProviderWalletBalance || (API_BASE.replace(/\/+$/, '') + '/api/player/provider/wallet-balance');
+  const WALLET_BALANCE_URL = API.playerMainWalletBalance || API.playerProviderWalletBalance || (API_BASE.replace(/\/+$/, '') + '/api/member/wallet/balance');
   const EXIT_API_URL = API.playerProviderExit || (API_BASE.replace(/\/+$/, '') + '/api/player/provider/exit');
   const HEARTBEAT_API_URL = API.playerProviderHeartbeat || (API_BASE.replace(/\/+$/, '') + '/api/player/provider/heartbeat');
 
@@ -358,6 +358,31 @@
     return normalizeProviderUrl(rawUrl);
   }
 
+  function getCachedMainWalletBalance(){
+    try{
+      const raw = localStorage.getItem('member_main_wallet_balance');
+      if(raw === null || raw === '') return null;
+      const value = Number(raw);
+      if(!Number.isFinite(value)) return null;
+      const confirmedAt = Number(localStorage.getItem('member_main_wallet_balance_confirmed_at') || 0);
+      // Legacy 0.00 values may have been written before the wallet API replied.
+      if(!confirmedAt && value === 0) return null;
+      return normalizedMoney(value);
+    }catch(e){ return null; }
+  }
+
+  function rememberMainWalletBalance(balance){
+    try{
+      localStorage.setItem('member_main_wallet_balance', String(balance));
+      localStorage.setItem('member_main_wallet_balance_confirmed_at', String(Date.now()));
+    }catch(e){}
+    document.querySelectorAll('[data-main-wallet-balance]').forEach(function(el){
+      el.textContent = 'MYR ' + money(balance);
+    });
+    window.__NAGA_WALLET_READY__ = true;
+    try{ document.dispatchEvent(new CustomEvent('naga:wallet-ready')); }catch(e){}
+  }
+
   async function fetchMainWalletBalance(){
     const token = getToken();
     if(!token){ goLogin(); return 0; }
@@ -373,10 +398,19 @@
     const json = await res.json().catch(function(){ return {}; });
     if(!res.ok || json.status === 'error') throw new Error(json.message || 'Unable to load main wallet balance.');
     const data = json.data || {};
-    const balance = Number(data.balance || (data.mainWallet && data.mainWallet.balance) || 0);
+    const rawBalance = firstValue(
+      data.balance, data.mainWalletBalance, data.main_wallet_balance,
+      data.walletBalance, data.wallet_balance,
+      data.mainWallet && data.mainWallet.balance,
+      data.main_wallet && data.main_wallet.balance,
+      data.wallet && data.wallet.balance
+    );
+    const balance = Number(rawBalance);
+    if(!Number.isFinite(balance)) throw new Error('Unable to load main wallet balance.');
     // Keep the same 2-decimal value that is shown to the player. This avoids
     // the UI showing RM 67.66 while retaining a hidden 67.659999... cache.
-    walletBalanceCache = isNaN(balance) ? 0 : normalizedMoney(balance);
+    walletBalanceCache = normalizedMoney(balance);
+    rememberMainWalletBalance(walletBalanceCache);
     return walletBalanceCache;
   }
 
@@ -540,16 +574,38 @@
     modal.querySelector('[data-provider-transfer-game-name]').textContent = payload._display.gameName || 'Selected Game';
     modal.querySelector('[data-provider-transfer-provider]').textContent = payload.providerCode || '-';
     modal.querySelector('[data-provider-transfer-amount]').value = '';
-    modal.querySelector('[data-provider-transfer-balance]').textContent = 'Loading...';
-    modal.classList.remove('hidden');
-    applyPromotionConfirmState();
+
+    // Never paint "Loading..." in the transfer dialog. The site shell already
+    // keeps the latest API-confirmed main-wallet balance in localStorage, so use
+    // that value immediately. If this is the first wallet read in the browser,
+    // wait for the API before revealing the dialog instead of flashing a placeholder.
+    const cachedBalance = getCachedMainWalletBalance();
+    if(cachedBalance !== null){
+      walletBalanceCache = cachedBalance;
+      modal.querySelector('[data-provider-transfer-balance]').textContent = money(cachedBalance);
+      modal.classList.remove('hidden');
+      applyPromotionConfirmState();
+    }
 
     try{
       const balance = await fetchMainWalletBalance();
-      modal.querySelector('[data-provider-transfer-balance]').textContent = money(balance);
+      if(pendingLaunch === payload){
+        modal.querySelector('[data-provider-transfer-balance]').textContent = money(balance);
+        if(cachedBalance === null){
+          modal.classList.remove('hidden');
+          applyPromotionConfirmState();
+        }
+      }
     }catch(err){
-      modal.querySelector('[data-provider-transfer-balance]').textContent = '0.00';
-      setError(err.message || 'Unable to load main wallet balance.');
+      if(cachedBalance === null){
+        walletBalanceCache = 0;
+        modal.querySelector('[data-provider-transfer-balance]').textContent = '0.00';
+        modal.classList.remove('hidden');
+        applyPromotionConfirmState();
+        setError(err.message || 'Unable to load main wallet balance.');
+      }
+      // When a confirmed cached balance is already visible, keep it on a
+      // temporary network failure instead of replacing it with 0.00.
     }
   }
 
