@@ -14486,3 +14486,52 @@ body.vip-page .vip-milestone-copy{
     grid-template-columns:repeat(3,minmax(0,1fr))!important;
   }
 }
+
+/* ===== VIP / History back-to-top finishing patch 2026-08-23 =====
+   VIP has no mobile bottom navigation. The global mobile rule reserves 57px for
+   pages that do, which exposed the body's dark fallback below the VIP artwork. */
+@media (max-width:768px){
+  html:has(body.vip-page),
+  html:has(body.vip-page) body.vip-page{
+    min-height:100dvh!important;
+    background-color:transparent!important;
+  }
+  body.vip-page{
+    padding-bottom:0!important;
+  }
+  body.vip-page .vip-main{
+    min-height:100dvh!important;
+    margin-bottom:0!important;
+    padding-bottom:max(28px,env(safe-area-inset-bottom))!important;
+  }
+}
+
+/* VIP is a naturally scrolling content page on tablet/desktop as well. Keep the
+   document as the scroll owner so the shared back-to-top control works everywhere. */
+@media (min-width:769px){
+  html:has(body.vip-page),
+  html:has(body.vip-page) body.vip-page{
+    height:auto!important;
+    max-height:none!important;
+    min-height:100vh!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+  }
+  body.vip-page{
+    display:block!important;
+  }
+  body.vip-page .vip-main{
+    height:auto!important;
+    max-height:none!important;
+    min-height:100vh!important;
+    overflow:visible!important;
+  }
+}
+
+/* Keep the shared control above page chrome on both VIP and History. */
+body.vip-page .naga-scroll-top-btn,
+body.history-page .naga-scroll-top-btn{
+  display:grid!important;
+  place-items:center!important;
+  visibility:visible!important;
+}
