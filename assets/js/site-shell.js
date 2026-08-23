@@ -412,6 +412,7 @@
           <a href="vip.html"><i class="fa-solid fa-crown mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_vip">VIP</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
           <a href="bonus.html"><i class="fa-solid fa-gift mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_bonus">Bonus</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
           <a href="spin.html"><i class="fa-solid fa-dharmachakra mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_spin">Spin</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+          <a href="leaderboard.html" data-leaderboard-menu style="display:none;"><i class="fa-solid fa-ranking-star mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_leaderboard">Leaderboard</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
           <a href="policies.html"><i class="fa-solid fa-shield-halved mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_compliance_policy">Compliance Policy</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
           <a href="chat.html"><i class="fa-solid fa-headset mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_live_chat">Live Chat</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
           <button type="button" class="mobile-menu-list-logout" data-member-logout><i class="fa-solid fa-right-from-bracket mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_logout">Logout</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></button>
@@ -427,6 +428,26 @@
   }
 
   // <a href="rebate.html"><i class="fa-solid fa-coins mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_rebate">Rebate</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+
+  // Ensure sidebar display controls are available on every page that uses the
+  // shared shell. Historically only index.html loaded frontend-display.js, so
+  // BO-controlled items such as Leaderboard stayed hidden on direct/internal
+  // pages. Delay until DOMContentLoaded so config.js has been parsed first.
+  function ensureFrontendDisplayController(){
+    if(window.NagaFrontendDisplay || document.querySelector('script[data-naga-frontend-display-loader]')) return;
+    const script=document.createElement('script');
+    script.src='assets/js/frontend-display.js?v=1.0.4';
+    script.async=true;
+    script.setAttribute('data-naga-frontend-display-loader','1');
+    document.head.appendChild(script);
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',ensureFrontendDisplayController,{once:true});
+  }else{
+    ensureFrontendDisplayController();
+  }
+
 
   function openMenu(){
     createSideMenu();

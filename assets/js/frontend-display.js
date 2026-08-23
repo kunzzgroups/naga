@@ -77,11 +77,11 @@
     const value = candidates.find(v => v !== undefined && v !== null);
 
     /*
-     * Default false is safer here.
-     * If BO/API has not returned the setting yet,
-     * Leaderboard stays hidden instead of flashing first.
+     * Backend/database default is enabled. Keep the same default in the
+     * frontend so a fresh browser does not permanently hide a valid BO
+     * Leaderboard item while the first setting request is still pending.
      */
-    return normalizeEnabled(value, false);
+    return normalizeEnabled(value, true);
   }
 
 
@@ -258,13 +258,11 @@
 
 
   function cachedLeaderboard(){
-    /*
-     * Default false prevents Leaderboard flash
-     * before BO setting is available.
-     */
+    /* Match the Spring/DB default (enabled). A confirmed BO value is still
+     * persisted and takes precedence immediately on later page loads. */
     return getStorage(
       LEADERBOARD_STORAGE_KEY,
-      false
+      true
     );
   }
 
@@ -413,7 +411,7 @@
       const key =
         event &&
         event.detail &&
-        event.detail.key;
+        (event.detail.sectionKey || event.detail.key);
 
       if(
         !key ||
