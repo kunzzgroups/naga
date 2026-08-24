@@ -95,8 +95,10 @@
     if(!registerForm || registerForm.dataset.nagaAuthBound === '1') return;
     registerForm.dataset.nagaAuthBound = '1';
 
-    const ref = new URLSearchParams(window.location.search).get('ref');
-    if(ref && formInput(registerForm,3)) formInput(registerForm,3).value = ref;
+    const params = new URLSearchParams(window.location.search);
+    const agentCodeFromUrl = (params.get('agent') || '').trim();
+    const ref = (params.get('ref') || '').trim();
+    if((agentCodeFromUrl || ref) && formInput(registerForm,3)) formInput(registerForm,3).value = agentCodeFromUrl || ref;
 
     const registerBtn = registerForm.querySelector('.submit-login');
     if(registerBtn) registerBtn.type = 'submit';
@@ -118,7 +120,8 @@
           username: mobile,
           mobile,
           password,
-          referrerCode
+          referrerCode: agentCodeFromUrl ? '' : referrerCode,
+          agentCode: agentCodeFromUrl || ''
         });
         saveMemberAuth(json);
         showMessage(registerForm, 'Register success. Please complete your bank details.', 'success');

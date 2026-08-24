@@ -61,7 +61,7 @@
     }catch(e){}
   })();
   </script>
-  <link rel="stylesheet" href="assets/css/style.css?v=1.1.2" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.1.3" />
   <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
   <link rel="preconnect" href="https://bo.titanxgaming.com" crossorigin>
   <link rel="preconnect" href="https://static.titanxgaming.com" crossorigin>
@@ -172,6 +172,21 @@
           </div>
           <div class="bonus-progress-note" id="bonusProgressNote">Winover progress</div>
           <button type="button" class="bonus-progress-complete" id="bonusProgressComplete" hidden>Complete Promotion</button>
+        </div>
+        <div class="bonus-progress-widget vip-turnover-progress-widget" id="vipTurnoverProgressWidget" data-vip-turnover-progress-widget hidden>
+          <div class="bonus-progress-head">
+            <span>VIP TURNOVER</span>
+            <strong id="vipTurnoverProgressStatus">&nbsp;</strong>
+          </div>
+          <div class="bonus-progress-name" id="vipTurnoverProgressName">VIP Reward Turnover Requirement</div>
+          <div class="bonus-progress-bar" aria-label="VIP turnover progress">
+            <span id="vipTurnoverProgressBar"></span>
+          </div>
+          <div class="bonus-progress-meta">
+            <span id="vipTurnoverProgressCurrent">&nbsp;</span>
+            <span id="vipTurnoverProgressRequired">&nbsp;</span>
+          </div>
+          <div class="bonus-progress-note" id="vipTurnoverProgressNote">VIP turnover progress</div>
         </div>
         <div class="bonus-complete-modal" id="bonusCompleteModal" aria-hidden="true">
           <div class="bonus-complete-backdrop" data-bonus-complete-close></div>
@@ -347,6 +362,7 @@
   <script src="assets/js/custom-asset-cache.js?v=1.0.20"></script>
   <script src="assets/js/member-auth.js?v=1.0.16"></script>
   <script src="assets/js/bonus-progress.js?v=1.0.4"></script>
+  <script src="assets/js/vip-turnover-progress.js?v=1.0.1"></script>
   <script src="assets/js/livechat-lazy-loader.js?v=1.0.0"></script>
   <script src="assets/js/page-loader.js?v=1.0.11"></script>
 <script src="assets/js/marquee.js?v=1.0.2"></script>
