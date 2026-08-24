@@ -6,7 +6,7 @@
   const executedJs = new Set();
   const authoritativeSections = new Map();
   const sectionObservers = new Map();
-  const CACHE_PREFIX = 'naga_layout_section_v2:';
+  const CACHE_PREFIX = 'naga_layout_section_v3:';
   let initialized = false;
   let shellReadySeen = false;
   let freshHeaderLoaded = false;
@@ -118,9 +118,16 @@
 
   function writeCachedSection(sectionKey, data) {
     try {
+      const normalized = normalizeData(data);
+      // Do not preserve a previous critical customization after BO explicitly
+      // clears that section. The bundled frontend then becomes the clean fallback.
+      if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, normalized)) {
+        localStorage.removeItem(cacheKey(sectionKey));
+        return;
+      }
       localStorage.setItem(cacheKey(sectionKey), JSON.stringify({
         savedAt: Date.now(),
-        data: normalizeData(data)
+        data: normalized
       }));
     } catch (_) {}
   }
@@ -164,12 +171,10 @@
         throw new Error((json && json.message) || ('Unable to load layout section: ' + sectionKey));
       }
       const normalized = normalizeData(json);
-      // A force refresh can put many requests on the BO at once. In that state
-      // some stacks may answer 200 with an empty/partial payload. Treat an empty
-      // critical shell response as a transient failure, never as a valid update.
-      if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, normalized)) {
-        throw new Error('Incomplete critical layout section: ' + sectionKey);
-      }
+      // A successful BO response is authoritative even when the section is empty.
+      // Empty is a valid state when an admin intentionally removes Layout Section
+      // CSS/JS/HTML. Older builds treated an empty `home` response as a failure
+      // and restored stale localStorage CSS, which made online differ from localhost.
       return normalized;
     } finally {
       if (timer) clearTimeout(timer);
@@ -653,15 +658,20 @@
 
   async function loadSection(sectionKey, targets, force) {
     const data = await fetchSection(sectionKey, !!force);
-    // Never destructively apply an empty critical result. fetchSection normally
-    // returns cached last-known-good data after failures, but this guard also
-    // protects against future callers and legacy edge cases.
+    // An empty critical response can be intentional. For the global `home`
+    // section, actively remove any previously injected BO CSS/JS so deleting CSS
+    // in BO immediately returns the site to bundled style.css. Header/sidebar
+    // keep the bundled shell markup when their BO HTML is empty.
     if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, data)) {
-      // Do not touch the DOM when BO has no usable section. The bundled Naga
-      // header/sidebar/home remains visible and becomes the current fallback.
+      if (sectionKey === GLOBAL_CSS_SECTION) {
+        applyCss(sectionKey, '');
+        const oldScript = document.querySelector('script[data-layout-section-js="' + sectionKey + '"]');
+        if (oldScript) oldScript.remove();
+        executedJs.delete(sectionKey);
+      }
       markCriticalFallbackReady(sectionKey);
       document.dispatchEvent(new CustomEvent('naga:layout-section-fallback', {
-        detail: { sectionKey: sectionKey, reason: 'empty-or-unavailable' }
+        detail: { sectionKey: sectionKey, reason: 'empty-authoritative' }
       }));
       return data;
     }
