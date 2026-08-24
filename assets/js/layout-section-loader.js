@@ -39,6 +39,36 @@
     }
   }
 
+
+  // The HTML/CSS bundled with Naga is a complete safe fallback. BO Layout is an
+  // enhancement, not a prerequisite for rendering the site. If BO temporarily
+  // returns an empty brand section (or the brand has not seeded Layout Section
+  // rows yet), keep the existing static markup and release the page loader.
+  // This prevents the header/sidebar/home design from looking blank after a hard
+  // refresh while still allowing a later valid BO response to replace it.
+  function markCriticalFallbackReady(sectionKey) {
+    if (!isCriticalSection(sectionKey)) return;
+    criticalReadyParts.add(sectionKey);
+
+    if (sectionKey === 'frontend-header') {
+      freshHeaderLoaded = true;
+      const root = document.documentElement;
+      const alreadyReady = root.classList.contains('naga-header-ready');
+      root.classList.add('naga-header-ready');
+      window.__NAGA_HEADER_READY__ = true;
+      if (!alreadyReady) {
+        try { document.dispatchEvent(new CustomEvent('naga:header-ready')); } catch (_) {}
+      }
+    }
+
+    if (criticalReadyParts.has('home') && criticalReadyParts.has('frontend-header')) {
+      if (!window.__NAGA_CRITICAL_LAYOUT_READY__) {
+        window.__NAGA_CRITICAL_LAYOUT_READY__ = true;
+        try { document.dispatchEvent(new CustomEvent('naga:critical-layout-ready')); } catch (_) {}
+      }
+    }
+  }
+
   function markHeaderReady() {
     if (!freshHeaderLoaded || !customAssetsReady) return;
     const root = document.documentElement;
@@ -174,7 +204,7 @@
           lastError && lastError.message ? lastError.message : lastError);
         return cached;
       }
-      console.warn('[Layout Section]', lastError && lastError.message ? lastError.message : lastError);
+      console.warn('[Layout Section] BO section unavailable; keeping bundled frontend layout:', sectionKey, lastError && lastError.message ? lastError.message : lastError);
       return { html: '', css: '', js: '' };
     })();
 
@@ -626,7 +656,15 @@
     // Never destructively apply an empty critical result. fetchSection normally
     // returns cached last-known-good data after failures, but this guard also
     // protects against future callers and legacy edge cases.
-    if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, data)) return data;
+    if (isCriticalSection(sectionKey) && !criticalSectionHasContent(sectionKey, data)) {
+      // Do not touch the DOM when BO has no usable section. The bundled Naga
+      // header/sidebar/home remains visible and becomes the current fallback.
+      markCriticalFallbackReady(sectionKey);
+      document.dispatchEvent(new CustomEvent('naga:layout-section-fallback', {
+        detail: { sectionKey: sectionKey, reason: 'empty-or-unavailable' }
+      }));
+      return data;
+    }
     applyCss(sectionKey, data.css);
     let htmlChanged = false;
     (targets || targetsFor(sectionKey)).forEach(function (target) {
