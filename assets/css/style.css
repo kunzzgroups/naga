@@ -14611,3 +14611,43 @@ body.vip-page .vip-milestone-full-banner.is-clickable{cursor:pointer;transition:
     min-height:0!important;
   }
 }
+
+
+/* ===== VIP claim reminder badge (BO Layout Section-safe) =====
+   The sidebar HTML can be replaced by BO at runtime. JS adds the class to the
+   current VIP link after each replacement, so this styling does not depend on
+   the bundled sidebar markup. */
+.naga-vip-reminder-link{
+  position:relative!important;
+}
+.naga-vip-claim-badge{
+  position:absolute;
+  top:50%;
+  right:42px;
+  transform:translateY(-50%);
+  z-index:5;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  border:2px solid #fff;
+  border-radius:999px;
+  background:#e60012;
+  color:#fff;
+  font-size:10px;
+  line-height:1;
+  font-weight:900;
+  box-sizing:border-box;
+  box-shadow:0 2px 8px rgba(230,0,18,.42);
+  pointer-events:none;
+  animation:nagaVipClaimBadgePulse 1.8s ease-in-out infinite;
+}
+@keyframes nagaVipClaimBadgePulse{
+  0%,100%{transform:translateY(-50%) scale(1);box-shadow:0 2px 8px rgba(230,0,18,.38)}
+  50%{transform:translateY(-50%) scale(1.10);box-shadow:0 2px 13px rgba(230,0,18,.62)}
+}
+@media(prefers-reduced-motion:reduce){
+  .naga-vip-claim-badge{animation:none}
+}

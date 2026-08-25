@@ -525,6 +525,193 @@
     });
   }
 
+
+  /*
+   * VIP claim reminder
+   * ------------------
+   * The mobile sidebar can be replaced at runtime by BO -> Layout Section
+   * (frontend-sidebar).  Do not rely on a hard-coded sidebar DOM node.  Instead,
+   * locate the current VIP link after every layout replacement and attach the
+   * reminder badge to whatever markup BO supplied.
+   */
+  var vipClaimReminderCount = 0;
+  var vipClaimReminderTimer = null;
+  var vipClaimReminderObserver = null;
+  var vipClaimReminderRequest = null;
+
+  function vipApiBase(){
+    var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
+    return String((cfg && cfg.baseUrl) || 'https://bo.titanxgaming.com').replace(/\/+$/, '');
+  }
+
+  function isVipHref(anchor){
+    if(!anchor) return false;
+    var href = String(anchor.getAttribute('href') || '').trim();
+    if(!href) return false;
+    try{
+      var url = new URL(href, window.location.href);
+      return /(^|\/)vip\.html$/i.test(url.pathname || '');
+    }catch(e){
+      return /(^|\/)vip\.html(?:[?#].*)?$/i.test(href);
+    }
+  }
+
+  function currentVipSidebarLinks(){
+    var roots = [
+      document.querySelector('#mobileSideMenu .mobile-menu-panel'),
+      document.querySelector('[data-layout-section="frontend-sidebar"]')
+    ].filter(Boolean);
+    var seen = new Set(), links = [];
+    roots.forEach(function(root){
+      root.querySelectorAll('a[href]').forEach(function(a){
+        if(isVipHref(a) && !seen.has(a)){
+          seen.add(a);
+          links.push(a);
+        }
+      });
+    });
+    return links;
+  }
+
+  function renderVipClaimReminder(){
+    var loggedIn = isLoggedIn();
+    currentVipSidebarLinks().forEach(function(link){
+      link.classList.add('naga-vip-reminder-link');
+      var badge = link.querySelector(':scope > .naga-vip-claim-badge');
+      if(!loggedIn || vipClaimReminderCount <= 0){
+        if(badge) badge.remove();
+        link.classList.remove('has-vip-claim-reminder');
+        link.removeAttribute('data-vip-claim-count');
+        return;
+      }
+      if(!badge){
+        badge = document.createElement('span');
+        badge.className = 'naga-vip-claim-badge';
+        badge.setAttribute('aria-hidden','true');
+        link.appendChild(badge);
+      }
+      var display = vipClaimReminderCount > 99 ? '99+' : String(vipClaimReminderCount);
+      if(badge.textContent !== display) badge.textContent = display;
+      badge.title = vipClaimReminderCount + ' VIP reward' + (vipClaimReminderCount === 1 ? '' : 's') + ' ready to claim';
+      link.classList.add('has-vip-claim-reminder');
+      link.setAttribute('data-vip-claim-count', String(vipClaimReminderCount));
+    });
+  }
+
+  function isSidebarVipStepClaim(row){
+    if(!row || String(row.status || '').toUpperCase() !== 'AVAILABLE') return false;
+
+    // The Level Bonus screen renders Claim buttons only for STEP_BONUS rows
+    // whose period keys are STEP-<levelKey>-<stepId>.  The states endpoint also
+    // returns UPGRADE_BONUS rows; counting those made the sidebar badge larger
+    // than the number of Claim buttons the player can actually see.
+    var rewardType = String(row.rewardType || '').toUpperCase();
+    var periodKey = String(row.periodKey || '').toUpperCase();
+    return rewardType === 'STEP_BONUS' && periodKey.indexOf('STEP-') === 0;
+  }
+
+  function setVipClaimReminderRows(rows){
+    var list = Array.isArray(rows) ? rows : [];
+    vipClaimReminderCount = list.reduce(function(total, row){
+      return total + (isSidebarVipStepClaim(row) ? 1 : 0);
+    }, 0);
+    renderVipClaimReminder();
+    try{
+      document.dispatchEvent(new CustomEvent('naga:vip-claim-reminder-updated', {
+        detail: { count: vipClaimReminderCount }
+      }));
+    }catch(e){}
+  }
+
+  function refreshVipClaimReminder(force){
+    var token = getToken();
+    if(!token){
+      vipClaimReminderCount = 0;
+      renderVipClaimReminder();
+      return Promise.resolve([]);
+    }
+    if(vipClaimReminderRequest && !force) return vipClaimReminderRequest;
+    var url = vipApiBase() + '/api/player/vip/rewards/states?_sidebar_vip=' + Date.now();
+    vipClaimReminderRequest = fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(json){ return {res:res,json:json}; });
+    }).then(function(pair){
+      if(pair.res.status === 401 || pair.res.status === 403){
+        vipClaimReminderCount = 0;
+        renderVipClaimReminder();
+        return [];
+      }
+      if(!pair.res.ok || !pair.json || pair.json.status === 'error') throw new Error((pair.json && pair.json.message) || 'VIP reward state unavailable');
+      var rows = Array.isArray(pair.json.data) ? pair.json.data : [];
+      setVipClaimReminderRows(rows);
+      return rows;
+    }).catch(function(err){
+      // A temporary API/network failure must not destroy the last known badge.
+      console.warn('[VIP Reminder] Unable to refresh claim state:', err && err.message ? err.message : err);
+      renderVipClaimReminder();
+      return [];
+    }).then(function(rows){
+      vipClaimReminderRequest = null;
+      return rows;
+    }, function(err){
+      vipClaimReminderRequest = null;
+      throw err;
+    });
+    return vipClaimReminderRequest;
+  }
+
+  function scheduleVipClaimReminder(){
+    if(vipClaimReminderTimer) clearInterval(vipClaimReminderTimer);
+    vipClaimReminderTimer = setInterval(function(){
+      if(document.visibilityState === 'visible') refreshVipClaimReminder(false);
+    }, 60000);
+  }
+
+  function observeVipSidebarReplacement(){
+    if(vipClaimReminderObserver) return;
+    var queued = false;
+    vipClaimReminderObserver = new MutationObserver(function(){
+      if(queued) return;
+      queued = true;
+      requestAnimationFrame(function(){
+        queued = false;
+        renderVipClaimReminder();
+      });
+    });
+    vipClaimReminderObserver.observe(document.body || document.documentElement, {childList:true, subtree:true});
+  }
+
+  function initVipClaimReminder(){
+    observeVipSidebarReplacement();
+    renderVipClaimReminder();
+    refreshVipClaimReminder(true);
+    scheduleVipClaimReminder();
+    document.addEventListener('naga:layout-section-applied', function(e){
+      if(!e || !e.detail || e.detail.sectionKey === 'frontend-sidebar') renderVipClaimReminder();
+    });
+    document.addEventListener('naga:layout-section-restored', function(e){
+      if(!e || !e.detail || e.detail.sectionKey === 'frontend-sidebar') renderVipClaimReminder();
+    });
+    document.addEventListener('naga:layout-sections-loaded', renderVipClaimReminder);
+    document.addEventListener('naga:site-shell-customized', renderVipClaimReminder);
+    document.addEventListener('naga:vip-claim-states-updated', function(e){
+      if(e && e.detail && Array.isArray(e.detail.rows)) setVipClaimReminderRows(e.detail.rows);
+      else refreshVipClaimReminder(true);
+    });
+    document.addEventListener('naga:member-session-refreshed', function(){ refreshVipClaimReminder(true); });
+    window.addEventListener('pageshow', function(){ refreshVipClaimReminder(true); });
+    window.addEventListener('focus', function(){ refreshVipClaimReminder(false); });
+    window.addEventListener('storage', function(e){
+      if(!e || e.key === 'member_token') refreshVipClaimReminder(true);
+    });
+  }
+
   function rehydrateShell(){
     const header = document.querySelector('.top-header');
     if(header){
@@ -542,6 +729,7 @@
     refreshShellBalance();
     translateShellScope(header);
     translateShellScope(panel);
+    renderVipClaimReminder();
   }
 
   function init(){
@@ -555,10 +743,11 @@
     refreshHeaderAuth();
     scheduleBalanceRefresh();
     startPresence();
+    initVipClaimReminder();
     document.dispatchEvent(new CustomEvent('naga:site-shell-ready'));
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
-  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, refreshMemberToken: refreshMemberToken, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell };
+  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, refreshMemberToken: refreshMemberToken, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell, refreshVipClaimReminder: refreshVipClaimReminder };
 })();
