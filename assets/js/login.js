@@ -3,8 +3,39 @@
 
   const API_BASE = window.NAGA_CONFIG?.api?.baseUrl || 'http://localhost:8080';
 
+  function visibleFormInputs(form){
+    if(!form) return [];
+    return Array.from(form.querySelectorAll('input')).filter(function(input){
+      const type = String(input.getAttribute('type') || 'text').toLowerCase();
+      return type !== 'hidden' && !input.disabled;
+    });
+  }
+
   function formInput(form, index){
-    return form ? form.querySelectorAll('input')[index] : null;
+    return visibleFormInputs(form)[index] || null;
+  }
+
+  // Login/Layout Section HTML can be customised from BO. Do not depend only on
+  // the physical input order because an extra hidden/decorative field would make
+  // the frontend submit the wrong username/password. Prefer semantic fields and
+  // keep the old visible-input order only as a compatibility fallback.
+  function loginUsernameInput(form){
+    return form && (
+      form.querySelector('input[name="username"]') ||
+      form.querySelector('input[autocomplete="username"]') ||
+      form.querySelector('input[data-login-username]') ||
+      formInput(form, 0)
+    );
+  }
+
+  function loginPasswordInput(form){
+    return form && (
+      form.querySelector('input[name="password"]') ||
+      form.querySelector('input[autocomplete="current-password"]') ||
+      form.querySelector('input[type="password"]') ||
+      form.querySelector('input[data-login-password]') ||
+      formInput(form, 1)
+    );
   }
 
   function showMessage(form, message, type){
@@ -39,9 +70,25 @@
   function saveMemberAuth(json){
     // A previous login/browser session may have left an outdated wallet value.
     // Remove it before redirecting so the next page must load the current API balance.
-    localStorage.removeItem('member_main_wallet_balance'); localStorage.removeItem('member_main_wallet_balance_confirmed_at');
-    localStorage.setItem('member_token', json.token || '');
-    localStorage.setItem('member_info', JSON.stringify(json.data || {}));
+    localStorage.removeItem('member_main_wallet_balance');
+    localStorage.removeItem('member_main_wallet_balance_confirmed_at');
+
+    const token = json && json.token ? String(json.token) : '';
+    if(!token) throw new Error('Login succeeded but no member token was returned.');
+
+    localStorage.setItem('member_token', token);
+    localStorage.setItem('member_info', JSON.stringify((json && json.data) || {}));
+
+    // IMPORTANT: member-inactivity.js is already loaded on the login page. A
+    // successful login happens in this same browser tab, so the browser does not
+    // fire a "storage" event back to this tab. If an old inactivity timestamp is
+    // still present, the destination page can see the brand-new token together
+    // with a >10 minute old timestamp and immediately log the player out again.
+    // Reset the activity timestamp at the exact moment a new login session starts.
+    const now = Date.now();
+    localStorage.setItem('naga_member_last_activity_at', String(now));
+    try{ sessionStorage.removeItem('naga_member_logout_reason'); }catch(e){}
+    try{ document.dispatchEvent(new CustomEvent('naga:member-login', {detail:{at:now}})); }catch(e){}
   }
 
   function bindTabs(scope){
@@ -68,8 +115,10 @@
 
     loginForm.addEventListener('submit', async function(e){
       e.preventDefault();
-      const username = (formInput(loginForm,0)?.value || '').trim();
-      const password = formInput(loginForm,1)?.value || '';
+      const usernameInput = loginUsernameInput(loginForm);
+      const passwordInput = loginPasswordInput(loginForm);
+      const username = (usernameInput?.value || '').trim();
+      const password = passwordInput?.value || '';
       if(!username || !password){
         showMessage(loginForm, 'Please enter username and password.', 'error');
         return;
