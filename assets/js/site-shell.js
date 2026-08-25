@@ -500,19 +500,16 @@
         const targetLang = isCurrentZh() ? 'en' : 'zh';
         const sideBtn = document.getElementById('sideLangBtn');
         if(sideBtn){ sideBtn.classList.add('switching'); }
-        if(window.I18N && typeof window.I18N.setLanguage === 'function'){
-          window.I18N.setLanguage(targetLang).then(function(){
-            if(sideBtn){ sideBtn.classList.remove('switching'); }
-            const overlay = document.getElementById('langOverlay');
-            if(overlay){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); }
-            flashSideLangChanged(targetLang);
-          });
+        if(window.I18N && typeof window.I18N.switchAndReload === 'function'){
+          // Persist + reload instead of refreshing every BO-driven module in-place.
+          // This prevents Bonus/VIP/catalog/site-customize from briefly becoming empty.
+          window.I18N.switchAndReload(targetLang);
         }else{
+          // Safe fallback for pages where lang.js has not initialized yet.
           localStorage.setItem('site_lang', targetLang);
           localStorage.setItem('lang', targetLang);
           document.documentElement.lang = targetLang === 'zh' ? 'zh-CN' : 'en';
-          if(sideBtn){ sideBtn.classList.remove('switching'); }
-          flashSideLangChanged(targetLang);
+          window.location.reload();
         }
         return;
       }

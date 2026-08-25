@@ -135,6 +135,25 @@
     });
   }
 
+  // User-triggered language changes must start the page in one stable language.
+  // Several BO-driven modules (promotion/VIP/catalog/site-customize) refresh asynchronously
+  // on i18n:changed. Switching them all in-place can temporarily leave a page empty when
+  // responses finish in a different order. Persist the selected language first, then reload
+  // once so every module boots with the same language from its very first request.
+  function switchLanguageAndReload(lang){
+    lang = normaliseLang(lang);
+    try {
+      localStorage.setItem(getStorageKey(), lang);
+      // Keep the legacy alias in sync because a few older frontend modules still read it.
+      localStorage.setItem('lang', lang);
+    } catch(e) {}
+    try { document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'; } catch(e) {}
+    window.__NAGA_LANGUAGE_NAVIGATING__ = true;
+    // Do not dispatch i18n:changed here. The reload is intentional: the next page load
+    // applies dictionary + BO translations atomically and page-loader hides incomplete UI.
+    window.location.reload();
+  }
+
   window.I18N = {
     current: 'en',
     defaultLang: 'en',
@@ -143,6 +162,7 @@
     t: t,
     load: changeLanguage,
     setLanguage: changeLanguage,
+    switchAndReload: switchLanguageAndReload,
     apply: applyLanguage,
     ready: false,
     resetToDefault: function(){
@@ -173,7 +193,7 @@
       langOverlay.addEventListener('click', function(e){
         if(e.target === langOverlay) closeLangPopup();
         var btn = e.target.closest && e.target.closest('.lang-option[data-lang]');
-        if(btn){ changeLanguage(btn.getAttribute('data-lang')).then(closeLangPopup); }
+        if(btn){ closeLangPopup(); switchLanguageAndReload(btn.getAttribute('data-lang')); }
       });
     }
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLangPopup(); });
