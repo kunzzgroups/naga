@@ -5,12 +5,22 @@
   const esc = v => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
   const strip = v => String(v || '').replace(/<[^>]*>/g,'').trim();
   const tr = (key, fallback) => { const v=window.I18N && typeof window.I18N.t==='function' ? window.I18N.t(key) : ''; return (!v || v===key) ? fallback : v; };
-  const currentLang = () => (window.I18N && window.I18N.current) || localStorage.getItem('site_lang') || 'en';
+  // Use I18N.current after language bootstrap completes. Before that, use the saved
+  // preference so the first BO promotion request is never forced to temporary English.
+  const currentLang = () => {
+    try{
+      if(window.I18N && window.I18N.ready && window.I18N.current) return window.I18N.current;
+      const saved=localStorage.getItem('site_lang')||localStorage.getItem('lang');
+      if(saved) return saved;
+    }catch(_e){}
+    return (window.I18N&&window.I18N.current)||'en';
+  };
   const PROMO_CACHE_PREFIX = 'naga_promotion_rows_v2';
   let promotionReadySignalled = false;
   let promotionLoadPromise = null;
   let promotionLastStartedAt = 0;
   let promotionInitialCacheRestored = false;
+  let promotionRequestSequence = 0;
 
   function promotionIdentity(){
     try{
@@ -19,15 +29,15 @@
     }catch(_){ return token()?'member':'guest'; }
   }
 
-  function promotionCacheKey(){
+  function promotionCacheKey(lang){
     const host=String(location.hostname||'default').toLowerCase();
-    const lang=String(currentLang()||'en').toLowerCase().replace('_','-');
-    return PROMO_CACHE_PREFIX+':'+host+':'+lang+':'+promotionIdentity();
+    const normalized=String(lang||currentLang()||'en').toLowerCase().replace('_','-');
+    return PROMO_CACHE_PREFIX+':'+host+':'+normalized+':'+promotionIdentity();
   }
 
-  function readPromotionCache(){
+  function readPromotionCache(lang){
     try{
-      const raw=localStorage.getItem(promotionCacheKey());
+      const raw=localStorage.getItem(promotionCacheKey(lang));
       if(raw===null) return null;
       const parsed=JSON.parse(raw);
       if(!parsed || !Array.isArray(parsed.rows)) return null;
@@ -35,8 +45,8 @@
     }catch(_){ return null; }
   }
 
-  function writePromotionCache(rows){
-    try{ localStorage.setItem(promotionCacheKey(), JSON.stringify({savedAt:Date.now(),rows:Array.isArray(rows)?rows:[]})); }catch(_){}
+  function writePromotionCache(rows,lang){
+    try{ localStorage.setItem(promotionCacheKey(lang), JSON.stringify({savedAt:Date.now(),rows:Array.isArray(rows)?rows:[]})); }catch(_){}
   }
 
   function signalPromotionReady(){
@@ -317,22 +327,49 @@
     if(loading) loading.style.display = 'none';
   }
 
-  async function refreshPromotionRows(boxes){
+  async function refreshPromotionRows(boxes, requestedLang, requestSequence){
     if(!api().playerPromotionList) { signalPromotionReady(); return; }
     const separator=api().playerPromotionList.includes('?')?'&':'?';
-    const query=new URLSearchParams({lang:currentLang(),_:String(Date.now())});
+    const lang=String(requestedLang||currentLang()||'en');
+    const query=new URLSearchParams({lang:lang,_:String(Date.now())});
     const r = await fetch(api().playerPromotionList+separator+query.toString(), {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
     const j = await r.json();
     if(!r.ok || j.status==='error') throw new Error(j.message||('Promotion API '+r.status));
-    const rows = Array.isArray(j.data) ? j.data : [];
-    writePromotionCache(rows);
+
+    // A slower request from the previous language must never repaint the page.
+    if(requestSequence !== promotionRequestSequence || String(currentLang()) !== lang) return;
+    let rows = Array.isArray(j.data) ? j.data : [];
+
+    // Language switching must be transactional. Some environments briefly return an
+    // empty promotion list while the brand/language context is settling. Never wipe
+    // already-rendered BO promotions because of that transient response; retry once
+    // and keep the previous valid render as the fallback.
+    const hasExistingRender = boxes.some(box => box.querySelector('.promo-dynamic-section,.promo-card'));
+    if(!rows.length && hasExistingRender){
+      await new Promise(resolve => setTimeout(resolve, 180));
+      if(requestSequence !== promotionRequestSequence || String(currentLang()) !== lang) return;
+      const retryUrl = api().playerPromotionList+separator+new URLSearchParams({lang:lang,_:String(Date.now())}).toString();
+      const retryResponse = await fetch(retryUrl, {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
+      const retryJson = await retryResponse.json();
+      if(retryResponse.ok && retryJson.status !== 'error' && Array.isArray(retryJson.data)) rows = retryJson.data;
+    }
+
+    if(requestSequence !== promotionRequestSequence || String(currentLang()) !== lang) return;
+    if(!rows.length && hasExistingRender){
+      // Keep the previous language visible rather than flashing a blank page. The
+      // next refresh/revalidation can replace it once valid translated rows exist.
+      signalPromotionReady();
+      return;
+    }
+
+    writePromotionCache(rows,lang);
     renderPromotionRows(rows, boxes);
     await waitForPromotionImages(document, 360);
-    signalPromotionReady();
+    if(requestSequence === promotionRequestSequence && String(currentLang()) === lang) signalPromotionReady();
   }
 
-  function restoreConfirmedPromotionRows(boxes){
-    const cached=readPromotionCache();
+  function restoreConfirmedPromotionRows(boxes,lang){
+    const cached=readPromotionCache(lang);
     if(!cached) return false;
     renderPromotionRows(cached.rows, boxes);
     // Cached BO-confirmed data owns the first frame. Images are normally in browser
@@ -341,7 +378,7 @@
     return true;
   }
 
-  function load(force){
+  function load(force, requestedLang){
     if(window.NAGA_HOME_BONUS_ENABLED === false){
       const boxes=promotionBoxes();
       hideBundledPromotionFallback(boxes);
@@ -352,20 +389,30 @@
     const boxes=promotionBoxes();
     if(!boxes.length){ signalPromotionReady(); return Promise.resolve(); }
 
+    const lang=String(requestedLang||currentLang()||'en');
     hideBundledPromotionFallback(boxes);
-    const restored=promotionInitialCacheRestored || restoreConfirmedPromotionRows(boxes);
+    const restored=promotionInitialCacheRestored || restoreConfirmedPromotionRows(boxes,lang);
     promotionInitialCacheRestored=false;
     const now=Date.now();
     if(!force && promotionLoadPromise && now-promotionLastStartedAt<1800) return promotionLoadPromise;
     promotionLastStartedAt=now;
-    promotionLoadPromise=refreshPromotionRows(boxes).catch(e=>{
+    const requestSequence=++promotionRequestSequence;
+
+    // Do not clear the existing BO cards while switching language. Keeping the last
+    // valid render prevents the Bonus page from becoming empty during the request.
+    promotionLoadPromise=refreshPromotionRows(boxes,lang,requestSequence).catch(e=>{
+      if(requestSequence !== promotionRequestSequence) return;
       console.warn('Promotion load failed', e);
-      // Never erase last-confirmed BO content because of a temporary network issue.
-      if(!restored){
+      // On initial page load only, show an error if there is no confirmed content.
+      // During a language switch, keep the previous valid BO render instead.
+      const hasRendered=boxes.some(box=>box.querySelector('.promo-dynamic-section,.promo-card'));
+      if(!restored && !hasRendered){
         boxes.forEach(box=>{box.innerHTML='<div class="bonus-empty">Unable to load bonus list.</div>';});
-        signalPromotionReady();
       }
-    }).finally(()=>{ promotionLoadPromise=null; });
+      signalPromotionReady();
+    }).finally(()=>{
+      if(requestSequence === promotionRequestSequence) promotionLoadPromise=null;
+    });
     return promotionLoadPromise;
   }
 
@@ -374,7 +421,7 @@
   const initialBoxes=promotionBoxes();
   if(initialBoxes.length){
     hideBundledPromotionFallback(initialBoxes);
-    promotionInitialCacheRestored=restoreConfirmedPromotionRows(initialBoxes);
+    promotionInitialCacheRestored=restoreConfirmedPromotionRows(initialBoxes,currentLang());
   }
 
   document.addEventListener('click', e => {
@@ -394,9 +441,22 @@
   const overlay = document.getElementById('bonusDetailOverlay');
   if(overlay) overlay.addEventListener('click', e => { if(e.target === overlay) closeDetail(); });
 
-  document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(true); });
-  document.addEventListener('i18n:changed', function(){ promotionReadySignalled=false; window.__NAGA_BONUS_READY__=false; load(true); });
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ load(false); }, {once:true}); else load(false);
+  document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(true,currentLang()); });
+  document.addEventListener('i18n:changed', function(event){
+    // Keep the current BO promotion DOM on screen while the new language is fetched.
+    // The new render replaces it atomically only after valid rows are received.
+    const lang=event&&event.detail&&event.detail.lang ? event.detail.lang : currentLang();
+    load(true,lang);
+  });
+  function startPromotion(){
+    if(window.I18N && window.I18N.ready) load(false,window.I18N.current);
+    else load(false,currentLang());
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startPromotion, {once:true}); else startPromotion();
+  document.addEventListener('naga:i18n-ready', function(event){
+    const lang=event&&event.detail&&event.detail.lang ? event.detail.lang : currentLang();
+    load(true,lang);
+  }, {once:true});
 
   window.addEventListener('resize', schedulePromotionGridHeightSync, {passive:true});
   window.addEventListener('orientationchange', schedulePromotionGridHeightSync, {passive:true});

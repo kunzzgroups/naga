@@ -23,7 +23,12 @@ function closeBonusDetail(){
 }
 
 function currentLangCode(){
-  return (window.I18N && window.I18N.current) || localStorage.getItem('site_lang') || localStorage.getItem('lang') || document.documentElement.lang || 'en';
+  try{
+    if(window.I18N && window.I18N.ready && window.I18N.current) return window.I18N.current;
+    const saved=localStorage.getItem('site_lang')||localStorage.getItem('lang');
+    if(saved) return saved;
+  }catch(_e){}
+  return (window.I18N && window.I18N.current) || document.documentElement.lang || 'en';
 }
 
 function isZhLang(){
