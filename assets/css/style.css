@@ -14651,3 +14651,31 @@ body.vip-page .vip-milestone-full-banner.is-clickable{cursor:pointer;transition:
 @media(prefers-reduced-motion:reduce){
   .naga-vip-claim-badge{animation:none}
 }
+
+/* ===== v1.1.12: authoritative BO Homepage Bonus visibility =====
+   IMPORTANT: keep this block at the END of style.css. Earlier desktop lobby
+   rules contain #homeBonusDisplaySection { display:block!important; } and must
+   never override a confirmed BO Disabled state. Conversely, Enabled must clear
+   any stale hidden state from a previous refresh. */
+html[data-home-bonus-enabled="0"] body.home-page #homeBonusDisplaySection,
+html[data-home-bonus-enabled="0"] body.home-page [data-home-bonus-display] {
+  display:none!important;
+  visibility:hidden!important;
+}
+html[data-home-bonus-enabled="1"] body.home-page #homeBonusDisplaySection {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+
+/* ===== v1.1.13: no-flash BO Homepage Bonus bootstrap =====
+   The HTML starts in pending state. Keep the promotion column fully hidden until
+   frontend-display.js receives the live BO setting. This prevents a Disabled
+   brand from flashing the bundled/predefined promotion markup on every reload. */
+html[data-home-bonus-enabled="pending"] body.home-page #homeBonusDisplaySection,
+html[data-home-bonus-enabled="pending"] body.home-page [data-home-bonus-display] {
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+}
