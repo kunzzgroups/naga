@@ -1,7 +1,7 @@
 (function(){
   'use strict';
-  if(window.__NAGA_LIVE_TRANSACTIONS_V100__) return;
-  window.__NAGA_LIVE_TRANSACTIONS_V100__=true;
+  if(window.__NAGA_LIVE_TRANSACTIONS_V101__) return;
+  window.__NAGA_LIVE_TRANSACTIONS_V101__=true;
 
   const MAX_ROWS=5;
   const fakeProviders=['PRAGMATICPLAY','PLAYSTAR','LUCKY365','ACEWIN','JILI','LIVE22','EPICWIN','PGSOFT','918KISS','MEGA888'];
@@ -12,6 +12,10 @@
     if(window.NAGA_API&&window.NAGA_API.publicLiveTransactions) return String(window.NAGA_API.publicLiveTransactions);
     const base=window.NAGA_CONFIG?.api?.baseUrl||'';
     return String(base).replace(/\/+$/,'')+'/api/public/live-transactions';
+  }
+  function displaySettingEndpoint(){
+    const base=window.NAGA_CONFIG?.api?.baseUrl||'';
+    return String(base).replace(/\/+$/,'')+'/api/frontend/display-setting';
   }
   function brandDomain(){return String(window.NAGA_BRAND?.domain||location.hostname||'').trim().toLowerCase()}
   function widgets(){return Array.from(document.querySelectorAll('[data-live-transaction-widget]'))}
@@ -51,12 +55,28 @@
     if(stopped) return;
     setVisible(true);render(fakeRows());schedule(seconds,'FAKE');
   }
+  async function explicitlyEnabled(headers){
+    try{
+      const u=displaySettingEndpoint()+(displaySettingEndpoint().includes('?')?'&':'?')+'_ltcfg='+Date.now();
+      const r=await fetch(u,{cache:'no-store',credentials:'omit',headers});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||String(j.status||'').toLowerCase()==='error') return false;
+      const cfg=j.data||{};
+      return Number(cfg.liveTransactionEnabled)===1||cfg.liveTransactionEnabled===true;
+    }catch(_){
+      return false;
+    }
+  }
   async function refresh(){
     if(stopped) return;
     try{
       if(window.NAGA_BRAND?.ready){try{await window.NAGA_BRAND.ready}catch(_){}}
       const headers={'Accept':'application/json','Cache-Control':'no-cache,no-store'};
       const domain=brandDomain();if(domain)headers['X-Brand-Domain']=domain;
+      // The display setting is the source of truth. Hide first and do not even
+      // request transaction rows unless this brand is explicitly enabled.
+      const configuredEnabled=await explicitlyEnabled(headers);
+      if(!configuredEnabled){setVisible(false);clearTimeout(timer);return}
       const url=endpoint()+(endpoint().includes('?')?'&':'?')+'_lt='+Date.now();
       const res=await fetch(url,{cache:'no-store',credentials:'omit',headers});
       const json=await res.json().catch(()=>({}));
