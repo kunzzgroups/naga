@@ -14679,3 +14679,25 @@ html[data-home-bonus-enabled="pending"] body.home-page [data-home-bonus-display]
   visibility:hidden!important;
   opacity:0!important;
 }
+
+/* ===== Live Transaction widget ===== */
+.live-transaction-widget{width:100%;margin:12px 0 14px;font-family:Arial,sans-serif;color:#071f55;background:#f7f9fc;border-radius:7px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.live-transaction-widget[hidden]{display:none!important}
+.live-transaction-title{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 5px;background:#eef2f8;color:#0647aa;font-size:12px;font-weight:900;letter-spacing:.1px}
+.live-transaction-title b{display:flex;align-items:center;gap:4px;background:#ed111b;color:#fff;border-radius:2px;padding:2px 5px;font-size:10px;line-height:1}
+.live-transaction-title b i{width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block;animation:liveTransactionPulse 1.1s ease-in-out infinite}
+.live-transaction-table{border-top:1px solid #d7dde7}
+.live-transaction-head,.live-transaction-row{display:grid;grid-template-columns:1.06fr 1.06fr .88fr;align-items:center}
+.live-transaction-head{min-height:24px;background:#c91520;color:#fff;font-size:10px;font-weight:900;text-transform:uppercase}
+.live-transaction-head span{padding:4px 5px;border-right:1px solid rgba(255,255,255,.5);min-width:0}
+.live-transaction-head span:last-child{border-right:0}
+.live-transaction-row{min-height:26px;font-size:10px;font-weight:800;background:#fff;transition:opacity .18s ease,transform .18s ease}
+.live-transaction-row:nth-child(even){background:#e9edf3}
+.live-transaction-row>span{display:flex;align-items:center;gap:4px;min-width:0;padding:4px 5px;white-space:nowrap;overflow:hidden}
+.live-transaction-row .lt-user{overflow:hidden;text-overflow:ellipsis;color:#0647aa;min-width:0}
+.live-transaction-row .lt-amount{color:#e31520;flex:0 0 auto}
+.live-transaction-row .lt-provider{display:block;overflow:hidden;text-overflow:ellipsis;color:#0647aa;text-transform:uppercase}
+.live-transaction-empty{padding:14px 8px;text-align:center;font-size:10px;font-weight:800;color:#6b7280;background:#fff}
+@keyframes liveTransactionPulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live-transaction-title b i{animation:none}}
+@media(max-width:900px){.mobile-bottom-area .live-transaction-widget{margin:12px 0}.left-sidebar .live-transaction-widget{display:none!important}}

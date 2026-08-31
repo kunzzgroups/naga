@@ -59,5 +59,6 @@ window.NAGA_API = {
   frontendDisplaySetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/display-setting',
   installAppSetting: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/install-app',
   advertisementPopup: window.NAGA_CONFIG.api.baseUrl + '/api/frontend/ad-popup',
-  publicLeaderboard: window.NAGA_CONFIG.api.baseUrl + '/api/public/leaderboard'
+  publicLeaderboard: window.NAGA_CONFIG.api.baseUrl + '/api/public/leaderboard',
+  publicLiveTransactions: window.NAGA_CONFIG.api.baseUrl + '/api/public/live-transactions'
 };
