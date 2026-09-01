@@ -14701,3 +14701,56 @@ html[data-home-bonus-enabled="pending"] body.home-page [data-home-bonus-display]
 @keyframes liveTransactionPulse{0%,100%{opacity:1}50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.live-transaction-title b i{animation:none}}
 @media(max-width:900px){.mobile-bottom-area .live-transaction-widget{margin:12px 0}.left-sidebar .live-transaction-widget{display:none!important}}
+
+/* ===== VIP mobile spacing/alignment fix 2026-09-01 =====
+   Keep the approved VIP visuals unchanged; only normalize mobile gutters and
+   restore breathing room between the tier progress card and milestone list. */
+@media (max-width:760px){
+  body.vip-page .vip-content-wrap{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+
+  body.vip-page .vip-panel[data-vip-panel="level"].active{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+
+  body.vip-page .vip-progress-card{
+    box-sizing:border-box!important;
+    width:auto!important;
+    max-width:calc(100% - 14px)!important;
+    margin-left:14px!important;
+    margin-right:0!important;
+    margin-bottom:18px!important;
+  }
+
+  body.vip-page .vip-level-list{
+    box-sizing:border-box!important;
+    width:auto!important;
+    max-width:calc(100% - 14px)!important;
+    margin-left:14px!important;
+    margin-right:0!important;
+  }
+
+  body.vip-page .vip-reward-row{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin-left:0!important;
+    margin-right:0!important;
+  }
+}
+
+/* ===== VIP mobile progress inner padding fix 2026-09-01 =====
+   Keep current design; add safe inner gutters so the Bronze/EXP copy and
+   Current badge do not touch the progress-card edges. */
+@media (max-width:760px){
+  body.vip-page .vip-progress-card.vip-tier-progress{
+    padding:8px 10px 12px 10px!important;
+  }
+}
