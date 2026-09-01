@@ -46,3 +46,104 @@
 @media(max-width:768px){
   .leaderboard-head-back{margin-right:10px!important}
 }
+
+/* v1.0.2: mobile leaderboard shows every column at once (no inner horizontal scroll) */
+@media(max-width:768px){
+  .leaderboard-card{overflow:hidden}
+  .leaderboard-table-wrap{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+    overflow-y:visible;
+    -webkit-overflow-scrolling:auto;
+  }
+  .leaderboard-table{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    table-layout:fixed;
+  }
+  .leaderboard-table th,
+  .leaderboard-table td{
+    padding:10px 5px;
+    min-width:0;
+    font-size:10px;
+    line-height:1.25;
+    vertical-align:middle;
+    overflow-wrap:anywhere;
+    word-break:normal;
+  }
+  .leaderboard-table th{
+    font-size:9px;
+    letter-spacing:.15px;
+    white-space:normal;
+  }
+  .leaderboard-table th:nth-child(1),
+  .leaderboard-table td:nth-child(1){width:10%;padding-left:9px}
+  .leaderboard-table th:nth-child(2),
+  .leaderboard-table td:nth-child(2){width:18%}
+  .leaderboard-table th:nth-child(3),
+  .leaderboard-table td:nth-child(3){width:24%}
+  .leaderboard-table th:nth-child(4),
+  .leaderboard-table td:nth-child(4){width:16%}
+  .leaderboard-table th:nth-child(5),
+  .leaderboard-table td:nth-child(5){width:17%}
+  .leaderboard-table th:nth-child(6),
+  .leaderboard-table td:nth-child(6){width:15%}
+  .leaderboard-table td:nth-child(2),
+  .leaderboard-table td:nth-child(4),
+  .leaderboard-table td:nth-child(5),
+  .leaderboard-table td:nth-child(6){
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:clip;
+  }
+  .leaderboard-table td:nth-child(3){
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  .leaderboard-money,
+  .leaderboard-ratio{font-size:9.5px}
+}
+
+@media(max-width:430px){
+  .leaderboard-table th,
+  .leaderboard-table td{padding:9px 3px;font-size:9px}
+  .leaderboard-table th:nth-child(1),
+  .leaderboard-table td:nth-child(1){padding-left:8px}
+  .leaderboard-table th{font-size:8px;letter-spacing:0}
+  .leaderboard-money,
+  .leaderboard-ratio{font-size:8.5px}
+}
+
+/* v1.0.4: restore normal desktop page scrolling while keeping mobile all-column layout */
+@media (min-width:769px){
+  html{
+    height:auto !important;
+    min-height:100% !important;
+    overflow-y:auto !important;
+  }
+  body.leaderboard-page{
+    height:auto !important;
+    min-height:100vh !important;
+    max-height:none !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    position:static !important;
+  }
+  body.leaderboard-page .leaderboard-main{
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+  body.leaderboard-page .leaderboard-card{
+    height:auto !important;
+    max-height:none !important;
+  }
+  body.leaderboard-page .leaderboard-table-wrap{
+    overflow-x:auto !important;
+    overflow-y:visible !important;
+    max-height:none !important;
+  }
+}
