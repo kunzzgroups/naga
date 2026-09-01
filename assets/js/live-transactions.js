@@ -1,10 +1,11 @@
 (function(){
   'use strict';
-  if(window.__NAGA_LIVE_TRANSACTIONS_V101__) return;
-  window.__NAGA_LIVE_TRANSACTIONS_V101__=true;
+  if(window.__NAGA_LIVE_TRANSACTIONS_V102__) return;
+  window.__NAGA_LIVE_TRANSACTIONS_V102__=true;
 
-  const MAX_ROWS=5;
-  const fakeProviders=['PRAGMATICPLAY','PLAYSTAR','LUCKY365','ACEWIN','JILI','LIVE22','EPICWIN','PGSOFT','918KISS','MEGA888'];
+  // BO allows up to 20 Random Demo transactions per update. Do not clamp it
+  // back to the old hard-coded five-row demo on the storefront.
+  const MAX_ROWS=20;
   let timer=0;
   let stopped=false;
 
@@ -22,19 +23,6 @@
   function rowsHosts(){return Array.from(document.querySelectorAll('[data-live-transaction-rows]'))}
   function money(v){const n=Number(v);return Number.isFinite(n)?'RM'+n.toFixed(2):''}
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  function randomDigits(n){let s='';for(let i=0;i<n;i++)s+=Math.floor(Math.random()*10);return s}
-  function fakeUser(){return randomDigits(2)+'****'+randomDigits(3)}
-  function fakeAmount(type){
-    const min=type==='withdraw'?20:10,max=type==='withdraw'?900:500;
-    return Math.round((min+Math.random()*(max-min))*100)/100;
-  }
-  function fakeRows(){
-    return Array.from({length:MAX_ROWS},()=>({
-      depositUser:fakeUser(),depositAmount:fakeAmount('deposit'),
-      withdrawUser:fakeUser(),withdrawAmount:fakeAmount('withdraw'),
-      provider:fakeProviders[Math.floor(Math.random()*fakeProviders.length)]
-    }));
-  }
   function rowHtml(r){
     const du=r.depositUser?`<span class="lt-user">${esc(r.depositUser)}</span><span class="lt-amount">${money(r.depositAmount)}</span>`:'<span class="lt-user">—</span>';
     const wu=r.withdrawUser?`<span class="lt-user">${esc(r.withdrawUser)}</span><span class="lt-amount">${money(r.withdrawAmount)}</span>`:'<span class="lt-user">—</span>';
@@ -45,15 +33,14 @@
     rowsHosts().forEach(host=>{host.innerHTML=safe.length?safe.map(rowHtml).join(''):'<div class="live-transaction-empty">Waiting for completed transactions...</div>'});
   }
   function setVisible(enabled){widgets().forEach(w=>{w.hidden=!enabled})}
-  function schedule(seconds,mode){
+  function schedule(seconds){
     clearTimeout(timer);
     if(stopped) return;
     const ms=Math.max(2,Math.min(60,Number(seconds)||5))*1000;
-    timer=setTimeout(()=>mode==='FAKE'?runFake(seconds):refresh(),ms);
-  }
-  function runFake(seconds){
-    if(stopped) return;
-    setVisible(true);render(fakeRows());schedule(seconds,'FAKE');
+    // Always reload from the API. In Random Demo mode the API chooses a new
+    // interval, row count and deposit/withdraw amount for every cycle using
+    // the exact min/max values saved in BO.
+    timer=setTimeout(refresh,ms);
   }
   async function explicitlyEnabled(headers){
     try{
@@ -87,12 +74,15 @@
       const interval=Math.max(2,Math.min(60,Number(d.intervalSeconds)||5));
       setVisible(enabled);
       if(!enabled){clearTimeout(timer);return}
-      if(mode==='FAKE'){render(fakeRows());schedule(interval,'FAKE')}
-      else{render(d.rows||[]);schedule(interval,'REAL')}
+      // Both REAL and FAKE rows come from the API. For FAKE this is important:
+      // depositAmount and withdrawAmount are generated from the same BO price
+      // range, and the number of rows follows the BO transaction-count range.
+      render(d.rows||[]);
+      schedule(interval);
     }catch(err){
       console.warn('Live Transaction load failed:',err&&err.message);
       setVisible(false);
-      schedule(10,'REAL');
+      schedule(10);
     }
   }
   function start(){stopped=false;refresh()}
