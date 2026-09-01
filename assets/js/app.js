@@ -877,6 +877,7 @@ const GAME_SKELETON_DESKTOP = 40;
 const GAME_SKELETON_MOBILE = 24;
 const GAME_IMAGE_CACHE = new Map();
 let gameBatchObserver = null;
+let gameBatchScrollCleanup = null;
 let gameBatchToken = 0;
 let gameIdleHandle = null;
 
@@ -884,6 +885,10 @@ function disconnectGameBatchObserver(){
   if(gameBatchObserver){
     gameBatchObserver.disconnect();
     gameBatchObserver = null;
+  }
+  if(gameBatchScrollCleanup){
+    try{ gameBatchScrollCleanup(); }catch(_e){}
+    gameBatchScrollCleanup = null;
   }
   if(gameIdleHandle != null){
     if('cancelIdleCallback' in window) window.cancelIdleCallback(gameIdleHandle);
@@ -1095,7 +1100,15 @@ function renderGames(list){
     panel.innerHTML = '';
     panel.appendChild(targetGrid);
     panel.scrollTop = 0;
-    scrollRoot = panel;
+    // On mobile SLOT the CSS intentionally makes .provider-games-panel part of
+    // the normal flow and .main-layout owns the vertical scroll. Using the
+    // non-scrolling panel as IntersectionObserver root can leave the sentinel
+    // outside the effective viewport, so progressive rendering stops after the
+    // first batch and the user cannot reach all games. Always observe the real
+    // scroll container.
+    scrollRoot = (isGameMobile() && activeCategoryTypeKey() === 'SLOT')
+      ? (document.querySelector('.main-layout') || null)
+      : panel;
   }else{
     gameGrid.innerHTML = '';
     gameGrid.classList.remove('provider-with-rail', 'mobile-direct-game-scroll');
@@ -1152,16 +1165,37 @@ function renderGames(list){
     }
   }
 
+  let batchAppending = false;
   function appendScrollBatch(){
-    if(renderToken !== gameBatchToken || renderedCount >= gameList.length) return;
+    if(batchAppending || renderToken !== gameBatchToken || renderedCount >= gameList.length) return;
+    batchAppending = true;
     const target = Math.min(renderedCount + gameScrollBatchSize(), gameList.length);
     appendFrameUntil(target, () => {
+      batchAppending = false;
       scheduleWarmNextImages(gameList, renderedCount);
       if(renderedCount >= gameList.length){
         disconnectGameBatchObserver();
         sentinel.remove();
+      }else{
+        // Re-check after DOM growth. This covers mobile browsers that do not
+        // immediately emit a second IntersectionObserver callback while a
+        // sticky/contained scroll viewport is moving.
+        requestAnimationFrame(maybeLoadNearEnd);
       }
     });
+  }
+
+  function maybeLoadNearEnd(){
+    if(renderToken !== gameBatchToken || renderedCount >= gameList.length || !sentinel.isConnected) return;
+    const rect = sentinel.getBoundingClientRect();
+    let viewportBottom;
+    if(scrollRoot && scrollRoot.getBoundingClientRect){
+      const rootRect = scrollRoot.getBoundingClientRect();
+      viewportBottom = Math.min(rootRect.bottom, window.innerHeight || rootRect.bottom);
+    }else{
+      viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
+    }
+    if(rect.top <= viewportBottom + 900) appendScrollBatch();
   }
 
   targetGrid.appendChild(sentinel);
@@ -1177,10 +1211,31 @@ function renderGames(list){
     }, {
       root: scrollRoot,
       // Start preparing well before the user reaches the last visible row.
-      rootMargin: '700px 0px',
+      rootMargin: '900px 0px',
       threshold: 0.01
     });
     gameBatchObserver.observe(sentinel);
+
+    // IntersectionObserver is the primary trigger. A lightweight passive scroll
+    // fallback makes progressive loading reliable on iOS/Android WebViews where
+    // sticky parents + a changing visual viewport can occasionally suppress an
+    // observer transition. It only performs one rectangle check per animation
+    // frame and is removed whenever the game list is re-rendered.
+    const fallbackTarget = scrollRoot || window;
+    let fallbackRaf = 0;
+    const onProgressiveScroll = () => {
+      if(fallbackRaf) return;
+      fallbackRaf = requestAnimationFrame(() => {
+        fallbackRaf = 0;
+        maybeLoadNearEnd();
+      });
+    };
+    fallbackTarget.addEventListener('scroll', onProgressiveScroll, {passive:true});
+    gameBatchScrollCleanup = () => {
+      fallbackTarget.removeEventListener('scroll', onProgressiveScroll);
+      if(fallbackRaf) cancelAnimationFrame(fallbackRaf);
+    };
+    requestAnimationFrame(maybeLoadNearEnd);
   });
 }
 
