@@ -14757,3 +14757,55 @@ html[data-home-bonus-enabled="pending"] body.home-page [data-home-bonus-display]
     padding:8px 10px 12px 10px!important;
   }
 }
+
+/* ===== Desktop provider landing: wrap providers into rows (no horizontal rail) =====
+   Match the mobile provider-first behaviour: providers fill left-to-right in
+   ascending BO order, then continue on the next row. Wide desktop shows 6
+   providers per row; standard desktop shows 5. */
+@media (min-width:769px){
+  body.home-page .category-provider-cards{
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:14px!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:visible!important;
+    overflow-x:visible!important;
+    overflow-y:visible!important;
+    padding:2px 0 10px!important;
+    margin:0!important;
+    scroll-snap-type:none!important;
+  }
+  body.home-page .category-provider-card{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:0!important;
+    height:auto!important;
+    aspect-ratio:1/1!important;
+    flex:none!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  body.home-page .category-provider-card img{
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    object-fit:contain!important;
+  }
+  body.home-page .category-provider-section,
+  body.home-page .category-mixed-shell{
+    width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+  }
+}
+
+/* With the fixed 400px left/right panels, medium desktop has less centre room.
+   Use five providers per row there instead of squeezing six. */
+@media (min-width:769px) and (max-width:1699px){
+  body.home-page .category-provider-cards{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+}
