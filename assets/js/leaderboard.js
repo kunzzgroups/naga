@@ -15,9 +15,6 @@
   function t(key,fallback){
     try{var v=window.I18N&&window.I18N.t&&window.I18N.t(key);return v&&v!==key?v:fallback}catch(_e){return fallback}
   }
-  function money(v,currency){
-    var n=Number(v||0);return (currency||'MYR')+' '+(Number.isFinite(n)?n:0).toFixed(2);
-  }
   function esc(v){
     return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]});
   }
@@ -73,7 +70,6 @@
   }
   function render(data){
     var records=Array.isArray(data.records)?data.records:[];
-    var currency=data.currency||'MYR';
     if(!records.length){
       tbody.innerHTML='';
       status.hidden=false;status.className='leaderboard-empty';status.textContent=t('leaderboard_empty','No qualifying casino records for this period.');
@@ -85,8 +81,6 @@
           '<td><span class="leaderboard-rank '+(rank<=3?'top-'+rank:'')+'">'+rank+'</span></td>'+ 
           '<td>'+esc(r.player||'******')+'</td>'+ 
           '<td>'+esc(displayGameName(r))+'</td>'+ 
-          '<td class="leaderboard-money">'+esc(money(r.bet,currency))+'</td>'+ 
-          '<td class="leaderboard-money">'+esc(money(r.win,currency))+'</td>'+ 
           '<td class="leaderboard-ratio">'+Number(r.payoutRatio||0).toFixed(2)+'</td>'+ 
           '</tr>';
       }).join('');
