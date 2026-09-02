@@ -94,7 +94,7 @@ html:not(.naga-header-ready) .top-header .logo-box img {
 
 .main-layout{
     display:grid;
-    grid-template-columns:320px 1fr 300px;
+    grid-template-columns:400px minmax(0, 1fr) 400px;
     min-height:calc(100vh - 130px);
     align-items:stretch;
 }
@@ -817,7 +817,7 @@ body{
     width:100%;
     max-width:none;
     display:grid;
-    grid-template-columns:clamp(285px, 22vw, 360px) minmax(0, 1fr) clamp(260px, 19vw, 330px);
+    grid-template-columns:400px minmax(0, 1fr) 400px;
     margin:0;
 }
 .left-sidebar,.center-content,.right-panel{
@@ -932,7 +932,7 @@ body{
 
 @media (min-width:901px) and (max-width:1280px){
     .main-layout{
-        grid-template-columns:285px minmax(0, 1fr) 280px;
+        grid-template-columns:400px minmax(0, 1fr) 400px;
     }
     .game-grid,
     .game-grid.provider-grid{
@@ -2584,7 +2584,7 @@ body{
 
 @media (min-width:901px) and (max-width:1280px){
     .main-layout{
-        grid-template-columns:300px minmax(0, 1fr) 300px !important;
+        grid-template-columns:400px minmax(0, 1fr) 400px !important;
     }
 
     .center-content{
@@ -7093,7 +7093,7 @@ html, body{max-width:100%; overflow-x:hidden;}
         max-height:calc(100vh - 69px - 57px)!important;
         overflow:hidden!important;
         display:grid!important;
-        grid-template-columns:320px minmax(0,1fr) 300px!important;
+        grid-template-columns:400px minmax(0,1fr) 400px!important;
         align-items:stretch!important;
     }
     .left-sidebar,
@@ -7287,7 +7287,7 @@ html, body{max-width:100%; overflow-x:hidden;}
     min-height:0!important;
     overflow:hidden!important;
     display:grid!important;
-    grid-template-columns:clamp(350px,21vw,390px) minmax(760px,1fr) clamp(330px,20vw,380px)!important;
+    grid-template-columns:400px minmax(0,1fr) 400px!important;
     align-items:stretch!important;
     margin:0!important;
   }

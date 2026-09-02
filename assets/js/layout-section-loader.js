@@ -233,7 +233,7 @@
         body.home-page .main-layout {
           width: 100% !important;
           max-width: 100vw !important;
-          grid-template-columns: clamp(285px, 22vw, 360px) minmax(0, 1fr) clamp(320px, 23vw, 390px) !important;
+          grid-template-columns: 400px minmax(0, 1fr) 400px !important;
           overflow: hidden !important;
         }
 
@@ -283,7 +283,7 @@
 
       @media (min-width: 901px) and (max-width: 1280px) {
         body.home-page .main-layout {
-          grid-template-columns: 285px minmax(0, 1fr) 320px !important;
+          grid-template-columns: 400px minmax(0, 1fr) 400px !important;
         }
 
         body.home-page .right-panel {
