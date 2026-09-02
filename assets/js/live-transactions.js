@@ -1,7 +1,7 @@
 (function(){
   'use strict';
-  if(window.__NAGA_LIVE_TRANSACTIONS_V102__) return;
-  window.__NAGA_LIVE_TRANSACTIONS_V102__=true;
+  if(window.__NAGA_LIVE_TRANSACTIONS_V103__) return;
+  window.__NAGA_LIVE_TRANSACTIONS_V103__=true;
 
   // BO allows up to 20 Random Demo transactions per update. Do not clamp it
   // back to the old hard-coded five-row demo on the storefront.
@@ -24,9 +24,9 @@
   function money(v){const n=Number(v);return Number.isFinite(n)?'RM'+n.toFixed(2):''}
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function rowHtml(r){
-    const du=r.depositUser?`<span class="lt-user">${esc(r.depositUser)}</span><span class="lt-amount">${money(r.depositAmount)}</span>`:'<span class="lt-user">—</span>';
-    const wu=r.withdrawUser?`<span class="lt-user">${esc(r.withdrawUser)}</span><span class="lt-amount">${money(r.withdrawAmount)}</span>`:'<span class="lt-user">—</span>';
-    return `<div class="live-transaction-row"><span>${du}</span><span>${wu}</span><span class="lt-provider">${esc(r.provider||'—')}</span></div>`;
+    const du=r.depositUser?`<span class="lt-user lt-deposit-user">${esc(r.depositUser)}</span><span class="lt-amount lt-deposit-amount">${money(r.depositAmount)}</span>`:'<span class="lt-user lt-deposit-user">—</span>';
+    const wu=r.withdrawUser?`<span class="lt-user lt-withdraw-user">${esc(r.withdrawUser)}</span><span class="lt-amount lt-withdraw-amount">${money(r.withdrawAmount)}</span>`:'<span class="lt-user lt-withdraw-user">—</span>';
+    return `<div class="live-transaction-row"><span class="lt-deposit-cell">${du}</span><span class="lt-withdraw-cell">${wu}</span><span class="lt-provider">${esc(r.provider||'—')}</span></div>`;
   }
   function render(rows){
     const safe=Array.isArray(rows)?rows.slice(0,MAX_ROWS):[];

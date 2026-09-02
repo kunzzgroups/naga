@@ -14695,7 +14695,10 @@ html[data-home-bonus-enabled="pending"] body.home-page [data-home-bonus-display]
 .live-transaction-row:nth-child(even){background:#e9edf3}
 .live-transaction-row>span{display:flex;align-items:center;gap:4px;min-width:0;padding:4px 5px;white-space:nowrap;overflow:hidden}
 .live-transaction-row .lt-user{overflow:hidden;text-overflow:ellipsis;color:#0647aa;min-width:0}
-.live-transaction-row .lt-amount{color:#e31520;flex:0 0 auto}
+/* Deposit / Withdraw use separate selectors so each side can be styled independently. */
+.live-transaction-row .lt-amount{flex:0 0 auto}
+.live-transaction-row .lt-deposit-amount{color:#e31520}
+.live-transaction-row .lt-withdraw-amount{color:#e31520}
 .live-transaction-row .lt-provider{display:block;overflow:hidden;text-overflow:ellipsis;color:#0647aa;text-transform:uppercase}
 .live-transaction-empty{padding:14px 8px;text-align:center;font-size:10px;font-weight:800;color:#6b7280;background:#fff}
 @keyframes liveTransactionPulse{0%,100%{opacity:1}50%{opacity:.25}}
