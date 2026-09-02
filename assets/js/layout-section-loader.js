@@ -175,6 +175,7 @@
       // Empty is a valid state when an admin intentionally removes Layout Section
       // CSS/JS/HTML. Older builds treated an empty `home` response as a failure
       // and restored stale localStorage CSS, which made online differ from localhost.
+      normalized.__authoritative = true;
       return normalized;
     } finally {
       if (timer) clearTimeout(timer);
@@ -210,7 +211,7 @@
         return cached;
       }
       console.warn('[Layout Section] BO section unavailable; keeping bundled frontend layout:', sectionKey, lastError && lastError.message ? lastError.message : lastError);
-      return { html: '', css: '', js: '' };
+      return { html: '', css: '', js: '', __unavailable: true };
     })();
 
     sectionPromises.set(sectionKey, request);
@@ -669,9 +670,28 @@
         if (oldScript) oldScript.remove();
         executedJs.delete(sectionKey);
       }
+
+      // `frontend-sidebar` is BO-authoritative. When BO successfully returns an
+      // empty sidebar, the admin intentionally removed the sidebar layout/menu.
+      // Older builds kept the bundled hard-coded menu as a fallback, so deleted
+      // BO items appeared again. Clear the panel only for a successful response;
+      // on a real network/API failure keep the bundled/last-known-good fallback.
+      if (sectionKey === 'frontend-sidebar' && !data.__unavailable) {
+        applyCss(sectionKey, '');
+        const oldSidebarScript = document.querySelector('script[data-layout-section-js="frontend-sidebar"]');
+        if (oldSidebarScript) oldSidebarScript.remove();
+        executedJs.delete('frontend-sidebar');
+        (targets || targetsFor(sectionKey)).forEach(function (target) {
+          if (!target) return;
+          target.innerHTML = '';
+          target.setAttribute('data-layout-section', 'frontend-sidebar');
+          target.setAttribute('data-bo-sidebar-empty', '1');
+        });
+      }
+
       markCriticalFallbackReady(sectionKey);
       document.dispatchEvent(new CustomEvent('naga:layout-section-fallback', {
-        detail: { sectionKey: sectionKey, reason: 'empty-authoritative' }
+        detail: { sectionKey: sectionKey, reason: data.__unavailable ? 'unavailable' : 'empty-authoritative' }
       }));
       return data;
     }
@@ -788,9 +808,27 @@
 
   document.addEventListener('naga:site-shell-ready', function () {
     shellReadySeen = true;
-    // initialize() owns normal startup. Starting another forced Header/Sidebar
-    // request after initialization has begun creates an out-of-order race. Only
-    // bootstrap here if the layout loader genuinely has not initialized yet.
+
+    // site-shell.js creates #mobileSideMenu dynamically. On pages where this
+    // loader runs first, the initial frontend-sidebar request can finish while
+    // targetsFor('frontend-sidebar') is still empty. The BO HTML was therefore
+    // fetched successfully but never applied, leaving site-shell's bundled menu
+    // (Bonus/Spin/Live Chat/etc.) visible. As soon as the shell exists, re-apply
+    // the BO sidebar to the real panel. Wait for any startup request to settle
+    // first so a fast shell-ready event cannot race an in-flight request.
+    const panel = document.querySelector('#mobileSideMenu .mobile-menu-panel');
+    if (panel && panel.getAttribute('data-layout-custom-applied') !== 'frontend-sidebar' && panel.getAttribute('data-bo-sidebar-empty') !== '1') {
+      const pending = sectionPromises.get('frontend-sidebar');
+      Promise.resolve(pending).catch(function () {}).then(function () {
+        const livePanel = document.querySelector('#mobileSideMenu .mobile-menu-panel');
+        if (!livePanel || livePanel.getAttribute('data-layout-custom-applied') === 'frontend-sidebar' || livePanel.getAttribute('data-bo-sidebar-empty') === '1') return;
+        sectionPromises.delete('frontend-sidebar');
+        return loadSection('frontend-sidebar', [livePanel], true);
+      }).catch(function (error) {
+        console.warn('[Layout Section] unable to apply BO sidebar after shell creation:', error && error.message ? error.message : error);
+      });
+    }
+
     if (!initialized && document.readyState !== 'loading') loadShellSections(true);
   });
 
