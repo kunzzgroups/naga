@@ -1,0 +1,81 @@
+/* First-frame guard: category legacy animation stays off until the fresh BO
+   animation settings for this page load are resolved. This prevents the bad
+   "animate first, stop one second later" flash when BO says NONE. */
+html.naga-animation-preflight .cat,
+html.naga-animation-preflight .cat .cat-icon,
+html.naga-animation-preflight .cat .gem{
+  animation:none!important;
+  animation-name:none!important;
+  animation-delay:0s!important;
+}
+
+/* BO-configurable frontend effects. No matching rule = existing frontend behaviour remains untouched. */
+.naga-effect-managed{animation:none!important;--naga-effect-duration:2.35s;--naga-effect-distance:7px;--naga-effect-scale:1.035;--naga-effect-glow:14px;transform:translateZ(0);backface-visibility:hidden}
+.naga-effect-managed:not(.naga-effect-paused){will-change:transform,opacity}
+.naga-effect-managed.naga-effect-paused{animation-play-state:paused!important;will-change:auto!important}
+.naga-effect-managed.naga-effect-none{animation:none!important;filter:none!important;will-change:auto!important}
+.naga-effect-speed-slow{--naga-effect-duration:3.4s}.naga-effect-speed-normal{--naga-effect-duration:2.35s}.naga-effect-speed-fast{--naga-effect-duration:1.25s}
+.naga-effect-intensity-low{--naga-effect-distance:4px;--naga-effect-scale:1.018;--naga-effect-glow:8px}.naga-effect-intensity-medium{--naga-effect-distance:7px;--naga-effect-scale:1.035;--naga-effect-glow:14px}.naga-effect-intensity-high{--naga-effect-distance:11px;--naga-effect-scale:1.065;--naga-effect-glow:22px}
+.naga-effect-float{animation:nagaCfgFloat var(--naga-effect-duration) ease-in-out infinite!important}.naga-effect-glow{animation:nagaCfgGlow var(--naga-effect-duration) ease-in-out infinite!important}.naga-effect-pulse{animation:nagaCfgPulse var(--naga-effect-duration) ease-in-out infinite!important}.naga-effect-bounce{animation:nagaCfgBounce var(--naga-effect-duration) cubic-bezier(.28,.84,.42,1) infinite!important}.naga-effect-shake{animation:nagaCfgShake var(--naga-effect-duration) ease-in-out infinite!important}.naga-effect-sway{animation:nagaCfgSway var(--naga-effect-duration) ease-in-out infinite!important}.naga-effect-zoom{animation:nagaCfgZoom var(--naga-effect-duration) ease-in-out infinite!important}.naga-effect-float-glow{animation:nagaCfgFloatGlow var(--naga-effect-duration) ease-in-out infinite!important}
+@keyframes nagaCfgFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,calc(var(--naga-effect-distance) * -1),0)}}
+@keyframes nagaCfgGlow{0%,100%{opacity:1;filter:brightness(1) drop-shadow(0 0 0 rgba(70,180,255,0))}50%{opacity:.98;filter:brightness(1.1) drop-shadow(0 0 var(--naga-effect-glow) rgba(70,180,255,.78))}}
+@keyframes nagaCfgPulse{0%,100%{transform:translateZ(0) scale(1)}50%{transform:translateZ(0) scale(var(--naga-effect-scale))}}
+@keyframes nagaCfgBounce{0%,65%,100%{transform:translate3d(0,0,0)}30%{transform:translate3d(0,calc(var(--naga-effect-distance) * -1.35),0)}45%{transform:translate3d(0,calc(var(--naga-effect-distance) * -.35),0)}}
+@keyframes nagaCfgShake{0%,100%{transform:translate3d(0,0,0)}20%{transform:translate3d(calc(var(--naga-effect-distance) * -.45),0,0)}40%{transform:translate3d(calc(var(--naga-effect-distance) * .45),0,0)}60%{transform:translate3d(calc(var(--naga-effect-distance) * -.3),0,0)}80%{transform:translate3d(calc(var(--naga-effect-distance) * .3),0,0)}}
+@keyframes nagaCfgSway{0%,100%{transform:translateZ(0) rotate(0)}35%{transform:translateZ(0) rotate(-2.6deg)}70%{transform:translateZ(0) rotate(2.6deg)}}
+@keyframes nagaCfgZoom{0%,100%{transform:translateZ(0) scale(1)}50%{transform:translateZ(0) scale(var(--naga-effect-scale))}}
+@keyframes nagaCfgFloatGlow{0%,100%{transform:translate3d(0,0,0);filter:brightness(1) drop-shadow(0 0 0 rgba(70,180,255,0))}50%{transform:translate3d(0,calc(var(--naga-effect-distance) * -1),0);filter:brightness(1.1) drop-shadow(0 0 var(--naga-effect-glow) rgba(70,180,255,.78))}}
+@media (prefers-reduced-motion:reduce){.naga-effect-managed{animation:none!important;transform:none!important;filter:none!important;will-change:auto!important}}
+
+/* BO rule must override the legacy category animation while enabled.
+   When the rule is removed, JS removes managed classes/inline animation and the original .cat behavior returns. */
+.cat.naga-effect-managed,.cat.clicked-tab.active.naga-effect-managed{animation-delay:0s!important}
+
+/* Category BO rules own the entire category visual animation while enabled.
+   Legacy Naga animates both the .cat button and its child .cat-icon/.gem with
+   !important rules. Suppress those child animations whenever a BO category
+   rule is active, so NONE really means no animation and any selected BO effect
+   is not layered with the old icon pulse. Removing/disabling the BO rule removes
+   naga-effect-managed and the original Naga category behaviour returns. */
+/* Legacy child animation is suppressed only as a fallback. Built-in BO effects
+   set an inline !important animation on .cat-icon, which has higher author
+   priority and therefore becomes the single source of truth. */
+.cat.naga-effect-managed .gem,
+.cat.clicked-tab.active.naga-effect-managed .gem{
+  animation:none!important;
+  animation-name:none!important;
+}
+.cat.naga-effect-managed.naga-effect-none .cat-icon{
+  animation:none!important;
+  animation-name:none!important;
+}
+.cat.naga-effect-managed.naga-effect-none .cat-icon,
+.cat.naga-effect-managed.naga-effect-none .gem{
+  animation:none!important;
+  animation-name:none!important;
+  animation-delay:0s!important;
+  animation-duration:0s!important;
+  transform:none!important;
+}
+
+
+/* CATEGORY ACTIVE-ONLY policy -------------------------------------------------
+   BO category rules configure WHICH effect is used, but preserve Naga's
+   original interaction model: only the currently active category animates.
+   Inactive category buttons/icons are always still. When active changes, CSS
+   switches the effect instantly with no JS scan, observer, timer, or API call. */
+.cat.naga-effect-managed{
+  animation:none!important;
+}
+.cat.naga-effect-managed .cat-icon{
+  animation:none!important;
+  animation-name:none!important;
+}
+.cat.naga-effect-managed.active:not(.naga-effect-none) .cat-icon,
+.cat.clicked-tab.active.naga-effect-managed:not(.naga-effect-none) .cat-icon{
+  animation:var(--naga-category-animation, none)!important;
+}
+.cat.naga-effect-managed:not(.active) .cat-icon{
+  animation:none!important;
+  animation-name:none!important;
+}

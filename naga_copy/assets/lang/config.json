@@ -1,0 +1,5 @@
+{
+  "default_lang": "en",
+  "available_langs": ["en", "zh"],
+  "storage_key": "site_lang"
+}

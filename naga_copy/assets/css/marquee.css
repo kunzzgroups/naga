@@ -1,0 +1,30 @@
+/* BO-controlled announcement below every Naga top header */
+.naga-marquee{--marquee-bg:rgba(7,33,69,.94);position:relative;z-index:45;width:100%;height:34px;overflow:hidden;background:var(--marquee-bg);border-top:1px solid rgba(255,180,0,.65);border-bottom:1px solid rgba(255,180,0,.65);color:#fff;box-sizing:border-box;display:none}
+.naga-marquee.is-visible{display:flex;align-items:center}
+.naga-marquee-viewport{position:relative;width:100%;height:100%;overflow:hidden;white-space:nowrap}
+.naga-marquee-track{position:absolute;left:100%;top:0;height:100%;display:flex;align-items:center;width:max-content;will-change:transform;animation:nagaMarquee var(--naga-marquee-duration,18s) linear infinite}
+.naga-marquee-copy{display:inline-flex;align-items:center;min-height:32px;font-size:14px;font-weight:700;line-height:1.25;white-space:nowrap}
+.naga-marquee-copy *{display:inline!important;margin:0!important;vertical-align:middle}
+.naga-marquee-copy br{display:none!important}
+/* Start fully outside the RIGHT edge. Move by the viewport width (from left:100%)
+   plus the element's own full width, so the message fully exits LEFT before looping. */
+@keyframes nagaMarquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(calc(-100vw - 100%),0,0)}}
+@media(max-width:768px){.naga-marquee{height:30px}.naga-marquee-copy{min-height:28px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){.naga-marquee-track{animation-duration:35s}}
+
+/* Keep the existing fixed-height home lobby inside the viewport when the
+   announcement consumes a row below the header. Provider-first/direct-game
+   mobile views already use natural document scrolling; SLOT calculates its
+   own bounded height in app.js with the marquee included in headerHeight. */
+@media (min-width:901px){
+  body.home-page:has(.naga-marquee.is-visible) .main-layout{
+    height:calc(100dvh - 69px - 57px - var(--naga-marquee-height,34px))!important;
+    max-height:calc(100dvh - 69px - 57px - var(--naga-marquee-height,34px))!important;
+  }
+}
+@media (max-width:768px){
+  body.home-page:not(.mobile-slot-natural-scroll):not(:has(.category-provider-cards)):not(:has(.direct-games-list)):has(.naga-marquee.is-visible) .main-layout{
+    height:calc(100dvh - 57px - 57px - var(--naga-marquee-height,30px))!important;
+    max-height:calc(100dvh - 57px - 57px - var(--naga-marquee-height,30px))!important;
+  }
+}
