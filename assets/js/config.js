@@ -12,8 +12,8 @@ window.NAGA_CONFIG = {
   // Add/remove items here only; the popup is generated automatically from this list
   // on every brand/domain using this frontend (including t2.titanx7.com).
   websiteTemplates: [
-    { name: 'TitanX7', url: 'https://titanx7.com/index.html' },
-    { name: 'TitanX7 T2', url: 'https://t2.titanx7.com/index.html' }
+    { name: 'Template 1', url: 'https://titanx7.com/index.html' },
+    { name: 'Template 2', url: 'https://t2.titanx7.com/index.html' }
   ]
 };
 
