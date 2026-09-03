@@ -3,9 +3,9 @@
 window.NAGA_CONFIG = {
   api: {
     // baseUrl: 'http://localhost:8080',
-    baseUrl: 'https://bo.titanxgaming.com',
+    baseUrl: 'https://bo.titanx7.com',
     // uploadBaseUrl: 'http://localhost:8080/uploads',
-    uploadBaseUrl: 'https://static.titanxgaming.com/uploads'
+    uploadBaseUrl: 'https://static.titanx7.com/uploads'
   }
 };
 

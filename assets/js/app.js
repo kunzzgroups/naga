@@ -11,15 +11,15 @@
 
 const API = window.NAGA_API || {};
 const GAME_CATEGORY_API_URL =
-  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanx7.com/api/public/game-catalog');
 const GAME_SUB_CATEGORY_API_URL =
-  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanx7.com/api/public/game-catalog');
 const GAME_API_URL =
-  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanx7.com/api/public/game-catalog');
 const GAME_PROVIDER_API_URL =
-  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanx7.com/api/public/game-catalog');
 const PUBLIC_GAME_CATALOG_API_URL =
-  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanxgaming.com/api/public/game-catalog');
+  API.publicGameCatalog || ((window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) ? window.NAGA_CONFIG.api.baseUrl + '/api/public/game-catalog' : 'https://bo.titanx7.com/api/public/game-catalog');
 const PUBLIC_GAME_CATALOG_VERSION_URL =
   API.publicGameCatalogVersion || PUBLIC_GAME_CATALOG_API_URL + '/version';
 
@@ -170,7 +170,7 @@ function langText(item, field, fallback){
 
 function uploadBaseUrl(){
   const cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-  return ((cfg && cfg.uploadBaseUrl) || 'https://static.titanxgaming.com/uploads').replace(/\/+$/, '');
+  return ((cfg && cfg.uploadBaseUrl) || 'https://static.titanx7.com/uploads').replace(/\/+$/, '');
 }
 
 function isFullImageUrl(value){
@@ -2038,7 +2038,7 @@ function initSlider(slider){
 // app.js
 const SLIDER_API_URL =
   (window.NAGA_API && window.NAGA_API.sliderList)
-  || 'https://bo.titanxgaming.com/api/public/slider/list';
+  || 'https://bo.titanx7.com/api/public/slider/list';
 function normalizeSliderResponse(response){
   if(Array.isArray(response)) return response;
   if(response && Array.isArray(response.data)) return response.data;

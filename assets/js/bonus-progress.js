@@ -1,6 +1,6 @@
 (function(){
   const API = window.NAGA_API || {};
-  const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || 'https://bo.titanxgaming.com';
+  const API_BASE = (window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl) || 'https://bo.titanx7.com';
   const CLAIMS_URL = API.playerPromotionClaims || (API_BASE.replace(/\/+$/, '') + '/api/player/promotion/my-claims');
   const COMPLETE_BASE = API.playerPromotionComplete || (API_BASE.replace(/\/+$/, '') + '/api/player/promotion/claim-completion');
   let currentClaim = null;

@@ -135,7 +135,7 @@
   function endpoint() {
     if (window.NAGA_API && window.NAGA_API.layoutSection) return window.NAGA_API.layoutSection;
     const base = window.NAGA_CONFIG && window.NAGA_CONFIG.api && window.NAGA_CONFIG.api.baseUrl;
-    return String(base || 'https://bo.titanxgaming.com').replace(/\/+$/, '') + '/api/customize/section';
+    return String(base || 'https://bo.titanx7.com').replace(/\/+$/, '') + '/api/customize/section';
   }
 
   function normalizeData(json) {

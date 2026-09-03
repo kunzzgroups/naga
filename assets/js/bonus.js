@@ -53,7 +53,7 @@ function langText(item, field, fallback){
 
 function uploadBaseUrl(){
   const cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-  return ((cfg && cfg.uploadBaseUrl) || 'https://static.titanxgaming.com/uploads').replace(/\/+$/, '');
+  return ((cfg && cfg.uploadBaseUrl) || 'https://static.titanx7.com/uploads').replace(/\/+$/, '');
 }
 
 function isFullImageUrl(value){

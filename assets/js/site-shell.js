@@ -65,7 +65,7 @@
     if(refreshTokenPromise) return refreshTokenPromise;
 
     var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-    var base = String((cfg && cfg.baseUrl) || 'https://bo.titanxgaming.com').replace(/\/+$/, '');
+    var base = String((cfg && cfg.baseUrl) || 'https://bo.titanx7.com').replace(/\/+$/, '');
     refreshTokenPromise = fetch(base + '/api/auth/member/refresh', {
       method: 'POST',
       cache: 'no-store',
@@ -132,7 +132,7 @@
   function walletBalanceUrl(){
     var api = window.NAGA_API || {};
     var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-    var base = (cfg && cfg.baseUrl) || 'https://bo.titanxgaming.com';
+    var base = (cfg && cfg.baseUrl) || 'https://bo.titanx7.com';
     return api.playerMainWalletBalance || (String(base).replace(/\/+$/, '') + '/api/member/wallet/balance');
   }
 
@@ -196,7 +196,7 @@
   var lastPresenceAt = 0;
   var PRESENCE_INTERVAL_MS = 60000;
   var PRESENCE_MIN_GAP_MS = 15000;
-  function presenceBase(){ var cfg=window.NAGA_CONFIG&&window.NAGA_CONFIG.api; return String((cfg&&cfg.baseUrl)||'https://bo.titanxgaming.com').replace(/\/+$/,''); }
+  function presenceBase(){ var cfg=window.NAGA_CONFIG&&window.NAGA_CONFIG.api; return String((cfg&&cfg.baseUrl)||'https://bo.titanx7.com').replace(/\/+$/,''); }
   function sendPresence(path, keepalive){
     var token=getToken(); if(!token) return Promise.resolve();
     return fetch(presenceBase()+path,{method:'POST',keepalive:!!keepalive,cache:'no-store',headers:{'Authorization':'Bearer '+token,'Cache-Control':'no-store'}}).catch(function(){});
@@ -538,7 +538,7 @@
 
   function vipApiBase(){
     var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-    return String((cfg && cfg.baseUrl) || 'https://bo.titanxgaming.com').replace(/\/+$/, '');
+    return String((cfg && cfg.baseUrl) || 'https://bo.titanx7.com').replace(/\/+$/, '');
   }
 
   function isVipHref(anchor){

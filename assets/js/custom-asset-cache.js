@@ -75,12 +75,12 @@
 
   function apiBaseUrl(){
     var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-    return String((cfg && cfg.baseUrl) || 'https://bo.titanxgaming.com').replace(/\/+$/, '');
+    return String((cfg && cfg.baseUrl) || 'https://bo.titanx7.com').replace(/\/+$/, '');
   }
 
   function uploadBaseUrl(){
     var cfg = window.NAGA_CONFIG && window.NAGA_CONFIG.api;
-    return String((cfg && cfg.uploadBaseUrl) || 'https://static.titanxgaming.com/uploads').replace(/\/+$/, '');
+    return String((cfg && cfg.uploadBaseUrl) || 'https://static.titanx7.com/uploads').replace(/\/+$/, '');
   }
 
 
