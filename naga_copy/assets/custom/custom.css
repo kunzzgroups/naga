@@ -1,7 +1,0 @@
-/* Add once only. Main images are controlled by assets/custom/custom.js + version.json. */
-body.naga-custom-main-layout {
-  background-size: cover !important;
-  background-position: center top !important;
-  background-repeat: no-repeat !important;
-  background-attachment: fixed !important;
-}
