@@ -5,12 +5,13 @@
   //   GET /api/public/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = '1.0.33';
+  var CUSTOM_ASSET_VERSION = '1.0.34';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
   var translationCache = {};
   var versionJsonCache = null;
+  var resolvedBrandId = null;
   var lastRunId = 0;
   var CACHE_PREFIX = 'naga_bo_custom_assets_v2:' + String(location.hostname || 'default').toLowerCase() + ':';
 
@@ -95,6 +96,21 @@
     return (window.NAGA_API&&window.NAGA_API.mainLayoutCustomize) || (apiBaseUrl() + '/api/customize/main-layout');
   }
 
+  function centralBrandImageUrl(fileName){
+    fileName = String(fileName || '').trim().replace(/^\/+/, '');
+    if(!fileName || fileName.indexOf('..') !== -1) return '';
+    var id = resolvedBrandId || window.NAGA_RESOLVED_BRAND_ID;
+    if(!id) return '';
+    return apiBaseUrl() + '/api/public/custom-assets/' + encodeURIComponent(String(id)) + '/images/' + encodeURIComponent(fileName);
+  }
+
+  function preferResolvedBrandAsset(value, fallback){
+    value = resolveImageValue(value || '');
+    if(value) return value;
+    var fileName = fileNameFromUrl(fallback || '');
+    return centralBrandImageUrl(fileName) || fallback || '';
+  }
+
   function loadVersionJson(forceRefresh){
     if(!forceRefresh && versionJsonCache) return Promise.resolve(versionJsonCache);
     if(!forceRefresh){
@@ -109,7 +125,15 @@
     // no-cache allows HTTP revalidation instead of forcing a full payload download
     // on every hard refresh. Brand headers are still attached by brand-runtime.
     return fetch(customVersionJsonUrl(), { cache: 'no-cache', headers: brandHeaders({ 'Accept':'application/json' }) })
-      .then(function(res){ if(!res.ok) throw new Error('main layout api failed'); return res.json(); })
+      .then(function(res){
+        if(!res.ok) throw new Error('main layout api failed');
+        var id = parseInt(res.headers.get('X-Brand-Id') || '', 10);
+        if(Number.isFinite(id) && id > 0){
+          resolvedBrandId = id;
+          window.NAGA_RESOLVED_BRAND_ID = id;
+        }
+        return res.json();
+      })
       .then(function(json){
         versionJsonCache = (json && json.data) || {};
         window.NAGA_CUSTOM_ASSETS = versionJsonCache;
@@ -124,9 +148,12 @@
 
   function defaultBackgroundFromVersionJson(versionData){
     versionData = versionData || {};
-    // BO site-customize writes the actual uploaded filename/url here.
-    // This can be background.png, background.jpg, background.jpeg, or a full uploaded URL.
-    return resolveImageValue(versionData.background || versionData.pageBackgroundUrl || '') || (CUSTOM_IMAGE_PATH + 'background.png');
+    // Prefer the URL returned by the BO/API. If a brand has no explicit value,
+    // resolve the conventional background filename through the authoritative
+    // X-Brand-Id returned by Spring instead of falling back to this frontend's
+    // local assets/custom/images path (which is Brand 1 on cloned brand sites).
+    var explicit = resolveImageValue(versionData.background || versionData.pageBackgroundUrl || '');
+    return explicit || centralBrandImageUrl('background.png') || (CUSTOM_IMAGE_PATH + 'background.png');
   }
 
   function translationApiUrl(){
@@ -272,7 +299,11 @@
       var field = el.getAttribute('data-custom-asset-src-field') || fieldFromUrl(fallback);
       var translated = resolveImageValue(getTranslatedValue(data, field));
       var boDefault = resolveImageValue(versionAssetValue(versionData, field));
-      var finalSrc = addCacheBuster(translated || boDefault || fallback);
+      // Never let a secondary brand silently fall back to the cloned Brand 1
+      // /assets/custom/images file. Once Spring tells us the resolved brand id,
+      // the conventional filename is fetched from that brand's central storage.
+      var brandFallback = centralBrandImageUrl(fileNameFromUrl(fallback));
+      var finalSrc = addCacheBuster(translated || boDefault || brandFallback || fallback);
 
       if(translated || boDefault){
         el.onerror = function(){
@@ -297,7 +328,8 @@
       var field = el.getAttribute('data-custom-asset-href-field') || fieldFromUrl(fallback);
       var translated = resolveImageValue(getTranslatedValue(data, field));
       var boDefault = resolveImageValue(versionAssetValue(versionData, field));
-      var finalHref = addCacheBuster(translated || boDefault || fallback);
+      var brandFallback = centralBrandImageUrl(fileNameFromUrl(fallback));
+      var finalHref = addCacheBuster(translated || boDefault || brandFallback || fallback);
       if(finalHref) el.setAttribute('href', finalHref);
     });
   }
@@ -400,6 +432,18 @@
   function run(){
     var runId = ++lastRunId;
     var lang = currentLang();
+
+    // v1.0.34: older builds could persist Brand 1 main-layout data under a
+    // secondary-brand hostname. Discard that stale snapshot once and rely on
+    // the fresh response/X-Brand-Id before selecting brand fallbacks.
+    try{
+      var migrationKey = CACHE_PREFIX + 'resolved-brand-cache-v1';
+      if(!sessionStorage.getItem(migrationKey)){
+        clearPersistent();
+        versionJsonCache = null;
+        sessionStorage.setItem(migrationKey, '1');
+      }
+    }catch(e){}
 
     // Always keep the original/default asset before applying language images.
     // Required for switching zh -> en instantly.
