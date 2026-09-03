@@ -6,7 +6,15 @@ window.NAGA_CONFIG = {
     baseUrl: 'https://bo.titanx7.com',
     // uploadBaseUrl: 'http://localhost:8080/uploads',
     uploadBaseUrl: 'https://static.titanx7.com/uploads'
-  }
+  },
+
+  // Website/template selector shown when the header logo is clicked.
+  // Add/remove items here only; the popup is generated automatically from this list
+  // on every brand/domain using this frontend (including t2.titanx7.com).
+  websiteTemplates: [
+    { name: 'TitanX7', url: 'https://titanx7.com/index.html' },
+    { name: 'TitanX7 T2', url: 'https://t2.titanx7.com/index.html' }
+  ]
 };
 
 window.NAGA_API = {

@@ -308,6 +308,107 @@
     }, 350);
   }
 
+  function normaliseWebsiteTemplates(){
+    var rows = window.NAGA_CONFIG && Array.isArray(window.NAGA_CONFIG.websiteTemplates)
+      ? window.NAGA_CONFIG.websiteTemplates : [];
+    return rows.map(function(item, index){
+      if(!item || item.enabled === false) return null;
+      var name = String(item.name || item.label || ('Website ' + (index + 1))).trim();
+      var rawUrl = String(item.url || item.href || '').trim();
+      if(!rawUrl) return null;
+      try{
+        var url = new URL(rawUrl, window.location.href);
+        if(url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+        return {name:name, url:url.href};
+      }catch(e){ return null; }
+    }).filter(Boolean);
+  }
+
+  function ensureWebsiteTemplateSelector(){
+    var overlay = document.getElementById('websiteTemplateOverlay');
+    if(overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'websiteTemplateOverlay';
+    overlay.className = 'lang-overlay website-template-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = '<div class="lang-modal website-template-modal" role="dialog" aria-modal="true" aria-labelledby="websiteTemplateTitle">' +
+      '<div class="website-template-title" id="websiteTemplateTitle">Select Website</div>' +
+      '<div class="website-template-list" data-website-template-list></div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function(e){
+      if(e.target === overlay){ closeWebsiteTemplateSelector(); return; }
+      var option = e.target.closest && e.target.closest('[data-website-template-url]');
+      if(!option) return;
+      var destination = option.getAttribute('data-website-template-url');
+      if(!destination) return;
+      closeWebsiteTemplateSelector();
+      window.location.assign(destination);
+    });
+    return overlay;
+  }
+
+  function renderWebsiteTemplateSelector(){
+    var overlay = ensureWebsiteTemplateSelector();
+    var list = overlay.querySelector('[data-website-template-list]');
+    var templates = normaliseWebsiteTemplates();
+    if(!list) return templates;
+    list.textContent = '';
+
+    templates.forEach(function(item){
+      var btn = document.createElement('button');
+      btn.className = 'lang-option website-template-option';
+      btn.type = 'button';
+      btn.setAttribute('data-website-template-url', item.url);
+      btn.textContent = item.name;
+      try{
+        var destinationHost = new URL(item.url).hostname.toLowerCase();
+        if(destinationHost === String(window.location.hostname || '').toLowerCase()){
+          btn.classList.add('active');
+          var mark = document.createElement('span');
+          mark.className = 'website-template-checkmark';
+          mark.textContent = '✔';
+          btn.appendChild(mark);
+        }
+      }catch(e){}
+      list.appendChild(btn);
+    });
+    return templates;
+  }
+
+  function openWebsiteTemplateSelector(){
+    var templates = renderWebsiteTemplateSelector();
+    if(!templates.length) return;
+    var overlay = ensureWebsiteTemplateSelector();
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeWebsiteTemplateSelector(){
+    var overlay = document.getElementById('websiteTemplateOverlay');
+    if(!overlay) return;
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function initWebsiteTemplateSelector(){
+    // Delegated binding is intentional: BO layout customization can replace the
+    // header/logo after page load, and the replacement must keep this behavior.
+    document.addEventListener('click', function(e){
+      var logo = e.target.closest && e.target.closest('.top-header .logo-box, .top-header .site-logo');
+      if(!logo) return;
+      if(!normaliseWebsiteTemplates().length) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openWebsiteTemplateSelector();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') closeWebsiteTemplateSelector();
+    });
+  }
+
   function enhanceHeader(){
     const header = document.querySelector('.top-header');
     if(!header || header.dataset.shellReady === '1') return;
@@ -467,8 +568,20 @@
 
   function bindMenu(){
     document.addEventListener('click', function(e){
-      const logo = e.target.closest && e.target.closest('.site-logo, .logo-box');
+      // Header logo opens the website/template selector. This handler runs in
+      // capture phase, so it must open the selector itself instead of redirecting
+      // to index.html (the old redirect prevented the popup click handler below
+      // from ever receiving the event).
+      const logo = e.target.closest && e.target.closest('.top-header .site-logo, .top-header .logo-box, .top-header .mobile-style-logo');
       if(logo){
+        if(normaliseWebsiteTemplates().length){
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation && e.stopImmediatePropagation();
+          openWebsiteTemplateSelector();
+          return;
+        }
+        // If no websites are configured, preserve the original home-logo action.
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation && e.stopImmediatePropagation();
@@ -731,6 +844,7 @@
 
   function init(){
     enhanceHeader();
+    initWebsiteTemplateSelector();
     createSideMenu();
     bindMenu();
     window.addEventListener('storage', refreshHeaderAuth);
@@ -746,5 +860,5 @@
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
-  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, refreshMemberToken: refreshMemberToken, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell, refreshVipClaimReminder: refreshVipClaimReminder };
+  window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, refreshMemberToken: refreshMemberToken, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell, refreshVipClaimReminder: refreshVipClaimReminder, openWebsiteTemplateSelector: openWebsiteTemplateSelector, closeWebsiteTemplateSelector: closeWebsiteTemplateSelector };
 })();
