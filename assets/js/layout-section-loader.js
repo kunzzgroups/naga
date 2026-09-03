@@ -7,6 +7,13 @@
   const authoritativeSections = new Map();
   const sectionObservers = new Map();
   const CACHE_PREFIX = 'naga_layout_section_v3:';
+
+  function brandHeaders(extra) {
+    const headers = new Headers(extra || {});
+    const host = String(location.hostname || '').toLowerCase();
+    if (host) headers.set('X-Brand-Domain', host);
+    return headers;
+  }
   let initialized = false;
   let shellReadySeen = false;
   let freshHeaderLoaded = false;
@@ -160,11 +167,11 @@
         cache: 'no-store',
         credentials: 'omit',
         signal: controller ? controller.signal : undefined,
-        headers: {
+        headers: brandHeaders({
           Accept: 'application/json',
           'Cache-Control': 'no-cache, no-store, max-age=0',
           Pragma: 'no-cache'
-        }
+        })
       });
       const json = await response.json().catch(function () { return {}; });
       if (!response.ok || (json && json.status === 'error')) {

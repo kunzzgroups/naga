@@ -5,7 +5,7 @@
   //   GET /api/public/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = '1.0.31';
+  var CUSTOM_ASSET_VERSION = '1.0.32';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
@@ -13,6 +13,13 @@
   var versionJsonCache = null;
   var lastRunId = 0;
   var CACHE_PREFIX = 'naga_bo_custom_assets_v2:' + String(location.hostname || 'default').toLowerCase() + ':';
+
+  function brandHeaders(extra){
+    var h = new Headers(extra || {});
+    var host = String(location.hostname || '').toLowerCase();
+    if(host) h.set('X-Brand-Domain', host);
+    return h;
+  }
 
   function readPersistent(key){
     try{
@@ -101,7 +108,7 @@
     }
     // no-cache allows HTTP revalidation instead of forcing a full payload download
     // on every hard refresh. Brand headers are still attached by brand-runtime.
-    return fetch(customVersionJsonUrl(), { cache: 'no-cache' })
+    return fetch(customVersionJsonUrl(), { cache: 'no-cache', headers: brandHeaders({ 'Accept':'application/json' }) })
       .then(function(res){ if(!res.ok) throw new Error('main layout api failed'); return res.json(); })
       .then(function(json){
         versionJsonCache = (json && json.data) || {};
@@ -229,7 +236,7 @@
       if(stored){ translationCache[lang]=stored; return Promise.resolve(stored); }
     }
 
-    return fetch(translationApiUrl(), { cache: 'no-cache' })
+    return fetch(translationApiUrl(), { cache: 'no-cache', headers: brandHeaders({ 'Accept':'application/json' }) })
       .then(function(res){ if(!res.ok) throw new Error('translation api failed'); return res.json(); })
       .then(function(json){
         var all = (json && json.data) || {};
