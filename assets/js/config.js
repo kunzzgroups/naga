@@ -13,7 +13,9 @@ window.NAGA_CONFIG = {
   // on every brand/domain using this frontend (including t2.titanx7.com).
   websiteTemplates: [
     { name: 'Template 1', url: 'https://titanx7.com/index.html' },
-    { name: 'Template 2', url: 'https://t2.titanx7.com/index.html' }
+    { name: 'Template 2', url: 'https://t2.titanx7.com/index.html' },
+    { name: 'Template 3', url: 'https://t3.titanx7.com/index.html' },
+    { name: 'Template 4', url: 'https://t4.titanx7.com/index.html' }
   ]
 };
 
