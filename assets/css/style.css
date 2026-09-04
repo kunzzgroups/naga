@@ -5899,7 +5899,7 @@ body.login-page #registerForm .verify-row button{
 .promo-detail-actions{text-align:center;margin-top:18px}
 
 /* Promotion category grouping from BO category title */
-.promo-category-wrapper{display:block;width:100%;padding-bottom:20px;}
+.promo-category-wrapper{display:block;width:100%}
 .bonus-text-title{font-family:Georgia,serif;color:#fff3e3;text-transform:uppercase;letter-spacing:.5px;font-size:30px;margin:0 0 15px;text-shadow:0 2px 4px rgba(0,0,0,.9),0 0 8px rgba(255,120,60,.6);position:relative;display:inline-block;padding-bottom:8px}
 .bonus-text-title:after{content:"";position:absolute;left:0;bottom:0;width:100%;height:3px;background:linear-gradient(90deg,#ffe7cf,#f08d68,transparent);box-shadow:0 0 5px #fff}
 .promo-image-card{padding:0;min-height:0;background:none;border:0;box-shadow:none;border-radius:9px;overflow:hidden;position:relative;cursor:pointer}
@@ -15082,5 +15082,120 @@ html[data-home-bonus-enabled="pending"] body.home-page [data-home-bonus-display]
     max-height:57px!important;
     overflow:visible!important;
     z-index:2000!important;
+  }
+}
+
+/* ===== v1.1.20: mobile/tablet hard viewport clamp above transparent bottom nav =====
+   Mobile previously fell back to document scrolling (`body` padding-bottom:57px).
+   That reserves layout space but does not stop large cards/images from painting
+   underneath a transparent fixed navigation bar. For the long-content pages below,
+   make the page body non-scrolling and give the real <main> its own fixed scroll
+   viewport from immediately below the 57px mobile header to immediately above the
+   57px bottom navigation. Descendant painting is clipped to that viewport. */
+@media (max-width:768px){
+  html.bonus-scroll-page,
+  html.transaction-scroll-page,
+  html:has(body.history-page),
+  html:has(body.downline-page),
+  html:has(body.leaderboard-page),
+  html:has(body.rebate-page),
+  html:has(body.setting-page){
+    height:100dvh!important;
+    min-height:100dvh!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+  }
+
+  html.bonus-scroll-page body.bonus-page,
+  html.transaction-scroll-page body.deposit-page,
+  html.transaction-scroll-page body.withdraw-page,
+  body.history-page,
+  body.downline-page,
+  body.leaderboard-page,
+  body.rebate-page,
+  body.setting-page{
+    height:100dvh!important;
+    min-height:0!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+    padding-bottom:0!important;
+  }
+
+  html.bonus-scroll-page body.bonus-page > .bonus-main,
+  html.transaction-scroll-page body.deposit-page > .deposit-main,
+  html.transaction-scroll-page body.withdraw-page > .withdraw-main,
+  body.history-page > .history-main,
+  body.downline-page > .downline-main,
+  body.leaderboard-page > .leaderboard-main,
+  body.rebate-page > .rebate-main,
+  body.setting-page > .setting-main,
+  body.setting-page > .setting-form-main{
+    position:fixed!important;
+    top:57px!important;
+    right:0!important;
+    bottom:57px!important;
+    left:0!important;
+    width:auto!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    margin:0!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    box-sizing:border-box!important;
+    contain:paint!important;
+    clip-path:inset(0)!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-y!important;
+    scroll-padding-bottom:20px!important;
+    z-index:1!important;
+  }
+
+  html.bonus-scroll-page body.bonus-page > .bonus-main{
+    padding-bottom:20px!important;
+  }
+
+  html.bonus-scroll-page body.bonus-page > .top-header,
+  html.transaction-scroll-page body.deposit-page > .top-header,
+  html.transaction-scroll-page body.withdraw-page > .top-header,
+  body.history-page > .top-header,
+  body.downline-page > .top-header,
+  body.leaderboard-page > .top-header,
+  body.rebate-page > .top-header,
+  body.setting-page > .top-header{
+    position:relative!important;
+    z-index:2100!important;
+  }
+
+  html.bonus-scroll-page body.bonus-page > .bottom-nav,
+  html.transaction-scroll-page body.deposit-page > .bottom-nav,
+  html.transaction-scroll-page body.withdraw-page > .bottom-nav,
+  body.history-page > .bottom-nav,
+  body.downline-page > .bottom-nav,
+  body.leaderboard-page > .bottom-nav,
+  body.rebate-page > .bottom-nav,
+  body.setting-page > .bottom-nav{
+    position:fixed!important;
+    top:auto!important;
+    right:0!important;
+    bottom:0!important;
+    left:0!important;
+    width:100%!important;
+    height:57px!important;
+    min-height:57px!important;
+    max-height:57px!important;
+    margin:0!important;
+    z-index:2200!important;
+  }
+
+  /* Keep the shared back-to-top control above the transparent nav. */
+  body.history-page .naga-scroll-top-btn,
+  body.downline-page .naga-scroll-top-btn,
+  body.leaderboard-page .naga-scroll-top-btn,
+  body.rebate-page .naga-scroll-top-btn,
+  body.setting-page .naga-scroll-top-btn,
+  body.bonus-page .naga-scroll-top-btn{
+    bottom:72px!important;
   }
 }
