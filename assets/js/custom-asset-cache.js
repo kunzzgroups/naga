@@ -5,7 +5,7 @@
   //   GET /api/public/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = '1.0.34';
+  var CUSTOM_ASSET_VERSION = '1.0.35';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
@@ -52,6 +52,10 @@
     'background.jpg': 'pageBackgroundUrl',
     'background.jpeg': 'pageBackgroundUrl',
     'background.png': 'pageBackgroundUrl',
+    'background-mobile.jpg': 'mobileBackgroundUrl',
+    'background-mobile.jpeg': 'mobileBackgroundUrl',
+    'background-mobile.png': 'mobileBackgroundUrl',
+    'background-mobile.webp': 'mobileBackgroundUrl',
     'referral.png': 'referralUrl',
     'share.png': 'shareUrl',
     'downline.png': 'downlineUrl',
@@ -146,8 +150,18 @@
       });
   }
 
+  function isMobileViewport(){
+    return window.matchMedia ? window.matchMedia('(max-width: 767px)').matches : window.innerWidth <= 767;
+  }
+
   function defaultBackgroundFromVersionJson(versionData){
     versionData = versionData || {};
+    // Mobile has its own BO-uploaded background. Only fall back to desktop when
+    // the current brand genuinely has no mobile background configured.
+    if(isMobileViewport()){
+      var mobileExplicit = resolveImageValue(versionData.mobileBackground || versionData.mobileBackgroundUrl || '');
+      if(mobileExplicit) return mobileExplicit;
+    }
     // Prefer the URL returned by the BO/API. If a brand has no explicit value,
     // resolve the conventional background filename through the authoritative
     // X-Brand-Id returned by Spring instead of falling back to this frontend's
@@ -336,7 +350,8 @@
 
   function applyBackground(data, versionData){
     var fallback = defaultBackgroundFromVersionJson(versionData);
-    var translated = resolveImageValue(getTranslatedValue(data, 'pageBackgroundUrl'));
+    var mobileConfigured = isMobileViewport() && !!resolveImageValue(versionData.mobileBackground || versionData.mobileBackgroundUrl || '');
+    var translated = mobileConfigured ? '' : resolveImageValue(getTranslatedValue(data, 'pageBackgroundUrl'));
     var bgUrl = addCacheBuster(translated || fallback);
 
     // Return a promise so the global page reveal can wait for the final BO background
