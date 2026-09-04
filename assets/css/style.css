@@ -14903,3 +14903,115 @@ html[data-home-bonus-enabled="pending"] body.home-page [data-home-bonus-display]
     gap:12px!important;
   }
 }
+
+/* ===== v1.1.17: transparent bottom-nav overlap guard =====
+   Pages that use normal document scrolling could visibly pass underneath the
+   fixed bottom navigation when the BO makes that navigation transparent.
+   Keep those pages in a viewport shell and scroll their <main> area instead,
+   so rendered page content always stops above the bottom navigation. Home and
+   chat keep their dedicated scrolling implementations. */
+:root{
+  --naga-desktop-bottom-nav-height:57px;
+}
+
+@media (min-width:769px){
+  html:has(body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page)){
+    width:100%!important;
+    height:100vh!important;
+    max-height:100vh!important;
+    overflow:hidden!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page){
+    width:100%!important;
+    height:100vh!important;
+    min-height:0!important;
+    max-height:100vh!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+    padding-bottom:var(--naga-desktop-bottom-nav-height)!important;
+    box-sizing:border-box!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page) > .top-header{
+    flex:0 0 69px!important;
+    height:69px!important;
+    min-height:69px!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page) > main{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    box-sizing:border-box!important;
+    scroll-padding-bottom:24px!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page) > .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    height:var(--naga-desktop-bottom-nav-height)!important;
+    min-height:var(--naga-desktop-bottom-nav-height)!important;
+    z-index:1000!important;
+  }
+}
+
+@media (max-width:768px){
+  html:has(body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page)){
+    width:100%!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page){
+    width:100%!important;
+    height:100dvh!important;
+    min-height:0!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+    padding-bottom:var(--mobile-bottom-nav-height,70px)!important;
+    box-sizing:border-box!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page) > .top-header{
+    flex:0 0 57px!important;
+    height:57px!important;
+    min-height:57px!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page) > main{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    box-sizing:border-box!important;
+    scroll-padding-bottom:20px!important;
+  }
+
+  body:is(.bonus-page,.deposit-page,.withdraw-page,.history-page,.downline-page,.leaderboard-page,.rebate-page,.setting-page,.game-detail-page,.forget-password-page,.login-page) > .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    height:var(--mobile-bottom-nav-height,70px)!important;
+    min-height:var(--mobile-bottom-nav-height,70px)!important;
+    z-index:1000!important;
+  }
+}
