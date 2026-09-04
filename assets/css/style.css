@@ -2255,10 +2255,50 @@ body{
 }
 
 
-/* ===== Website/template selector (header logo click) ===== */
-.top-header .logo-box,
+/* ===== Website/template selector (dedicated icon beside header logo) ===== */
 .top-header .site-logo{
     cursor:pointer;
+}
+
+.website-template-switch{
+    width:32px;
+    height:32px;
+    flex:0 0 32px;
+    margin-left:3px;
+    padding:0;
+    border:1px solid rgba(255,204,0,.78);
+    border-radius:8px;
+    background:rgba(0,0,0,.32);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease, border-color .15s ease;
+}
+.website-template-switch:hover{
+    background:rgba(255,204,0,.14);
+    border-color:#ffcc00;
+}
+.website-template-switch:active{
+    transform:scale(.95);
+}
+.website-template-switch[hidden]{
+    display:none !important;
+}
+.website-template-switch-icon{
+    width:16px;
+    height:16px;
+    display:grid;
+    grid-template-columns:repeat(2, 6px);
+    grid-template-rows:repeat(2, 6px);
+    gap:3px;
+}
+.website-template-switch-icon i{
+    display:block;
+    width:6px;
+    height:6px;
+    border:1.5px solid #ffcc00;
+    border-radius:1px;
 }
 
 .website-template-modal{

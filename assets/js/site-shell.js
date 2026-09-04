@@ -393,12 +393,36 @@
     overlay.setAttribute('aria-hidden', 'true');
   }
 
+  function ensureWebsiteTemplateSwitchButton(){
+    var header = document.querySelector('.top-header');
+    if(!header) return null;
+    var logoBox = header.querySelector('.logo-box');
+    if(!logoBox) return null;
+
+    var existing = logoBox.querySelector('.website-template-switch');
+    if(existing){
+      existing.hidden = !normaliseWebsiteTemplates().length;
+      return existing;
+    }
+
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'website-template-switch';
+    button.setAttribute('aria-label', 'Switch website template');
+    button.setAttribute('title', 'Switch website template');
+    button.innerHTML = '<span class="website-template-switch-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
+    button.hidden = !normaliseWebsiteTemplates().length;
+    logoBox.appendChild(button);
+    return button;
+  }
+
   function initWebsiteTemplateSelector(){
+    ensureWebsiteTemplateSwitchButton();
     // Delegated binding is intentional: BO layout customization can replace the
-    // header/logo after page load, and the replacement must keep this behavior.
+    // header after page load, and the replacement must keep this behavior.
     document.addEventListener('click', function(e){
-      var logo = e.target.closest && e.target.closest('.top-header .logo-box, .top-header .site-logo');
-      if(!logo) return;
+      var switchButton = e.target.closest && e.target.closest('.website-template-switch');
+      if(!switchButton) return;
       if(!normaliseWebsiteTemplates().length) return;
       e.preventDefault();
       e.stopPropagation();
@@ -406,6 +430,14 @@
     });
     document.addEventListener('keydown', function(e){
       if(e.key === 'Escape') closeWebsiteTemplateSelector();
+    });
+    document.addEventListener('naga:layout-sections-loaded', ensureWebsiteTemplateSwitchButton);
+    document.addEventListener('naga:site-shell-customized', ensureWebsiteTemplateSwitchButton);
+    document.addEventListener('naga:layout-section-applied', function(e){
+      if(!e || !e.detail || e.detail.sectionKey === 'frontend-header') ensureWebsiteTemplateSwitchButton();
+    });
+    document.addEventListener('naga:layout-section-restored', function(e){
+      if(!e || !e.detail || e.detail.sectionKey === 'frontend-header') ensureWebsiteTemplateSwitchButton();
     });
   }
 
@@ -568,20 +600,10 @@
 
   function bindMenu(){
     document.addEventListener('click', function(e){
-      // Header logo opens the website/template selector. This handler runs in
-      // capture phase, so it must open the selector itself instead of redirecting
-      // to index.html (the old redirect prevented the popup click handler below
-      // from ever receiving the event).
-      const logo = e.target.closest && e.target.closest('.top-header .site-logo, .top-header .logo-box, .top-header .mobile-style-logo');
+      // The main logo always returns to Home. Template switching is handled by
+      // the dedicated icon beside the logo, so the two actions never conflict.
+      const logo = e.target.closest && e.target.closest('.top-header .site-logo');
       if(logo){
-        if(normaliseWebsiteTemplates().length){
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation && e.stopImmediatePropagation();
-          openWebsiteTemplateSelector();
-          return;
-        }
-        // If no websites are configured, preserve the original home-logo action.
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation && e.stopImmediatePropagation();
@@ -839,6 +861,7 @@
     refreshShellBalance();
     translateShellScope(header);
     translateShellScope(panel);
+    ensureWebsiteTemplateSwitchButton();
     renderVipClaimReminder();
   }
 
