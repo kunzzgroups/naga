@@ -17,3 +17,6 @@
 }
 #mobileSideMenu .naga-a2hs-button[hidden]{display:none!important;}
 #mobileSideMenu .naga-a2hs-button .naga-a2hs-label{flex:1;min-width:0;}
+
+#mobileSideMenu .naga-a2hs-button .sidebar-item-icon{width:38px;flex:0 0 38px;margin:0;display:inline-flex;align-items:center;justify-content:center;font-size:24px;line-height:1;}
+#mobileSideMenu .naga-a2hs-button .sidebar-item-chevron{width:auto;flex:0 0 auto;margin-left:auto;margin-right:0;display:inline-flex;align-items:center;justify-content:center;font-size:22px;line-height:1;}

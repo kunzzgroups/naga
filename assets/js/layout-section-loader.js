@@ -444,6 +444,47 @@
     return template.innerHTML;
   }
 
+  // BO owns the sidebar markup, but icon/chevron presentation roles must stay
+  // independent. Preserve all BO classes and add semantic runtime classes only.
+  // This also makes future BO-added menu items work without requiring the saved
+  // Layout Section HTML to be migrated.
+  function normalizeSidebarItemRolesHtml(html, sectionKey) {
+    if (!html || sectionKey !== 'frontend-sidebar') return html;
+
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const list = template.content.querySelector('.mobile-menu-list');
+    if (!list) return template.innerHTML;
+
+    Array.from(list.children).forEach(function (item) {
+      if (!item || !item.matches || !item.matches('a,button')) return;
+      const directIcons = Array.from(item.children).filter(function (child) {
+        return child && child.tagName === 'I';
+      });
+      if (!directIcons.length) return;
+
+      let chevron = directIcons.find(function (icon) {
+        return icon.classList.contains('mobile-menu-arrow') ||
+          icon.classList.contains('sidebar-item-chevron') ||
+          icon.classList.contains('fa-chevron-right') ||
+          icon.classList.contains('fa-angle-right');
+      });
+      if (!chevron && directIcons.length > 1) chevron = directIcons[directIcons.length - 1];
+
+      directIcons.forEach(function (icon, index) {
+        if (icon === chevron) {
+          icon.classList.add('sidebar-item-chevron');
+          icon.classList.remove('sidebar-item-icon');
+        } else if (index === 0 || icon.classList.contains('mobile-menu-icon')) {
+          icon.classList.add('sidebar-item-icon');
+          icon.classList.remove('sidebar-item-chevron');
+        }
+      });
+    });
+
+    return template.innerHTML;
+  }
+
   function normalizeAuthImageHtml(html, sectionKey) {
     if (!html || (sectionKey !== 'frontend-header' && sectionKey !== 'frontend-sidebar')) return html;
 
@@ -633,6 +674,7 @@
 
   function applyHtml(target, html, sectionKey) {
     html = normalizeShellTextI18nHtml(html, sectionKey);
+    html = normalizeSidebarItemRolesHtml(html, sectionKey);
     html = normalizeAuthImageHtml(html, sectionKey);
     html = normalizeAuthPageHtml(html, sectionKey);
     if (!target || !html.trim()) return false;

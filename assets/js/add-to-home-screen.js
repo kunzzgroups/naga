@@ -199,7 +199,7 @@
     btn.id = 'nagaAddToHomeScreen';
     btn.type = 'button';
     btn.className = 'naga-a2hs-button';
-    btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button mobile-menu-icon" aria-hidden="true"></i><span class="naga-a2hs-label"></span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i>';
+    btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span class="naga-a2hs-label"></span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i>';
     btn.addEventListener('click', onInstallClick, {passive:false});
     var logout = list.querySelector('[data-member-logout],.mobile-menu-list-logout');
     if (logout) list.insertBefore(btn, logout); else list.appendChild(btn);

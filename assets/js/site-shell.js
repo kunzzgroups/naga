@@ -540,15 +540,15 @@
           <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>&nbsp;</span></div></div>
         </div>
         <div class="mobile-menu-list">
-          <a href="index.html"><i class="fa-solid fa-house mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_home">Home</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <a href="downline.html"><i class="fa-solid fa-users mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_downline">Downline</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <a href="vip.html" data-vip-menu><i class="fa-solid fa-crown mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_vip">VIP</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <a href="bonus.html"><i class="fa-solid fa-gift mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_bonus">Bonus</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <a href="spin.html"><i class="fa-solid fa-dharmachakra mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_spin">Spin</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <a href="leaderboard.html" data-leaderboard-menu style="display:none;"><i class="fa-solid fa-ranking-star mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_leaderboard">Leaderboard</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <a href="policies.html"><i class="fa-solid fa-shield-halved mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_compliance_policy">Compliance Policy</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <a href="chat.html"><i class="fa-solid fa-headset mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_live_chat">Live Chat</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
-          <button type="button" class="mobile-menu-list-logout" data-member-logout><i class="fa-solid fa-right-from-bracket mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_logout">Logout</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></button>
+          <a href="index.html"><i class="fa-solid fa-house mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_home">Home</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <a href="downline.html"><i class="fa-solid fa-users mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_downline">Downline</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <a href="vip.html" data-vip-menu><i class="fa-solid fa-crown mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_vip">VIP</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <a href="bonus.html"><i class="fa-solid fa-gift mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_bonus">Bonus</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <a href="spin.html"><i class="fa-solid fa-dharmachakra mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_spin">Spin</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <a href="leaderboard.html" data-leaderboard-menu style="display:none;"><i class="fa-solid fa-ranking-star mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_leaderboard">Leaderboard</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <a href="policies.html"><i class="fa-solid fa-shield-halved mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_compliance_policy">Compliance Policy</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <a href="chat.html"><i class="fa-solid fa-headset mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_live_chat">Live Chat</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
+          <button type="button" class="mobile-menu-list-logout" data-member-logout><i class="fa-solid fa-right-from-bracket mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_logout">Logout</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></button>
         </div>
         <div class="mobile-menu-lang" id="sideLangBtn"><span>🌐 简体中文</span><span>CN ›</span></div>
         <div class="mobile-menu-version"><span data-i18n="side_version">Version:</span> 1.1.0</div>
@@ -560,7 +560,7 @@
     translateShellScope(overlay);
   }
 
-  // <a href="rebate.html"><i class="fa-solid fa-coins mobile-menu-icon" aria-hidden="true"></i><span data-i18n="side_rebate">Rebate</span><i class="fa-solid fa-chevron-right mobile-menu-arrow" aria-hidden="true"></i></a>
+  // <a href="rebate.html"><i class="fa-solid fa-coins mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_rebate">Rebate</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
 
   // Ensure sidebar display controls are available on every page that uses the
   // shared shell. Historically only index.html loaded frontend-display.js, so

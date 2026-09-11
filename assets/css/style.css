@@ -11712,23 +11712,36 @@ html.page-leaving body{
   }
 }
 
-/* Mobile sidebar: standardized Font Awesome <i> icons */
-.mobile-menu-list .mobile-menu-icon{
+/* Mobile sidebar: left icon and right chevron are independent roles.
+   BO may keep the legacy mobile-menu-* classes; layout-section-loader adds the
+   sidebar-item-* roles at runtime without changing BO's saved HTML. */
+.mobile-menu-list .sidebar-item-icon,
+.mobile-menu-list .mobile-menu-icon:not(.sidebar-item-chevron){
     width:38px;
     flex:0 0 38px;
     display:inline-flex;
     align-items:center;
     justify-content:center;
+    margin-left:0;
+    margin-right:0;
     font-size:24px;
     line-height:1;
     color:#ffffff;
     text-align:center;
 }
-.mobile-menu-list .mobile-menu-arrow{
+.mobile-menu-list .sidebar-item-chevron,
+.mobile-menu-list .mobile-menu-arrow:not(.sidebar-item-icon){
+    width:auto;
     margin-left:auto;
+    margin-right:0;
     flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
     font-size:22px;
+    line-height:1;
     color:rgba(255,255,255,.45);
+    text-align:center;
 }
 .mobile-menu-list a span,
 .mobile-menu-list button span{
@@ -15446,5 +15459,81 @@ body.custom-generated-page .bottom-nav{
     height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;
     overflow-x:hidden!important;overflow-y:auto!important;contain:paint!important;clip-path:inset(0)!important;
     overscroll-behavior-y:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;
+  }
+}
+
+
+/* ===== v1.1.25: mobile provider/direct-game scrollport stops above bottom nav =====
+   Provider-first (ALL/HOT/LIVE/etc.) used native document scrolling in v1.0.98/99.
+   Because the bottom nav is transparent/fixed, cards could visibly paint behind it.
+   Keep the whole home page inside 100dvh, give the nav its own flex row, and scroll
+   only the main lobby row. SLOT's dedicated provider rail layout is untouched. */
+@media (max-width:768px){
+  html:has(body.home-page .category-provider-cards),
+  html:has(body.home-page .direct-games-list),
+  body.home-page:has(.category-provider-cards),
+  body.home-page:has(.direct-games-list){
+    width:100%!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+  }
+
+  body.home-page:has(.category-provider-cards),
+  body.home-page:has(.direct-games-list){
+    display:flex!important;
+    flex-direction:column!important;
+    padding-bottom:0!important;
+    touch-action:auto!important;
+  }
+
+  body.home-page:has(.category-provider-cards) .top-header,
+  body.home-page:has(.direct-games-list) .top-header,
+  body.home-page:has(.category-provider-cards) .naga-marquee,
+  body.home-page:has(.direct-games-list) .naga-marquee{
+    flex:0 0 auto!important;
+  }
+
+  body.home-page:has(.category-provider-cards) .main-layout,
+  body.home-page:has(.direct-games-list) .main-layout{
+    flex:1 1 0!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-y!important;
+    contain:paint!important;
+  }
+
+  body.home-page:has(.category-provider-cards) .center-content,
+  body.home-page:has(.category-provider-cards) .game-grid,
+  body.home-page:has(.category-provider-cards) .category-provider-section,
+  body.home-page:has(.category-provider-cards) .category-mixed-shell,
+  body.home-page:has(.category-provider-cards) .category-provider-cards,
+  body.home-page:has(.direct-games-list) .center-content,
+  body.home-page:has(.direct-games-list) .game-grid,
+  body.home-page:has(.direct-games-list) .direct-games-list{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.home-page:has(.category-provider-cards) .bottom-nav,
+  body.home-page:has(.direct-games-list) .bottom-nav{
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    z-index:1000!important;
+    flex:0 0 var(--mobile-bottom-nav-height,70px)!important;
+    height:var(--mobile-bottom-nav-height,70px)!important;
+    min-height:var(--mobile-bottom-nav-height,70px)!important;
   }
 }
