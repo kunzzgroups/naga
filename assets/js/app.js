@@ -328,10 +328,26 @@ function providerRuleForCode(code){
 function providersForActiveCategory(){
   const activeId = String(activeCategoryId || '').trim();
   if(!activeId) return providers;
-  const configuredCodes = categoryProviderRules().map(r => String(r.providerCode || '').trim().toUpperCase()).filter(Boolean);
-  if(configuredCodes.length) return providers.filter(p => configuredCodes.includes(providerCodeOf(p)));
+
+  const configuredCodes = categoryProviderRules()
+    .map(r => String(r.providerCode || '').trim().toUpperCase())
+    .filter(Boolean);
+
+  // HOT GAME is a curated landing and must follow its explicit BO provider
+  // selection exactly. Normal categories are different: Provider Management's
+  // "Provider Categories" assignment is also authoritative. Merge both sources
+  // so a provider-level integration with no GAME_LIST rows (WBET/other sports
+  // providers) appears immediately after it is assigned to SPORT/LIVE/OTHER,
+  // without requiring the category to be opened and re-saved afterwards.
+  if(activeCategoryTypeKey() === 'HOT' && configuredCodes.length){
+    return providers.filter(p => configuredCodes.includes(providerCodeOf(p)));
+  }
+
+  const configuredSet = new Set(configuredCodes);
   const byIds = providers.filter(p => providerCategoryIdsOf(p).includes(activeId));
-  if(byIds.length) return byIds;
+  byIds.forEach(p => configuredSet.add(providerCodeOf(p)));
+  if(configuredSet.size) return providers.filter(p => configuredSet.has(providerCodeOf(p)));
+
   const key = activeCategoryTypeKey();
   return key ? providers.filter(p => providerTypesOf(p).includes(key)) : providers;
 }
@@ -736,6 +752,24 @@ function openProviderFromLanding(providerCode, games){
   if(!cleanCode) return;
   const providerGames = gamesForProviderFromCategoryList(games, cleanCode);
   const allProviderGames = allCatalogGamesForProvider(cleanCode);
+
+  // A provider can be launchable without exposing a game-list API at all.
+  // WBET is one example: the backend already supports provider-level SPORTS
+  // launch using only providerCode. Treat every zero-game provider generically
+  // the same way instead of drilling into an empty game screen.
+  if(allProviderGames.length === 0){
+    const provider = providerForCode(cleanCode);
+    const providerName = providerNameOf(provider);
+    if(window.NAGA_PROVIDER_LAUNCH && typeof window.NAGA_PROVIDER_LAUNCH.launch === 'function'){
+      Promise.resolve(window.NAGA_PROVIDER_LAUNCH.launch(
+        { providerCode: cleanCode, name: providerName },
+        { providerCode: cleanCode, transferAmount: 0, gameName: providerName }
+      )).catch(err => {
+        if(window.NAGA_MODAL) window.NAGA_MODAL.error((err && err.message) || 'Launch provider failed.', 'Launch Game');
+      });
+      return;
+    }
+  }
 
   // Direct launch only when the WHOLE provider has exactly one active game.
   // Do not use the selected category count for this decision.
