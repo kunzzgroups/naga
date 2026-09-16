@@ -982,8 +982,14 @@
     }catch(e){}
   }
 
-  window.addEventListener('pagehide', trySettleOnPageClose);
-  window.addEventListener('beforeunload', trySettleOnPageClose);
+  // Do NOT explicitly settle an active provider wallet just because the Naga
+  // lobby document is unloading. Some providers (including GGSOFT) can cause
+  // opener/lobby navigation as part of their launch flow while the separate
+  // provider game tab is still alive. Treating pagehide/beforeunload as a real
+  // game exit caused BALANCE -> WITHDRAW only seconds after a successful launch.
+  //
+  // Real exits are still handled by the provider-tab close/return monitor above,
+  // and backend stale-session recovery remains the final safety net.
   // Do not settle on visibilitychange. Opening/focusing the provider tab makes the
   // lobby page hidden even though the game is still active, which previously caused
   // premature exit requests and inconsistent delayed balance refreshes.
