@@ -641,6 +641,18 @@
     }
     try{ reservedProviderTab.opener = window; }catch(e){}
 
+    // The popup has to be reserved synchronously while the Confirm click still owns
+    // browser user activation. Do not leave that reserved tab as a blank white page
+    // while the backend creates the provider session / transfers the wallet. Paint a
+    // tiny self-contained loading screen immediately; directLaunch() replaces this
+    // document with the real provider URL as soon as the launch response is ready.
+    try{
+      const loadingDoc = reservedProviderTab.document;
+      loadingDoc.open();
+      loadingDoc.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Launching Game...</title><style>html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center;background:#071018;color:#fff;font-family:Arial,Helvetica,sans-serif}.naga-launch{width:min(86vw,420px);text-align:center}.naga-spinner{width:48px;height:48px;margin:0 auto 22px;border:4px solid rgba(255,255,255,.16);border-top-color:#18e4e8;border-radius:50%;animation:nagaSpin .8s linear infinite}.naga-title{font-size:20px;font-weight:700;letter-spacing:.2px}.naga-text{margin-top:10px;color:#aebbc5;font-size:14px;line-height:1.5}@keyframes nagaSpin{to{transform:rotate(360deg)}}</style></head><body><div class="naga-launch"><div class="naga-spinner"></div><div class="naga-title">Launching game...</div><div class="naga-text">Please wait while we connect you to the game provider.</div></div></body></html>');
+      loadingDoc.close();
+    }catch(e){}
+
     if(!(await ensureProviderCanLaunch(true))){
       try{ reservedProviderTab.close(); }catch(e){}
       return;
