@@ -621,13 +621,30 @@
       setError(promotionState.message);
       return;
     }
-    if(!(await ensureProviderCanLaunch(true))) return;
     const amountValue = modal.querySelector('[data-provider-transfer-amount]').value;
     const amount = Number(amountValue || 0);
     if(isNaN(amount) || amount < 0){ setError('Please enter a valid amount.'); return; }
     // Compare MYR in cents, not raw floating-point numbers. Equal displayed
     // values (for example RM 67.66 balance and RM 67.66 transfer) must pass.
     if(moneyCents(amount) > moneyCents(walletBalanceCache)){ setError('Insufficient main wallet balance.'); return; }
+
+    // Reserve the provider tab synchronously from the Confirm button click.
+    // Waiting for ensure/launch/deposit HTTP requests before window.open() loses the
+    // browser's user-activation permission on Chrome/Safari and the old fallback then
+    // redirected the Naga lobby itself to the provider. Once the lobby disappeared,
+    // heartbeat/close monitoring stopped and money only returned later via stale-session
+    // recovery. Keeping this blank tab reserved preserves the lobby and its heartbeat.
+    const reservedProviderTab = window.open('about:blank', '_blank');
+    if(!reservedProviderTab){
+      setError('Game window was blocked. Please allow pop-ups for this site and try again. No funds were transferred.');
+      return;
+    }
+    try{ reservedProviderTab.opener = window; }catch(e){}
+
+    if(!(await ensureProviderCanLaunch(true))){
+      try{ reservedProviderTab.close(); }catch(e){}
+      return;
+    }
 
     const payload = Object.assign({}, pendingLaunch);
     delete payload._display;
@@ -640,8 +657,9 @@
     const oldText = btn.textContent;
     btn.textContent = 'Transferring...';
     try{
-      await directLaunch(payload);
+      await directLaunch(payload, reservedProviderTab);
     }catch(err){
+      try{ if(reservedProviderTab && !reservedProviderTab.closed) reservedProviderTab.close(); }catch(e){}
       btn.disabled = false;
       btn.textContent = oldText;
       const launchError = cleanProviderErrorMessage(err && err.message ? err.message : err, 'Launch game failed.');
@@ -819,7 +837,7 @@
     }, 10000);
   }
 
-  async function directLaunch(payload){
+  async function directLaunch(payload, reservedProviderTab){
     const token = getToken();
     if(!token){ goLogin(); return null; }
     if(!(await ensureProviderCanLaunch(false))) throw new Error(getActiveProviderSessionId() ? ACTIVE_GAME_MESSAGE : LAUNCHING_GAME_MESSAGE);
@@ -855,15 +873,21 @@
       // instead of provider-return.html), provider-launch.js can identify that this is
       // the returned game tab and immediately settle/clear the active session.
       const providerWindowName = PROVIDER_GAME_WINDOW_NAME_PREFIX + String(activeSession.sessionId || Date.now());
-      const gameTab = window.open(launchUrl, providerWindowName);
-      if(gameTab){
-        try{ gameTab.focus(); }catch(e){}
-        startProviderMonitor(activeSession.sessionId, activeSession.providerCode || payload.providerCode || '', gameTab);
-      }else{
-        // New tab blocked fallback: redirect same window. The saved session still
-        // prevents a second game from launching in another tab.
-        window.location.href = launchUrl;
+      const gameTab = reservedProviderTab && !reservedProviderTab.closed ? reservedProviderTab : null;
+      if(!gameTab){
+        // Never redirect the Naga lobby to a transfer-wallet provider. Losing the lobby
+        // also loses heartbeat and popup-close detection, which makes the player's funds
+        // appear missing until backend stale recovery runs. If a reserved tab somehow
+        // disappeared after launch, immediately settle the just-opened provider session.
+        try{
+          await exitProviderGame({ sessionId: activeSession.sessionId, providerCode: activeSession.providerCode || payload.providerCode || '', transferBackAll: true });
+        }catch(e){}
+        throw new Error('Game window was closed or blocked. Your provider balance has been returned. Please allow pop-ups and try again.');
       }
+      try{ gameTab.name = providerWindowName; }catch(e){}
+      try{ gameTab.location.replace(launchUrl); }catch(e){ gameTab.location.href = launchUrl; }
+      try{ gameTab.focus(); }catch(e){}
+      startProviderMonitor(activeSession.sessionId, activeSession.providerCode || payload.providerCode || '', gameTab);
       return launchUrl;
     }finally{
       providerLaunchInProgress = false;
