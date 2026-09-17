@@ -15537,3 +15537,11 @@ body.custom-generated-page .bottom-nav{
     min-height:var(--mobile-bottom-nav-height,70px)!important;
   }
 }
+
+
+/* Brand-scoped mobile homepage slot (content is supplied by BO Layout Section).
+   Hidden by default so existing brands and desktop layouts are unchanged. */
+.home-mobile-before-category-slot { display: none; }
+@media (max-width: 767.98px) {
+  .home-mobile-before-category-slot:not(:empty) { display: block; width: 100%; }
+}
