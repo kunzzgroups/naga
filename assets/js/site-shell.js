@@ -956,6 +956,10 @@
     window.addEventListener('storage', refreshHeaderAuth);
     document.addEventListener('click', function(e){
       if(e.target.closest && e.target.closest('[data-member-logout]')) setTimeout(refreshHeaderAuth, 80);
+      if(e.target.closest && e.target.closest('[data-refresh-main-wallet]')) {
+        e.preventDefault();
+        refreshShellBalance();
+      }
     });
     refreshHeaderAuth();
     scheduleBalanceRefresh();
