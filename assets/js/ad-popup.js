@@ -44,10 +44,10 @@ function build(cfg){
 
   var buttonText=String(cfg.buttonText||'').trim();
   var url=validLink(cfg.linkUrl);
-  var hasCopy=!!(title||message||(url&&buttonText));
+  var hasCopy=!!(title||message||buttonText);
 
   var overlay=document.createElement('div');overlay.className='naga-ad-popup-overlay';overlay.setAttribute('role','presentation');
-  var popup=document.createElement('div');popup.className='naga-ad-popup'+(hasImage&&!hasCopy?' naga-ad-popup-image-only':'');popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-label',title||'Advertisement');
+  var popup=document.createElement('div');popup.className='naga-ad-popup'+(hasImage&&!hasCopy?' naga-ad-popup-image-only':(hasImage&&hasCopy?' naga-ad-popup-with-copy':''));popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-label',title||'Advertisement');
   var close=document.createElement('button');close.type='button';close.className='naga-ad-popup-close';close.setAttribute('aria-label','Close advertisement');close.innerHTML='&times;';
   popup.appendChild(close);
 
@@ -60,7 +60,10 @@ function build(cfg){
     var copy=document.createElement('div');copy.className='naga-ad-popup-copy';
     if(title){var h=document.createElement('h2');h.className='naga-ad-popup-title';h.textContent=title;copy.appendChild(h);}
     if(message){var p=document.createElement('p');p.className='naga-ad-popup-message';p.textContent=message;copy.appendChild(p);}
-    if(url&&buttonText){var a=document.createElement('a');a.className='naga-ad-popup-action';a.href=url;a.textContent=buttonText;copy.appendChild(a);}
+    if(buttonText){
+      if(url){var a=document.createElement('a');a.className='naga-ad-popup-action';a.href=url;a.textContent=buttonText;copy.appendChild(a);}
+      else{var action=document.createElement('button');action.type='button';action.className='naga-ad-popup-action';action.textContent=buttonText;action.setAttribute('data-ad-dismiss','1');copy.appendChild(action);}
+    }
     popup.appendChild(copy);
   }
   overlay.appendChild(popup);document.body.appendChild(overlay);document.body.classList.add('naga-ad-popup-lock');
@@ -71,6 +74,7 @@ function build(cfg){
     setTimeout(function(){if(overlay.parentNode)overlay.parentNode.removeChild(overlay);},220);
   }
   close.addEventListener('click',dismiss);
+  var dismissAction=popup.querySelector('[data-ad-dismiss="1"]');if(dismissAction)dismissAction.addEventListener('click',dismiss);
   overlay.addEventListener('click',function(e){if(e.target===overlay)dismiss();});
   document.addEventListener('keydown',function escHandler(e){if(e.key==='Escape'&&!closed){dismiss();document.removeEventListener('keydown',escHandler);}});
   requestAnimationFrame(function(){requestAnimationFrame(function(){overlay.classList.add('is-open');close.focus({preventScroll:true});});});
