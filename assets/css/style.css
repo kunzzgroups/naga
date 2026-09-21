@@ -15545,3 +15545,11 @@ body.custom-generated-page .bottom-nav{
 @media (max-width: 767.98px) {
   .home-mobile-before-category-slot:not(:empty) { display: block; width: 100%; }
 }
+
+
+/* ===== v1.1.27: BO home-header persistent actions =====
+   Partnership belongs to the BO Layout Section and must remain visible for
+   guests and logged-in members. Guest Login/Register groups remain auth-only. */
+body.member-logged-in .top-auth-actions.top-persistent-actions {
+  display:flex!important;
+}
