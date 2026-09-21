@@ -473,6 +473,12 @@
 
   function refreshHeaderAuth(){
     var logged = isLoggedIn();
+    // Brand 3 uses the BO-customized compact header: once logged in, keep the
+    // Partnership shortcut but do not show the wallet/balance or Logout controls.
+    // Other brands retain the existing member header unchanged.
+    var brandId = String((document.documentElement && document.documentElement.dataset.brandId) ||
+      (window.NAGA_BRAND && window.NAGA_BRAND.data && window.NAGA_BRAND.data.id) || '');
+    var isBrand3 = brandId === '3';
     document.body.classList.toggle('member-logged-in', logged);
 
     // Apply visibility directly as well as through CSS. The BO layout loader can
@@ -492,8 +498,9 @@
       el.setAttribute('aria-hidden', 'false');
     });
     document.querySelectorAll('.top-member-actions').forEach(function(el){
-      el.style.setProperty('display', logged ? 'flex' : 'none', 'important');
-      el.setAttribute('aria-hidden', logged ? 'false' : 'true');
+      var showMemberHeader = logged && !isBrand3;
+      el.style.setProperty('display', showMemberHeader ? 'flex' : 'none', 'important');
+      el.setAttribute('aria-hidden', showMemberHeader ? 'false' : 'true');
     });
 
     document.querySelectorAll('.mobile-menu-member').forEach(function(el){
@@ -541,6 +548,9 @@
       });
     }).observe(header, {childList:true});
     window.addEventListener('pageshow', refreshHeaderAuth);
+    // Brand bootstrap is asynchronous. Re-apply header visibility as soon as the
+    // resolved brand id is available so Brand 3 never inherits another brand's UI.
+    window.addEventListener('naga:brand-ready', refreshHeaderAuth);
     window.addEventListener('focus', refreshHeaderAuth);
     window.addEventListener('storage', function(e){
       if(!e || e.key === 'member_token' || e.key === 'member_info') refreshHeaderAuth();
