@@ -494,6 +494,21 @@
     });
     document.querySelectorAll('.mobile-menu-auth').forEach(function(el){
       el.style.display = logged ? 'none' : '';
+      el.setAttribute('aria-hidden', logged ? 'true' : 'false');
+    });
+
+    // BO layout sections can provide a custom mobile account panel. Keep its
+    // guest/member controls in sync with the same member session used by the
+    // header and sidebar, even after the BO layout HTML is replaced at runtime.
+    document.querySelectorAll('.brand-mobile-panel-auth').forEach(function(el){
+      el.style.setProperty('display', logged ? 'none' : 'flex', 'important');
+      el.setAttribute('aria-hidden', logged ? 'true' : 'false');
+    });
+    // Deposit/Withdraw must remain visible for both guests and logged-in members.
+    // Only Login/Register is conditional on the member session.
+    document.querySelectorAll('.brand-mobile-panel-actions').forEach(function(el){
+      el.style.setProperty('display', 'flex', 'important');
+      el.setAttribute('aria-hidden', 'false');
     });
     if(!logged){
       document.querySelectorAll('#mobileSideMenu [data-main-wallet-balance]').forEach(function(el){
