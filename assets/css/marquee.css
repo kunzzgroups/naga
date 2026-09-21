@@ -28,3 +28,21 @@
     max-height:calc(100dvh - 57px - 57px - var(--naga-marquee-height,30px))!important;
   }
 }
+
+/* Live Chat uses a fixed header/content viewport. Keep the global marquee in its
+   own fixed row below the header and reserve the same row in the chat viewport. */
+body.chat-page .naga-marquee.is-visible{
+  position:fixed!important;
+  left:0!important;
+  right:0!important;
+  top:var(--chat-header-h,66px)!important;
+  z-index:79!important;
+}
+body.chat-page:has(.naga-marquee.is-visible) .chat-main{
+  top:calc(var(--chat-header-h,66px) + var(--naga-marquee-height,34px))!important;
+}
+@media(max-width:768px){
+  body.chat-page:has(.naga-marquee.is-visible) .chat-main{
+    top:calc(var(--chat-header-h,66px) + var(--naga-marquee-height,30px))!important;
+  }
+}

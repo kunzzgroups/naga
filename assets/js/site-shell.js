@@ -473,34 +473,17 @@
 
   function refreshHeaderAuth(){
     var logged = isLoggedIn();
-    // Brand 3 uses the BO-customized compact header: once logged in, keep the
-    // Partnership shortcut but do not show the wallet/balance or Logout controls.
-    // Other brands retain the existing member header unchanged.
-    var brandId = String((document.documentElement && document.documentElement.dataset.brandId) ||
-      (window.NAGA_BRAND && window.NAGA_BRAND.data && window.NAGA_BRAND.data.id) || '');
-    var isBrand3 = brandId === '3';
     document.body.classList.toggle('member-logged-in', logged);
 
     // Apply visibility directly as well as through CSS. The BO layout loader can
     // replace the header after initial render, especially on iPhone Safari.
     document.querySelectorAll('.top-auth-actions').forEach(function(el){
-      // Partnership is a public shortcut and must stay visible for both guests
-      // and logged-in members. Only auth groups that actually contain the
-      // Login/Register controls are hidden after login.
-      var hasPartnership = !!el.querySelector('.top-partnership-btn');
-      var hasLoginRegister = !!el.querySelector('.top-login-btn, .top-register-btn');
-      var hideAuthGroup = logged && hasLoginRegister && !hasPartnership;
-      el.style.setProperty('display', hideAuthGroup ? 'none' : 'flex', 'important');
-      el.setAttribute('aria-hidden', hideAuthGroup ? 'true' : 'false');
-    });
-    document.querySelectorAll('.top-partnership-btn').forEach(function(el){
-      el.style.removeProperty('display');
-      el.setAttribute('aria-hidden', 'false');
+      el.style.setProperty('display', logged ? 'none' : 'flex', 'important');
+      el.setAttribute('aria-hidden', logged ? 'true' : 'false');
     });
     document.querySelectorAll('.top-member-actions').forEach(function(el){
-      var showMemberHeader = logged && !isBrand3;
-      el.style.setProperty('display', showMemberHeader ? 'flex' : 'none', 'important');
-      el.setAttribute('aria-hidden', showMemberHeader ? 'false' : 'true');
+      el.style.setProperty('display', logged ? 'flex' : 'none', 'important');
+      el.setAttribute('aria-hidden', logged ? 'false' : 'true');
     });
 
     document.querySelectorAll('.mobile-menu-member').forEach(function(el){
@@ -548,9 +531,6 @@
       });
     }).observe(header, {childList:true});
     window.addEventListener('pageshow', refreshHeaderAuth);
-    // Brand bootstrap is asynchronous. Re-apply header visibility as soon as the
-    // resolved brand id is available so Brand 3 never inherits another brand's UI.
-    window.addEventListener('naga:brand-ready', refreshHeaderAuth);
     window.addEventListener('focus', refreshHeaderAuth);
     window.addEventListener('storage', function(e){
       if(!e || e.key === 'member_token' || e.key === 'member_info') refreshHeaderAuth();
