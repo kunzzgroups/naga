@@ -478,8 +478,18 @@
     // Apply visibility directly as well as through CSS. The BO layout loader can
     // replace the header after initial render, especially on iPhone Safari.
     document.querySelectorAll('.top-auth-actions').forEach(function(el){
-      el.style.setProperty('display', logged ? 'none' : 'flex', 'important');
-      el.setAttribute('aria-hidden', logged ? 'true' : 'false');
+      // Partnership is a public shortcut and must stay visible for both guests
+      // and logged-in members. Only auth groups that actually contain the
+      // Login/Register controls are hidden after login.
+      var hasPartnership = !!el.querySelector('.top-partnership-btn');
+      var hasLoginRegister = !!el.querySelector('.top-login-btn, .top-register-btn');
+      var hideAuthGroup = logged && hasLoginRegister && !hasPartnership;
+      el.style.setProperty('display', hideAuthGroup ? 'none' : 'flex', 'important');
+      el.setAttribute('aria-hidden', hideAuthGroup ? 'true' : 'false');
+    });
+    document.querySelectorAll('.top-partnership-btn').forEach(function(el){
+      el.style.removeProperty('display');
+      el.setAttribute('aria-hidden', 'false');
     });
     document.querySelectorAll('.top-member-actions').forEach(function(el){
       el.style.setProperty('display', logged ? 'flex' : 'none', 'important');
