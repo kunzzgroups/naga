@@ -399,21 +399,13 @@
     var logoBox = header.querySelector('.logo-box');
     if(!logoBox) return null;
 
+    // The template-switch control is owned by the BO frontend-header layout.
+    // Do not create it in JavaScript: removing it in BO must remove it from the
+    // frontend, while adding the markup back must restore the existing behavior.
     var existing = logoBox.querySelector('.website-template-switch');
-    if(existing){
-      existing.hidden = !normaliseWebsiteTemplates().length;
-      return existing;
-    }
-
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'website-template-switch';
-    button.setAttribute('aria-label', 'Switch website template');
-    button.setAttribute('title', 'Switch website template');
-    button.innerHTML = '<span class="website-template-switch-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
-    button.hidden = !normaliseWebsiteTemplates().length;
-    logoBox.appendChild(button);
-    return button;
+    if(!existing) return null;
+    existing.hidden = !normaliseWebsiteTemplates().length;
+    return existing;
   }
 
   function initWebsiteTemplateSelector(){
