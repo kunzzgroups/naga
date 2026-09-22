@@ -297,11 +297,22 @@
     var map = {
       logoUrl:'logo', faviconUrl:'favicon', faviconUrl2:'favicon2', faviconUrl3:'favicon3', pageBackgroundUrl:'background',
       referralUrl:'referral', shareUrl:'share', downlineUrl:'downline', copylinkUrl:'copylink',
-      loginUrl:'login', registerUrl:'register', depositUrl:'deposit', withdrawUrl:'withdraw', refreshUrl:'refresh',
+      loginUrl:'login', registerUrl:'register', mobileLoginUrl:'mobileLogin', mobileRegisterUrl:'mobileRegister', depositUrl:'deposit', withdrawUrl:'withdraw', mobileDepositUrl:'mobileDeposit', mobileWithdrawUrl:'mobileWithdraw', refreshUrl:'refresh',
       homeUrl:'home', historyUrl:'history', bonusUrl:'bonus', livechatUrl:'livechat', settingUrl:'setting', providerAllUrl:'providerAll'
     };
     var key = map[field] || field.replace(/Url$/, '');
     return String(versionData[key] || '').trim();
+  }
+
+  function viewportAssetField(field){
+    if(!isMobileViewport()) return field;
+    var mobileFields = {
+      loginUrl: 'mobileLoginUrl',
+      registerUrl: 'mobileRegisterUrl',
+      depositUrl: 'mobileDepositUrl',
+      withdrawUrl: 'mobileWithdrawUrl'
+    };
+    return mobileFields[field] || field;
   }
 
   function applyImageTranslations(data, versionData){
@@ -311,8 +322,12 @@
     document.querySelectorAll('img[src*="assets/custom/images/"], input[type="image"][src*="assets/custom/images/"], img[data-default-custom-src], input[type="image"][data-default-custom-src]').forEach(function(el){
       var fallback = defaultSrc(el, 'src');
       var field = el.getAttribute('data-custom-asset-src-field') || fieldFromUrl(fallback);
+      var viewportField = viewportAssetField(field);
+      // Mobile-specific auth/wallet images are optional and intentionally shared
+      // across languages. When absent, retain the existing desktop/language asset.
       var translated = resolveImageValue(getTranslatedValue(data, field));
-      var boDefault = resolveImageValue(versionAssetValue(versionData, field));
+      var mobileDefault = viewportField !== field ? resolveImageValue(versionAssetValue(versionData, viewportField)) : '';
+      var boDefault = mobileDefault || resolveImageValue(versionAssetValue(versionData, field));
       // Never let a secondary brand silently fall back to the cloned Brand 1
       // /assets/custom/images file. Once Spring tells us the resolved brand id,
       // the conventional filename is fetched from that brand's central storage.
