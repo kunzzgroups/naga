@@ -1,0 +1,4 @@
+.tr-main{max-width:1100px;margin:0 auto;padding:110px 16px 40px}
+[data-layout-section="topup-reward-preview"][hidden]{display:none!important}
+.topup-reward-disabled [data-layout-section="topup-reward-preview"]{display:none!important}
+@media(max-width:650px){.tr-main{padding:90px 10px 25px}}

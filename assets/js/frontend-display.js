@@ -9,6 +9,7 @@
    * following refresh disappear.
    */
   const LEADERBOARD_STORAGE_KEY = 'naga_leaderboard_enabled';
+  const TOPUP_REWARD_STORAGE_KEY = 'naga_topup_reward_enabled';
 
   function normalizeEnabled(value, defaultValue){
     if(value === undefined || value === null || value === '') return defaultValue !== false;
@@ -46,6 +47,10 @@
     ];
     const value = candidates.find(v => v !== undefined && v !== null);
     return normalizeEnabled(value, true);
+  }
+
+  function extractTopupRewardEnabled(payload){
+    const data=unwrapPayload(payload); const value=[data.topupRewardEnabled,data.topup_reward_enabled].find(v=>v!==undefined&&v!==null); return normalizeEnabled(value,false);
   }
 
   function extractVipSidebarEnabled(payload){
@@ -118,6 +123,10 @@
     }));
   }
 
+  function applyTopupReward(enabled, source){
+    const isEnabled=enabled===true; window.NAGA_TOPUP_REWARD_ENABLED=isEnabled; document.documentElement.classList.toggle('topup-reward-disabled',!isEnabled); if(document.body)document.body.classList.toggle('topup-reward-disabled',!isEnabled); document.querySelectorAll('[data-topup-reward-menu]').forEach(el=>{el.hidden=!isEnabled;if(isEnabled)el.style.removeProperty('display');else el.style.display='none';el.setAttribute('aria-hidden',isEnabled?'false':'true');}); setStorage(TOPUP_REWARD_STORAGE_KEY,isEnabled); document.dispatchEvent(new CustomEvent('naga:topup-reward-visibility',{detail:{enabled:isEnabled,source:source||'unknown'}}));
+  }
+
   function applyVipSidebar(enabled, source){
     const isEnabled = enabled !== false;
     window.NAGA_VIP_SIDEBAR_ENABLED = isEnabled;
@@ -134,6 +143,7 @@
   function applySettings(payload, source){
     applyHomeBonus(extractHomeBonusEnabled(payload), source);
     applyLeaderboard(extractLeaderboardEnabled(payload), source);
+    applyTopupReward(extractTopupRewardEnabled(payload), source);
     applyVipSidebar(extractVipSidebarEnabled(payload), source);
   }
 
@@ -207,6 +217,7 @@
          */
         console.warn('Frontend display setting load failed; preserving current display state.', error);
         applyLeaderboard(cachedLeaderboard(), 'cache-fallback');
+        applyTopupReward(getStorage(TOPUP_REWARD_STORAGE_KEY,false),'cache-fallback');
 
         // Internal pages may initialize before brand/config bootstrapping is fully
         // ready. Retry instead of permanently leaving VIP at its default visible
@@ -232,6 +243,7 @@
       window.NAGA_LEADERBOARD_ENABLED !== undefined ? window.NAGA_LEADERBOARD_ENABLED : cachedLeaderboard(),
       'dom-reapply'
     );
+    applyTopupReward(window.NAGA_TOPUP_REWARD_ENABLED!==undefined?window.NAGA_TOPUP_REWARD_ENABLED:getStorage(TOPUP_REWARD_STORAGE_KEY,false),'dom-reapply');
     if(window.NAGA_VIP_SIDEBAR_ENABLED !== undefined) applyVipSidebar(window.NAGA_VIP_SIDEBAR_ENABLED, 'dom-reapply');
   }
 
@@ -242,6 +254,7 @@
   function init(){
     /* Home Bonus intentionally has NO cached/predefined visibility decision here. */
     applyLeaderboard(cachedLeaderboard(), 'initial-cache');
+    applyTopupReward(getStorage(TOPUP_REWARD_STORAGE_KEY,false),'initial-cache');
     refresh({force:true});
   }
 
@@ -256,6 +269,7 @@
     applySettings:applySettings,
     applyHomeBonus:applyHomeBonus,
     applyLeaderboard:applyLeaderboard,
+    applyTopupReward:applyTopupReward,
     applyVipSidebar:applyVipSidebar,
     reapplySidebarVisibility:reapplyVisibility
   };
