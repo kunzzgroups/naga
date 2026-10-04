@@ -22,6 +22,7 @@
   var authLanguageReady = !isAuthPage || !!(window.I18N && window.I18N.ready);
   var marqueeReady = !!window.__NAGA_MARQUEE_READY__;
   var socialReady = !isHomeLobby || !!window.__NAGA_SOCIAL_LINKS_READY__;
+  var topupPreviewReady = !isHomeLobby || !!window.__NAGA_TOPUP_PREVIEW_READY__;
   var profileReady = !isSettingPage || !!window.__NAGA_PROFILE_READY__;
   var vipReady = !isVipPage || !!window.__NAGA_VIP_READY__;
   var bonusReady = !isBonusPage || !!window.__NAGA_BONUS_READY__;
@@ -84,7 +85,7 @@
 
   function tryReveal() {
     // Animation is intentionally not part of this gate.
-    if (domReady && customAssetsReady && lobbyReady && criticalLayoutReady && authLayoutReady && authLanguageReady && marqueeReady && socialReady && headerReady && profileReady && vipReady && bonusReady && walletReady) revealPage(false);
+    if (domReady && customAssetsReady && lobbyReady && criticalLayoutReady && authLayoutReady && authLanguageReady && marqueeReady && socialReady && topupPreviewReady && headerReady && profileReady && vipReady && bonusReady && walletReady) revealPage(false);
   }
 
   function onDomReady() { domReady = true; tryReveal(); }
@@ -108,6 +109,11 @@
   }, { once: true });
   document.addEventListener('naga:social-links-ready', function () {
     socialReady = true;
+    tryReveal();
+  }, { once: true });
+
+  document.addEventListener('naga:topup-preview-ready', function () {
+    topupPreviewReady = true;
     tryReveal();
   }, { once: true });
 
@@ -173,6 +179,7 @@
     // BO social data so Facebook/Telegram do not pop into an already-visible page.
     setTimeout(function () { socialReady = true; tryReveal(); }, 450);
   }
+
 
   /* On a brand-new browser with no marquee cache, give the shared BO settings
      request a tiny head start so the first visible frame has its final height.

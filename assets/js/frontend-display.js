@@ -9,7 +9,6 @@
    * following refresh disappear.
    */
   const LEADERBOARD_STORAGE_KEY = 'naga_leaderboard_enabled';
-  const TOPUP_REWARD_STORAGE_KEY = 'naga_topup_reward_enabled';
 
   function normalizeEnabled(value, defaultValue){
     if(value === undefined || value === null || value === '') return defaultValue !== false;
@@ -124,7 +123,35 @@
   }
 
   function applyTopupReward(enabled, source){
-    const isEnabled=enabled===true; window.NAGA_TOPUP_REWARD_ENABLED=isEnabled; document.documentElement.classList.toggle('topup-reward-disabled',!isEnabled); if(document.body)document.body.classList.toggle('topup-reward-disabled',!isEnabled); document.querySelectorAll('[data-topup-reward-menu]').forEach(el=>{el.hidden=!isEnabled;if(isEnabled)el.style.removeProperty('display');else el.style.display='none';el.setAttribute('aria-hidden',isEnabled?'false':'true');}); setStorage(TOPUP_REWARD_STORAGE_KEY,isEnabled); document.dispatchEvent(new CustomEvent('naga:topup-reward-visibility',{detail:{enabled:isEnabled,source:source||'unknown'}}));
+    const isEnabled = enabled === true;
+    window.NAGA_TOPUP_REWARD_ENABLED = isEnabled;
+    document.documentElement.dataset.topupRewardEnabled = isEnabled ? '1' : '0';
+    document.documentElement.classList.toggle('topup-reward-disabled', !isEnabled);
+    if(document.body) document.body.classList.toggle('topup-reward-disabled', !isEnabled);
+
+    document.querySelectorAll('[data-topup-reward-menu]').forEach(el => {
+      const isHomePreview = el.getAttribute('data-layout-section') === 'topup-reward-preview';
+      if(!isEnabled){
+        el.hidden = true;
+        el.style.display = 'none';
+        el.setAttribute('aria-hidden','true');
+        return;
+      }
+      /* The home preview owns its reveal. Do not expose an empty/placeholder
+         Layout Section before campaign data has been injected. */
+      if(isHomePreview){
+        if(!el.dataset.topupRewardReady){
+          el.hidden = true;
+          el.style.display = 'none';
+          el.setAttribute('aria-hidden','true');
+        }
+        return;
+      }
+      el.hidden = false;
+      el.style.removeProperty('display');
+      el.setAttribute('aria-hidden','false');
+    });
+    document.dispatchEvent(new CustomEvent('naga:topup-reward-visibility',{detail:{enabled:isEnabled,source:source||'unknown'}}));
   }
 
   function applyVipSidebar(enabled, source){
@@ -217,7 +244,6 @@
          */
         console.warn('Frontend display setting load failed; preserving current display state.', error);
         applyLeaderboard(cachedLeaderboard(), 'cache-fallback');
-        applyTopupReward(getStorage(TOPUP_REWARD_STORAGE_KEY,false),'cache-fallback');
 
         // Internal pages may initialize before brand/config bootstrapping is fully
         // ready. Retry instead of permanently leaving VIP at its default visible
@@ -243,7 +269,7 @@
       window.NAGA_LEADERBOARD_ENABLED !== undefined ? window.NAGA_LEADERBOARD_ENABLED : cachedLeaderboard(),
       'dom-reapply'
     );
-    applyTopupReward(window.NAGA_TOPUP_REWARD_ENABLED!==undefined?window.NAGA_TOPUP_REWARD_ENABLED:getStorage(TOPUP_REWARD_STORAGE_KEY,false),'dom-reapply');
+    if(window.NAGA_TOPUP_REWARD_ENABLED !== undefined) applyTopupReward(window.NAGA_TOPUP_REWARD_ENABLED,'dom-reapply');
     if(window.NAGA_VIP_SIDEBAR_ENABLED !== undefined) applyVipSidebar(window.NAGA_VIP_SIDEBAR_ENABLED, 'dom-reapply');
   }
 
@@ -254,7 +280,6 @@
   function init(){
     /* Home Bonus intentionally has NO cached/predefined visibility decision here. */
     applyLeaderboard(cachedLeaderboard(), 'initial-cache');
-    applyTopupReward(getStorage(TOPUP_REWARD_STORAGE_KEY,false),'initial-cache');
     refresh({force:true});
   }
 
