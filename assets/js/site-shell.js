@@ -539,37 +539,15 @@
     overlay.className = 'mobile-menu-overlay';
     overlay.id = 'mobileSideMenu';
     overlay.setAttribute('aria-hidden','true');
+    // The frontend creates only the structural host needed to open/close the drawer.
+    // Every visible sidebar element (avatar, auth/wallet, menu rows, icons,
+    // language and version) comes exclusively from BO Layout Section `frontend-sidebar`.
+    // Do not add any local menu fallback here: otherwise a BO-deleted/changed item can
+    // briefly reappear or override the saved BO markup before layout hydration.
     overlay.innerHTML = `
       <div class="mobile-menu-backdrop" data-menu-close></div>
-      <aside class="mobile-menu-panel" role="dialog" aria-modal="true" aria-label="Menu">
-        <div class="mobile-menu-head">
-          <div class="mobile-avatar"><i class="fa-solid fa-user"></i></div>
-          <div class="mobile-menu-auth">
-            <a href="login.html" class="mobile-login-btn auth-image-link" aria-label="Login"><img class="sidebar-auth-image sidebar-login-image" src="assets/custom/images/login.png" alt="LOGIN" decoding="async" loading="eager"></a>
-            <a href="register.html" class="mobile-register-btn auth-image-link" aria-label="Register"><img class="sidebar-auth-image sidebar-register-image" src="assets/custom/images/register.png" alt="REGISTER" decoding="async" loading="eager"></a>
-          </div>
-          <div class="mobile-menu-member"><div class="mobile-menu-wallet"><span data-main-wallet-balance>&nbsp;</span></div></div>
-        </div>
-        <div class="mobile-menu-list">
-          <a href="index.html"><i class="fa-solid fa-house mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_home">Home</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="downline.html"><i class="fa-solid fa-users mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_downline">Downline</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="vip.html" data-vip-menu><i class="fa-solid fa-crown mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_vip">VIP</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="bonus.html"><i class="fa-solid fa-gift mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_bonus">Bonus</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="spin.html"><i class="fa-solid fa-dharmachakra mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_spin">Spin</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="topup-reward.html" data-topup-reward-menu style="display:none;"><i class="fa-solid fa-gift mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span>Top-up Reward</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="leaderboard.html" data-leaderboard-menu style="display:none;"><i class="fa-solid fa-ranking-star mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_leaderboard">Leaderboard</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="policies.html"><i class="fa-solid fa-shield-halved mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_compliance_policy">Compliance Policy</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <a href="chat.html"><i class="fa-solid fa-headset mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_live_chat">Live Chat</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
-          <button type="button" class="mobile-menu-list-logout" data-member-logout><i class="fa-solid fa-right-from-bracket mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_logout">Logout</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></button>
-        </div>
-        <div class="mobile-menu-lang" id="sideLangBtn"><span>🌐 简体中文</span><span>CN ›</span></div>
-        <div class="mobile-menu-version"><span data-i18n="side_version">Version:</span> 1.1.0</div>
-      </aside>`;
+      <aside class="mobile-menu-panel" data-layout-section="frontend-sidebar" role="dialog" aria-modal="true" aria-label="Menu"></aside>`;
     document.body.appendChild(overlay);
-    const panel = overlay.querySelector('.mobile-menu-panel');
-    if(panel) panel.setAttribute('data-layout-section', 'frontend-sidebar');
-    updateSideLangLabel();
-    translateShellScope(overlay);
   }
 
   // <a href="rebate.html"><i class="fa-solid fa-coins mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_rebate">Rebate</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>

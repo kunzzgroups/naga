@@ -432,8 +432,21 @@
     ];
     logoutSelectors.forEach(function(selector){
       template.content.querySelectorAll(selector).forEach(function(el){
+        // Never put data-i18n on a structured logout control. The translator uses
+        // textContent for data-i18n, which would delete BO-owned icon/chevron nodes.
+        // Translate the existing text child instead so Layout Section remains the
+        // visual source of truth and all decorative children survive rehydration.
+        const textNode = el.querySelector('span[data-i18n], span');
+        if (textNode) {
+          const existingKey = textNode.getAttribute('data-i18n');
+          textNode.setAttribute('data-i18n', existingKey || 'side_logout');
+          el.removeAttribute('data-i18n');
+          el.setAttribute('data-i18n-aria-label', 'logout');
+          return;
+        }
         // Do not replace graphic-only controls; translate their accessibility label instead.
         if (el.querySelector('img') && !(el.textContent || '').trim()) {
+          el.removeAttribute('data-i18n');
           el.setAttribute('data-i18n-aria-label', 'logout');
           return;
         }
