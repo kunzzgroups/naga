@@ -39,7 +39,7 @@
 
   function normalize(payload) {
     return unwrap(payload).map(function (item) {
-      return { id: item && item.id, url: safeHttpUrl(item && item.url), image: imageUrl(item && (item.imageUrl || item.image || item.imagePath || item.path)) };
+      return { id: item && item.id, url: safeHttpUrl(item && (item.url || item.linkUrl || item.link || item.socialUrl)), image: imageUrl(item && (item.imageUrl || item.image_url || item.image || item.imagePath || item.path || item.iconUrl || item.icon)) };
     }).filter(function (item) { return item.url && item.image; });
   }
 
@@ -138,6 +138,9 @@
       });
       // BO owns visibility/layout. Only expose data state for BO CSS/JS if desired.
       container.setAttribute('data-social-count', String(current.length));
+      var group = container.closest('[data-mobile-social-group]');
+      if (group) { group.hidden = current.length === 0; if (!current.length) group.classList.remove('is-open'); }
+      if (window.NagaSidebarRuntime && typeof window.NagaSidebarRuntime.syncSocialVisibility === 'function') window.NagaSidebarRuntime.syncSocialVisibility();
     });
   }
 
@@ -206,6 +209,14 @@
   document.addEventListener('naga:layout-section-restored', function (event) {
     if (event && event.detail && event.detail.sectionKey === 'frontend-sidebar') applyMobile();
   });
+
+
+  // BO may inject/replace frontend-sidebar after this controller has already loaded.
+  // Observe only for the BO-owned placeholder; never build sidebar structure here.
+  var sidebarObserver = new MutationObserver(function () {
+    if (document.querySelector('[data-mobile-social-list]')) applyMobile();
+  });
+  if (document.documentElement) sidebarObserver.observe(document.documentElement, { childList: true, subtree: true });
 
   window.NagaSocialLinks = { refresh: load, apply: function () { apply({ markReady: !readySent }); }, applyMobile: applyMobile };
 })();

@@ -566,6 +566,17 @@
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureSocialLinksController, {once:true});
   else ensureSocialLinksController();
 
+  function ensureSidebarRuntime(){
+    if(window.NagaSidebarRuntime || document.querySelector('script[data-naga-sidebar-runtime]')) return;
+    const script=document.createElement('script');
+    script.src='assets/js/sidebar-runtime.js?v=1.0.1';
+    script.async=false;
+    script.setAttribute('data-naga-sidebar-runtime','1');
+    document.head.appendChild(script);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureSidebarRuntime, {once:true});
+  else ensureSidebarRuntime();
+
   // Ensure sidebar display controls are available on every page that uses the
   // shared shell. Historically only index.html loaded frontend-display.js, so
   // BO-controlled items such as Leaderboard stayed hidden on direct/internal
