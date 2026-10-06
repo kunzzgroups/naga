@@ -90,9 +90,61 @@
     return anchor;
   }
 
+  function socialLabel(urlValue) {
+    try {
+      var host = new URL(urlValue).hostname.toLowerCase().replace(/^www\./, '');
+      if (host.indexOf('facebook.') !== -1 || host === 'fb.com') return 'Facebook';
+      if (host.indexOf('telegram.') !== -1 || host === 't.me') return 'Telegram';
+      if (host.indexOf('instagram.') !== -1) return 'Instagram';
+      if (host.indexOf('whatsapp.') !== -1 || host === 'wa.me') return 'WhatsApp';
+      if (host.indexOf('youtube.') !== -1 || host === 'youtu.be') return 'YouTube';
+      if (host.indexOf('tiktok.') !== -1) return 'TikTok';
+      if (host.indexOf('twitter.') !== -1 || host === 'x.com') return 'X';
+      return host.split('.')[0].replace(/(^|[-_])([a-z])/g, function (_, sep, ch) { return (sep ? ' ' : '') + ch.toUpperCase(); }) || 'Social Media';
+    } catch (_) { return 'Social Media'; }
+  }
+
+  function createMobileLink(item, index) {
+    var anchor = document.createElement('a');
+    anchor.className = 'mobile-social-item';
+    anchor.href = item.url;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.setAttribute('data-social-id', item.id == null ? String(index) : String(item.id));
+
+    var iconWrap = document.createElement('span');
+    iconWrap.className = 'mobile-social-item-icon';
+    var image = document.createElement('img');
+    image.src = item.image;
+    image.alt = '';
+    image.decoding = 'async';
+    image.loading = 'lazy';
+    iconWrap.appendChild(image);
+
+    var label = document.createElement('span');
+    label.className = 'mobile-social-item-label';
+    label.textContent = socialLabel(item.url);
+
+    anchor.appendChild(iconWrap);
+    anchor.appendChild(label);
+    return anchor;
+  }
+
+  function applyMobile() {
+    document.querySelectorAll('[data-mobile-social-list]').forEach(function (container) {
+      container.innerHTML = '';
+      current.forEach(function (item, index) {
+        container.appendChild(createMobileLink(item, index));
+      });
+      // BO owns visibility/layout. Only expose data state for BO CSS/JS if desired.
+      container.setAttribute('data-social-count', String(current.length));
+    });
+  }
+
   function apply(options) {
     options = options || {};
     var pending = 0;
+    applyMobile();
     var containers = document.querySelectorAll('[data-social-links]');
     containers.forEach(function (container) {
       container.innerHTML = '';
@@ -148,5 +200,12 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
 
-  window.NagaSocialLinks = { refresh: load, apply: function () { apply({ markReady: !readySent }); } };
+  document.addEventListener('naga:layout-section-applied', function (event) {
+    if (event && event.detail && event.detail.sectionKey === 'frontend-sidebar') applyMobile();
+  });
+  document.addEventListener('naga:layout-section-restored', function (event) {
+    if (event && event.detail && event.detail.sectionKey === 'frontend-sidebar') applyMobile();
+  });
+
+  window.NagaSocialLinks = { refresh: load, apply: function () { apply({ markReady: !readySent }); }, applyMobile: applyMobile };
 })();

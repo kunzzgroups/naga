@@ -552,6 +552,20 @@
 
   // <a href="rebate.html"><i class="fa-solid fa-coins mobile-menu-icon sidebar-item-icon" aria-hidden="true"></i><span data-i18n="side_rebate">Rebate</span><i class="fa-solid fa-chevron-right mobile-menu-arrow sidebar-item-chevron" aria-hidden="true"></i></a>
 
+  // Social records are runtime data only. BO Layout Section owns the mobile
+  // social container and all of its surrounding sidebar markup/CSS. Load the
+  // existing social data renderer on pages that do not already include it.
+  function ensureSocialLinksController(){
+    if(window.NagaSocialLinks || document.querySelector('script[data-naga-social-links-loader]') || document.querySelector('script[src*="assets/js/social-links.js"]')) return;
+    const script=document.createElement('script');
+    script.src='assets/js/social-links.js?v=1.0.6';
+    script.async=false;
+    script.setAttribute('data-naga-social-links-loader','1');
+    document.head.appendChild(script);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureSocialLinksController, {once:true});
+  else ensureSocialLinksController();
+
   // Ensure sidebar display controls are available on every page that uses the
   // shared shell. Historically only index.html loaded frontend-display.js, so
   // BO-controlled items such as Leaderboard stayed hidden on direct/internal

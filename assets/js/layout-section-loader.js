@@ -686,9 +686,15 @@
   }
 
   function applyHtml(target, html, sectionKey) {
-    html = normalizeShellTextI18nHtml(html, sectionKey);
-    html = normalizeSidebarItemRolesHtml(html, sectionKey);
-    html = normalizeAuthImageHtml(html, sectionKey);
+    // frontend-sidebar is fully BO-authoritative. Do not normalize, rebuild,
+    // add classes, replace auth images, or otherwise change its saved markup.
+    // Runtime controllers may only bind behavior/state to placeholders that BO
+    // explicitly placed in that markup.
+    if (sectionKey !== 'frontend-sidebar') {
+      html = normalizeShellTextI18nHtml(html, sectionKey);
+      html = normalizeSidebarItemRolesHtml(html, sectionKey);
+      html = normalizeAuthImageHtml(html, sectionKey);
+    }
     html = normalizeAuthPageHtml(html, sectionKey);
     if (!target || !html.trim()) return false;
     if (target.innerHTML !== html) target.innerHTML = html;
