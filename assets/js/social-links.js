@@ -212,9 +212,33 @@
 
 
   // BO may inject/replace frontend-sidebar after this controller has already loaded.
-  // Observe only for the BO-owned placeholder; never build sidebar structure here.
-  var sidebarObserver = new MutationObserver(function () {
-    if (document.querySelector('[data-mobile-social-list]')) applyMobile();
+  // Observe only for a newly-added BO placeholder. Never react to mutations made
+  // *inside* an existing social list: applyMobile() itself clears/appends children,
+  // and observing those mutations caused an endless render -> mutation -> render
+  // loop that could freeze the whole frontend.
+  var mobileApplyQueued = false;
+  function nodeIntroducesMobileSocialList(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (node.matches && node.matches('[data-mobile-social-list]')) return true;
+    return !!(node.querySelector && node.querySelector('[data-mobile-social-list]'));
+  }
+  function queueMobileApply() {
+    if (mobileApplyQueued) return;
+    mobileApplyQueued = true;
+    setTimeout(function () {
+      mobileApplyQueued = false;
+      applyMobile();
+    }, 0);
+  }
+  var sidebarObserver = new MutationObserver(function (mutations) {
+    var shouldApply = false;
+    for (var i = 0; i < mutations.length && !shouldApply; i += 1) {
+      var added = mutations[i].addedNodes || [];
+      for (var j = 0; j < added.length; j += 1) {
+        if (nodeIntroducesMobileSocialList(added[j])) { shouldApply = true; break; }
+      }
+    }
+    if (shouldApply) queueMobileApply();
   });
   if (document.documentElement) sidebarObserver.observe(document.documentElement, { childList: true, subtree: true });
 
