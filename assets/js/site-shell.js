@@ -558,7 +558,7 @@
   function ensureSocialLinksController(){
     if(window.NagaSocialLinks || document.querySelector('script[data-naga-social-links-loader]') || document.querySelector('script[src*="assets/js/social-links.js"]')) return;
     const script=document.createElement('script');
-    script.src='assets/js/social-links.js?v=1.0.7';
+    script.src='assets/js/social-links.js?v=1.0.9';
     script.async=false;
     script.setAttribute('data-naga-social-links-loader','1');
     document.head.appendChild(script);

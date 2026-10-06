@@ -139,7 +139,21 @@
       // BO owns visibility/layout. Only expose data state for BO CSS/JS if desired.
       container.setAttribute('data-social-count', String(current.length));
       var group = container.closest('[data-mobile-social-group]');
-      if (group) { group.hidden = current.length === 0; if (!current.length) group.classList.remove('is-open'); }
+      if (group) {
+        var hasSocial = current.length > 0;
+        group.hidden = !hasSocial;
+        // BO sidebar markup intentionally starts Social Media with display:none so
+        // an empty group never flashes before API data is ready. Once BO social
+        // records exist, remove only that initial inline hide. The BO CSS still
+        // owns all actual layout/design.
+        if (hasSocial) {
+          if (group.style && group.style.display === 'none') group.style.removeProperty('display');
+          group.setAttribute('data-social-ready', 'true');
+        } else {
+          group.removeAttribute('data-social-ready');
+          group.classList.remove('is-open');
+        }
+      }
       if (window.NagaSidebarRuntime && typeof window.NagaSidebarRuntime.syncSocialVisibility === 'function') window.NagaSidebarRuntime.syncSocialVisibility();
     });
   }
