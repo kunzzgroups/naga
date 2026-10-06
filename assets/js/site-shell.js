@@ -433,6 +433,36 @@
     });
   }
 
+  function enforceResponsiveHomeHeaderLogoPosition(){
+    var id = 'naga-responsive-home-header-logo-override';
+    var style = document.getElementById(id);
+    if(!style){
+      style = document.createElement('style');
+      style.id = id;
+      style.textContent = [
+        '@media (min-width:769px){',
+        'html body .mobile-home-header-row{position:relative!important;display:block!important;width:100%!important;}',
+        'html body .mobile-home-header-row>.mobile-template-switch-wrap{position:absolute!important;left:10px!important;top:50%!important;transform:translateY(-50%)!important;margin:0!important;z-index:4!important;}',
+        'html body .mobile-home-header-row>.logo-box.mobile-style-logo{position:absolute!important;left:68px!important;right:auto!important;top:50%!important;transform:translateY(-50%)!important;margin:0!important;z-index:3!important;}',
+        'html body .mobile-home-header-row>.top-header-actions{position:absolute!important;right:8px!important;left:auto!important;top:50%!important;transform:translateY(-50%)!important;margin:0!important;z-index:3!important;}',
+        '}',
+        '@media (max-width:768px){',
+        'html[data-mobile-header-logo-position="center"] body .mobile-home-header-row>.logo-box.mobile-style-logo{position:absolute!important;left:50%!important;right:auto!important;top:50%!important;transform:translate(-50%,-50%)!important;margin:0!important;}',
+        'html[data-mobile-header-logo-position="left"] body .mobile-home-header-row>.logo-box.mobile-style-logo{position:absolute!important;left:68px!important;right:auto!important;top:50%!important;transform:translateY(-50%)!important;margin:0!important;}',
+        '}'
+      ].join('');
+    }
+    // BO Layout Section injects its own <style> after the base stylesheet.
+    // Keep this frontend-owned responsive override last so BO positioning CSS
+    // cannot force the desktop logo back to the center.
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  enforceResponsiveHomeHeaderLogoPosition();
+  document.addEventListener('naga:layout-sections-loaded', enforceResponsiveHomeHeaderLogoPosition);
+  document.addEventListener('naga:layout-section-applied', enforceResponsiveHomeHeaderLogoPosition);
+  document.addEventListener('naga:layout-section-restored', enforceResponsiveHomeHeaderLogoPosition);
+
   function enhanceHeader(){
     const header = document.querySelector('.top-header');
     if(!header || header.dataset.shellReady === '1') return;

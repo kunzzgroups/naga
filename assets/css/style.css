@@ -15562,3 +15562,46 @@ body.custom-generated-page .bottom-nav{
 body.member-logged-in .top-auth-actions.top-persistent-actions {
   display:flex!important;
 }
+
+
+/* BO Frontend Display: mobile header logo position (CENTER default / LEFT beside template switch). */
+@media (max-width:768px){
+  html[data-mobile-header-logo-position="center"] .mobile-home-header-row{position:relative!important;}
+  html[data-mobile-header-logo-position="center"] .mobile-home-header-row > .logo-box.mobile-style-logo{position:absolute!important;left:50%!important;right:auto!important;top:50%!important;transform:translate(-50%,-50%)!important;margin:0!important;z-index:2!important;}
+  html[data-mobile-header-logo-position="left"] .mobile-home-header-row{display:flex!important;align-items:center!important;justify-content:flex-start!important;}
+  html[data-mobile-header-logo-position="left"] .mobile-home-header-row > .mobile-template-switch-wrap{flex:0 0 auto!important;}
+  html[data-mobile-header-logo-position="left"] .mobile-home-header-row > .logo-box.mobile-style-logo{position:static!important;transform:none!important;margin:0 0 0 8px!important;flex:0 0 auto!important;}
+  html[data-mobile-header-logo-position="left"] .mobile-home-header-row > .top-header-actions{margin-left:auto!important;}
+}
+
+/* ===== v1.1.28: split desktop/mobile home-header logo placement =====
+   Desktop is always left, immediately after the template switch, with a safe gap.
+   Mobile continues to follow the BO Frontend Display LEFT/CENTER selection. */
+@media (min-width:769px){
+  .mobile-home-header-row{
+    position:relative!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+  }
+  .mobile-home-header-row > .mobile-template-switch-wrap{
+    position:relative!important;
+    flex:0 0 auto!important;
+    margin:0!important;
+    z-index:3!important;
+  }
+  .mobile-home-header-row > .logo-box.mobile-style-logo{
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    top:auto!important;
+    transform:none!important;
+    flex:0 0 auto!important;
+    margin:0 0 0 14px!important;
+    z-index:2!important;
+  }
+  .mobile-home-header-row > .top-header-actions{
+    margin-left:auto!important;
+  }
+}
