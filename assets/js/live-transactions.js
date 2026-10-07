@@ -8,6 +8,7 @@
   const MAX_ROWS=20;
   let timer=0;
   let stopped=false;
+  let lastState=null;
 
   function endpoint(){
     if(window.NAGA_API&&window.NAGA_API.publicLiveTransactions) return String(window.NAGA_API.publicLiveTransactions);
@@ -79,12 +80,13 @@
       const enabled=d.enabled!==false&&Number(d.enabled)!==0;
       const mode=String(d.mode||'REAL').toUpperCase()==='FAKE'?'FAKE':'REAL';
       const interval=Math.max(2,Math.min(60,Number(d.intervalSeconds)||5));
-      setVisible(enabled);
-      if(!enabled){clearTimeout(timer);return}
+      if(!enabled){lastState={enabled:false,rows:[]};setVisible(false);clearTimeout(timer);return}
       // Both REAL and FAKE rows come from the API. For FAKE this is important:
       // depositAmount and withdrawAmount are generated from the same BO price
       // range, and the number of rows follows the BO transaction-count range.
-      render(d.rows||[]);
+      lastState={enabled:true,rows:Array.isArray(d.rows)?d.rows:[]};
+      render(lastState.rows);
+      setVisible(true);
       schedule(interval);
     }catch(err){
       console.warn('Live Transaction load failed:',err&&err.message);
@@ -95,7 +97,19 @@
   function start(){stopped=false;refresh()}
   function stop(){stopped=true;clearTimeout(timer)}
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else start()});
-  document.addEventListener('naga:layout-section-applied',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction'){setVisible(false);refresh()}});
-  document.addEventListener('naga:layout-section-restored',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction'){setVisible(false);refresh()}});
+  function rehydrateAfterLayout(){
+    // BO Layout may replace this section after the runtime API has already loaded.
+    // Never blank a validated live widget during that replacement: paint the last
+    // good runtime state into the new BO-owned HTML immediately, then refresh.
+    if(lastState){
+      if(lastState.enabled){render(lastState.rows);setVisible(true)}
+      else setVisible(false);
+    }else{
+      setVisible(false);
+    }
+    refresh();
+  }
+  document.addEventListener('naga:layout-section-applied',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction')rehydrateAfterLayout()});
+  document.addEventListener('naga:layout-section-restored',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction')rehydrateAfterLayout()});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
