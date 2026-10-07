@@ -32,7 +32,14 @@
     const safe=Array.isArray(rows)?rows.slice(0,MAX_ROWS):[];
     rowsHosts().forEach(host=>{host.innerHTML=safe.length?safe.map(rowHtml).join(''):'<div class="live-transaction-empty">Waiting for completed transactions...</div>'});
   }
-  function setVisible(enabled){widgets().forEach(w=>{w.hidden=!enabled})}
+  function sections(){return Array.from(document.querySelectorAll('[data-layout-section="live-transaction"]'))}
+  function setVisible(enabled){
+    widgets().forEach(w=>{w.hidden=!enabled});
+    sections().forEach(section=>{
+      if(enabled){section.dataset.liveTransactionReady='1';section.setAttribute('aria-hidden','false')}
+      else{delete section.dataset.liveTransactionReady;section.setAttribute('aria-hidden','true')}
+    });
+  }
   function schedule(seconds){
     clearTimeout(timer);
     if(stopped) return;
@@ -88,7 +95,7 @@
   function start(){stopped=false;refresh()}
   function stop(){stopped=true;clearTimeout(timer)}
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else start()});
-  document.addEventListener('naga:layout-section-applied',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction')refresh()});
-  document.addEventListener('naga:layout-section-restored',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction')refresh()});
+  document.addEventListener('naga:layout-section-applied',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction'){setVisible(false);refresh()}});
+  document.addEventListener('naga:layout-section-restored',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction'){setVisible(false);refresh()}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

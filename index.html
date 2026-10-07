@@ -16,6 +16,9 @@
     html[data-home-bonus-enabled="0"] [data-home-bonus-display]{display:none!important;visibility:hidden!important;opacity:0!important}
       html[data-topup-reward-enabled="pending"] [data-topup-reward-menu],
     html[data-topup-reward-enabled="0"] [data-topup-reward-menu]{display:none!important;visibility:hidden!important;opacity:0!important}
+    /* Runtime-fed BO sections must not expose cached/sample HTML before their live data is ready. */
+    [data-layout-section="live-transaction"]:not([data-live-transaction-ready="1"]),
+    [data-layout-section="topup-reward-preview"]:not([data-topup-reward-ready="1"]){display:none!important;visibility:hidden!important;opacity:0!important}
   </style>
   <style id="page-loader-critical">html{background:#070707}html.page-loading{overflow:hidden!important}html.page-loading body{opacity:1}html.page-loading:before{content:"Loading games...";position:fixed;inset:0;z-index:2147483646;display:flex;align-items:calc(50% + 52px);justify-content:center;background:#070707;color:#fff;font:600 14px/1.2 Arial,sans-serif;letter-spacing:.2px;pointer-events:none;animation:pageLoaderOverlayFailsafe 4.2s steps(1,end) forwards}html.page-loading:after{content:"";position:fixed;top:50%;left:50%;z-index:2147483647;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid rgba(255,255,255,.18);border-top-color:#35f486;border-radius:50%;opacity:0;pointer-events:none;animation:pageLoaderSpin .65s linear .24s infinite,pageLoaderOverlayFailsafe 4.2s steps(1,end) forwards}@keyframes pageLoaderSpin{0%{opacity:0;transform:rotate(0)}1%{opacity:1}100%{opacity:1;transform:rotate(360deg)}}@keyframes pageLoaderOverlayFailsafe{0%,99%{visibility:visible}100%{visibility:hidden}}</style>
 <script id="page-loader-watchdog">
@@ -337,7 +340,7 @@
   <script src="assets/js/ad-popup.js?v=1.0.1"></script>
   <script src="assets/js/social-links.js?v=1.0.10"></script>
   <script src="assets/js/frontend-display.js?v=1.0.11"></script>
-  <script src="assets/js/live-transactions.js?v=1.0.4"></script>
+  <script src="assets/js/live-transactions.js?v=1.0.5"></script>
   <script src="assets/js/provider-launch.js?v=1.1.8"></script>
   <script src="assets/js/app.js?v=1.0.70"></script>
   <script src="assets/js/qrcode.bundle.js?v=1.0.0"></script>
@@ -389,6 +392,6 @@
 <script src="assets/custom/animation-effects.custom.js?v=20260813-1"></script>
     
 <script src="assets/js/add-to-home-screen.js?v=2.0.4" defer></script>
-<script src="assets/js/topup-reward-preview.js?v=1.0.6"></script>
+<script src="assets/js/topup-reward-preview.js?v=1.0.5"></script>
 </body>
 </html>
