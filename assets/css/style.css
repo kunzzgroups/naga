@@ -15605,3 +15605,15 @@ body.member-logged-in .top-auth-actions.top-persistent-actions {
     margin-left:auto!important;
   }
 }
+
+
+/* ===== v1.1.33: prevent reused game viewport from restoring an old scroll offset =====
+   Provider/category changes replace the game list inside the same desktop scroll
+   container. Disable browser scroll anchoring so a previously deep scroll cannot
+   pull the freshly rendered list underneath the fixed category area. */
+body.home-page .provider-games-panel,
+body.home-page .provider-games-list,
+body.home-page .direct-games-list,
+body.home-page .game-grid{
+  overflow-anchor:none!important;
+}

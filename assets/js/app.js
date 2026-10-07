@@ -366,6 +366,29 @@ function pickDefaultSubCategoryId(list){
   return (slot || list[0]).id;
 }
 
+function resetGameContentScroll(){
+  // The game/provider list is a reused scroll viewport on desktop. After the
+  // user scrolls deep into one provider, replacing its children can trigger
+  // browser scroll anchoring and restore the old offset after we render the
+  // next provider/category. Reset every possible game-content scroller both
+  // now and on the next frames so the new list always starts fully visible.
+  const reset = () => {
+    const targets = [
+      document.querySelector('.provider-games-panel'),
+      document.getElementById('gameGrid')
+    ];
+    targets.forEach(el => {
+      if(!el) return;
+      try{ el.scrollTo({ top:0, left:0, behavior:'auto' }); }
+      catch(_){ el.scrollTop = 0; el.scrollLeft = 0; }
+    });
+  };
+  reset();
+  requestAnimationFrame(reset);
+  setTimeout(reset, 0);
+  setTimeout(reset, 80);
+}
+
 function setGamesLoading(){
   if(!gameGrid) return;
 
@@ -686,6 +709,7 @@ function buildProviderRail(rows){
     : '<div class="provider-rail-all-icon">All</div>';
   allBtn.addEventListener('click', () => {
     if(isAllProviderCode(activeProviderCode)) return;
+    resetGameContentScroll();
     activeProviderCode = ALL_PROVIDER_CODE;
     activeSubCategoryId = null;
     subCategories = [];
@@ -708,6 +732,7 @@ function buildProviderRail(rows){
       : `<div class="provider-rail-initial">${providerInitials(name)}</div>`;
     btn.addEventListener('click', () => {
       if(String(activeProviderCode) === String(row.code)) return;
+      resetGameContentScroll();
       activeProviderCode = row.code;
       activeSubCategoryId = null;
       subCategoryAutoTriedIds = new Set();
@@ -1134,6 +1159,7 @@ function renderGames(list){
     panel.innerHTML = '';
     panel.appendChild(targetGrid);
     panel.scrollTop = 0;
+    resetGameContentScroll();
     // On mobile SLOT the CSS intentionally makes .provider-games-panel part of
     // the normal flow and .main-layout owns the vertical scroll. Using the
     // non-scrolling panel as IntersectionObserver root can leave the sentinel
@@ -1913,6 +1939,7 @@ if(categoryRow){
   categoryRow.addEventListener('click',e=>{
     const btn=e.target.closest('.cat');
     if(!btn)return;
+    resetGameContentScroll();
     activeCategoryId=btn.dataset.id;
     activeSubCategoryId=null;
     activeProviderCode=null;
@@ -1927,6 +1954,7 @@ if(subTabRow){
   subTabRow.addEventListener('click',e=>{
     const btn=e.target.closest('button[data-id]');
     if(!btn)return;
+    resetGameContentScroll();
     activeSubCategoryId=btn.dataset.id || null;
     subTabRow.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===btn));
     centerActiveMobileSubCategory();
