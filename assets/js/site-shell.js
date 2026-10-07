@@ -697,6 +697,17 @@
         openMenu();
         return;
       }
+      // Close the sidebar whenever the user clicks anywhere in the overlay
+      // outside the actual drawer panel. Do not depend only on the BO backdrop
+      // element because BO Layout CSS can resize/restyle the overlay/backdrop.
+      const menuOverlay = e.target.closest && e.target.closest('#mobileSideMenu');
+      if(menuOverlay && !e.target.closest('.mobile-menu-panel')){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation && e.stopImmediatePropagation();
+        closeMenu();
+        return;
+      }
       if(e.target.closest && e.target.closest('[data-menu-close]')) closeMenu();
       if(e.target.closest && e.target.closest('#sideLangBtn')){
         e.preventDefault();

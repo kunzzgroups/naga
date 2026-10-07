@@ -6432,8 +6432,6 @@ body.member-logged-in .top-member-actions{display:flex;}
         left:0;
         top:0;
         bottom:0;
-        width:86vw;
-        max-width:385px;
         background:linear-gradient(180deg,rgba(35,36,45,.98),rgba(27,28,36,.98));
         padding:15px 14px 14px;
         transform:translateX(-102%);
@@ -6527,7 +6525,7 @@ body.member-logged-in .top-member-actions{display:flex;}
     }
     .mobile-menu-version{margin-top:18px;color:rgba(255,255,255,.38);font-size:16px;font-weight:800;}
     @media (max-width: 360px){
-        .mobile-menu-panel{width:90vw;padding-left:12px;padding-right:12px;}
+        .mobile-menu-panel{padding-left:12px;padding-right:12px;}
         .mobile-avatar{width:62px;height:62px;flex-basis:62px;font-size:36px;}
         .mobile-login-btn,.mobile-register-btn{width:92px;font-size:16px;}
         .mobile-menu-auth{gap:8px;}
@@ -6685,7 +6683,6 @@ body.member-logged-in .top-member-actions{display:flex;}
         left:0;
         top:0;
         bottom:0;
-        width:385px;
         background:linear-gradient(180deg,rgba(35,36,45,.98),rgba(27,28,36,.98));
         padding:15px 14px 14px;
         transform:translateX(-102%);
@@ -8164,8 +8161,6 @@ body.chat-page .chat-messages::-webkit-scrollbar{
 /* ===== Patch: mobile sidebar logged-out auth alignment fix ===== */
 @media (max-width: 768px){
   .mobile-menu-panel{
-    width: min(86vw, 360px) !important;
-    max-width: 360px !important;
     box-sizing: border-box !important;
     padding-left: 10px !important;
     padding-right: 10px !important;
@@ -8223,7 +8218,6 @@ body.chat-page .chat-messages::-webkit-scrollbar{
 }
 @media (max-width: 390px){
   .mobile-menu-panel{
-    width: 84vw !important;
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
@@ -8262,8 +8256,6 @@ body:not(.member-logged-in) .mobile-menu-auth{display:grid !important;}
 /* ===== Final patch: sidebar logged-in balance alignment ===== */
 @media (max-width: 768px){
   #mobileSideMenu .mobile-menu-panel{
-    width: min(86vw, 360px) !important;
-    max-width: 360px !important;
     overflow-x: hidden !important;
     box-sizing: border-box !important;
   }
@@ -15632,6 +15624,68 @@ body.home-page .game-grid{
     min-height: 100dvh !important;
     inset: 0 !important;
     box-sizing: border-box !important;
+}
+
+@supports not (height: 100dvh) {
+    #mobileSideMenu.mobile-menu-overlay {
+        height: 100vh !important;
+        min-height: 100vh !important;
+    }
+}
+\n\n/* =========================================================
+   SIDEBAR MODAL/BACKDROP HARDENING
+   Keep the page behind the drawer non-interactive and visibly dimmed even
+   when BO Layout Section CSS is injected after the base shell styles.
+   ========================================================= */
+#mobileSideMenu.mobile-menu-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    z-index: 2147482000 !important;
+    background: rgba(0, 0, 0, .66) !important;
+    overflow: hidden !important;
+    touch-action: none;
+}
+
+#mobileSideMenu.mobile-menu-overlay:not(.open) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+#mobileSideMenu.mobile-menu-overlay.open {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+}
+
+#mobileSideMenu > .mobile-menu-backdrop {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, .66) !important;
+    pointer-events: auto !important;
+    z-index: 0 !important;
+}
+
+/* Drawer width is intentionally NOT defined in Naga frontend.
+   BO Layout Section owns .mobile-menu-panel width/min-width/max-width. */
+#mobileSideMenu > .mobile-menu-panel {
+    position: absolute !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+    touch-action: pan-y !important;
+}
+
+body.mobile-menu-open {
+    overflow: hidden !important;
+    touch-action: none !important;
 }
 
 @supports not (height: 100dvh) {
