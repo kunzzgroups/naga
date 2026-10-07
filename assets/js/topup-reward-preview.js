@@ -12,8 +12,11 @@
     }
     if(!window.__NAGA_TOPUP_PREVIEW_READY__){window.__NAGA_TOPUP_PREVIEW_READY__=true;try{document.dispatchEvent(new CustomEvent('naga:topup-preview-ready',{detail:{visible:!!visible}}))}catch(_e){}}
   }
-  function rankCell(rank){
-    if(rank>=1&&rank<=3)return `<img class="tx-deposit-board__rank-image" src="assets/custom/images/rank-${rank}.png" alt="Rank ${rank}" decoding="async">`;
+  function rankCell(rank,row){
+    const imageUrl=row&&row.prize&&row.prize.imageUrl?String(row.prize.imageUrl).trim():'';
+    if(rank>=1&&rank<=3&&imageUrl){
+      return `<img class="tx-deposit-board__rank-image" src="${esc(imageUrl)}" alt="Rank ${rank}" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="tx-deposit-board__rank" hidden>${rank}</span>`;
+    }
     return `<span class="tx-deposit-board__rank">${rank}</span>`;
   }
   function renderDepositBoard(box,c,rows){
@@ -26,7 +29,7 @@
       const code=currency();
       tbody.innerHTML=rows.slice(0,limit).map(x=>{
         const rank=Number(x.rank||0), cls=rank===1?'tx-deposit-board__row--gold':rank===2?'tx-deposit-board__row--silver':rank===3?'tx-deposit-board__row--bronze':'';
-        return `<tr${cls?` class="${cls}"`:''}><td>${rankCell(rank)}</td><td>${esc(x.player||'')}</td><td><span class="tx-deposit-board__currency">${esc(code)}</span> ${money(x.amount)}</td></tr>`;
+        return `<tr${cls?` class="${cls}"`:''}><td>${rankCell(rank,x)}</td><td>${esc(x.player||'')}</td><td><span class="tx-deposit-board__currency">${esc(code)}</span> ${money(x.amount)}</td></tr>`;
       }).join('');
     }
     const footer=board.querySelector('.tx-deposit-board__footer');
