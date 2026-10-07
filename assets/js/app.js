@@ -180,6 +180,16 @@ function isFullImageUrl(value){
 function resolveUploadImage(value, folder, fallback){
   const img = String(value || '').trim();
   if(!img) return fallback || '';
+
+  // Some legacy DB rows still contain absolute titanxgaming.com /uploads URLs.
+  // Rebase only those managed upload assets to the configured static host so a
+  // merchant brand never renders the retired TitanX domain. External CDN URLs
+  // remain unchanged.
+  if(/^(?:https?:)?\/\/(?:static\.)?titanxgaming\.com\//i.test(img)){
+    const match = img.match(/\/uploads\/(.+)$/i);
+    if(match && match[1]) return uploadBaseUrl() + '/' + match[1].replace(/^\/+/, '');
+  }
+
   if(isFullImageUrl(img) || img.startsWith('/')) return img;
   return uploadBaseUrl() + '/' + folder + '/' + img.replace(/^\/+/, '');
 }
