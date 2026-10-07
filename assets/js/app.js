@@ -239,6 +239,13 @@ function sortByOrder(a, b){
       || (Number(a.id || 0) - Number(b.id || 0));
 }
 
+// Games are the only frontend catalog items where a larger BO Sort value
+// has higher display priority. Keep category/provider/subcategory ordering
+// unchanged and preserve the API order when two games have the same value.
+function sortGamesByOrderDesc(a, b){
+  return Number(b.sortOrder || b.sort_order || 0) - Number(a.sortOrder || a.sort_order || 0);
+}
+
 
 function safeLower(value){
   return String(value == null ? '' : value).toLowerCase();
@@ -1564,7 +1571,7 @@ function applyGameCatalog(catalog){
       // a provider code must belong to a currently active provider.
       return !code || activeProviderCodes.has(code);
     })
-    .sort(sortByOrder);
+    .sort(sortGamesByOrderDesc);
 
   gameCatalogReady = categories.length > 0 || catalogGames.length > 0;
 }

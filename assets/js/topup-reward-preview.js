@@ -15,7 +15,7 @@
   function rankCell(rank,row){
     const imageUrl=row&&row.prize&&row.prize.imageUrl?String(row.prize.imageUrl).trim():'';
     if(rank>=1&&rank<=3&&imageUrl){
-      return `<img class="tx-deposit-board__rank-image" src="${esc(imageUrl)}" alt="Rank ${rank}" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="tx-deposit-board__rank" hidden>${rank}</span>`;
+      return `<img class="tx-deposit-board__rank-image" src="${esc(imageUrl)}" alt="Rank ${rank}" decoding="async" onerror="this.hidden=true">`;
     }
     return `<span class="tx-deposit-board__rank">${rank}</span>`;
   }
