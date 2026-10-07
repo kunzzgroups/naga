@@ -15617,3 +15617,26 @@ body.home-page .direct-games-list,
 body.home-page .game-grid{
   overflow-anchor:none!important;
 }
+
+/* =========================================================
+   SIDEBAR OVERLAY SAFETY FIX
+   BO Layout Section may size #mobileSideMenu together with the drawer panel.
+   The overlay itself must always cover the viewport so the backdrop remains
+   clickable and site-shell.js can close the sidebar on mobile and desktop.
+   ========================================================= */
+#mobileSideMenu.mobile-menu-overlay {
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    inset: 0 !important;
+    box-sizing: border-box !important;
+}
+
+@supports not (height: 100dvh) {
+    #mobileSideMenu.mobile-menu-overlay {
+        height: 100vh !important;
+        min-height: 100vh !important;
+    }
+}
