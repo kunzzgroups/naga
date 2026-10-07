@@ -1003,6 +1003,13 @@
     document.addEventListener('naga:layout-section-applied', function(e){
       var sectionKey = e && e.detail && e.detail.sectionKey;
       if(sectionKey === 'frontend-sidebar') updateSideLangLabel();
+      if(sectionKey === 'home-right-balance'){
+        refreshHeaderAuth();
+        var rightBalanceCached = getStoredBalance();
+        if(getToken() && rightBalanceCached !== null) setAllWalletText(rightBalanceCached);
+        if(getToken()) refreshShellBalance();
+        else setAllWalletText('');
+      }
       if(!sectionKey || sectionKey === 'home-mobile-before-category'){
         refreshHeaderAuth();
         var cached = getStoredBalance();

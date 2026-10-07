@@ -63,6 +63,12 @@
   }
 
   window.NAGA_TRANSACTION_LIMITS_API={load:load,apply:apply};
+  // BO Layout Section may replace the right balance markup after the limits have
+  // already loaded. Repaint the runtime values into the newly inserted hooks.
+  document.addEventListener('naga:layout-section-applied',function(e){
+    if(!e||!e.detail||e.detail.sectionKey!=='home-right-balance') return;
+    if(window.NAGA_TRANSACTION_LIMITS) apply(window.NAGA_TRANSACTION_LIMITS);
+  });
   // Paint the last confirmed BO values immediately; refresh silently afterwards.
   const cached=readCache(); if(cached) apply(cached);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
