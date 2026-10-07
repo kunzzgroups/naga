@@ -1035,3 +1035,15 @@
   else init();
   window.NAGA_SITE_SHELL = { refreshHeaderAuth: refreshHeaderAuth, refreshBalance: refreshShellBalance, refreshLanguageLabel: updateSideLangLabel, refreshMemberToken: refreshMemberToken, openMenu: openMenu, closeMenu: closeMenu, logout: doShellLogout, rehydrate: rehydrateShell, refreshVipClaimReminder: refreshVipClaimReminder, openWebsiteTemplateSelector: openWebsiteTemplateSelector, closeWebsiteTemplateSelector: closeWebsiteTemplateSelector };
 })();
+
+
+// Balance-panel navigation is delegated because this HTML can be replaced at runtime
+// by BO Layout Section. Avoid inline onclick handlers so BO saves are not rejected by
+// reverse-proxy/WAF rules that inspect editable HTML.
+document.addEventListener('click', function (event) {
+  const trigger = event.target.closest('[data-balance-nav]');
+  if (!trigger) return;
+  const target = String(trigger.getAttribute('data-balance-nav') || '').trim();
+  if (!target || !/^[a-z0-9][a-z0-9._/-]*\.html(?:[?#].*)?$/i.test(target)) return;
+  window.location.href = target;
+});
