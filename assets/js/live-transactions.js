@@ -88,5 +88,7 @@
   function start(){stopped=false;refresh()}
   function stop(){stopped=true;clearTimeout(timer)}
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else start()});
+  document.addEventListener('naga:layout-section-applied',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction')refresh()});
+  document.addEventListener('naga:layout-section-restored',e=>{if(e.detail&&e.detail.sectionKey==='live-transaction')refresh()});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
