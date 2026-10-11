@@ -39,7 +39,7 @@
 
   function normalize(payload) {
     return unwrap(payload).map(function (item) {
-      return { id: item && item.id, url: safeHttpUrl(item && (item.url || item.linkUrl || item.link || item.socialUrl)), image: imageUrl(item && (item.imageUrl || item.image_url || item.image || item.imagePath || item.path || item.iconUrl || item.icon)) };
+      return { id: item && item.id, url: safeHttpUrl(item && (item.url || item.linkUrl || item.link || item.socialUrl)), image: imageUrl(item && (item.imageUrl || item.image_url || item.image || item.imagePath || item.path || item.iconUrl || item.icon)), label: String(item && (item.name || item.title || item.label || item.platformName) || "").trim() };
     }).filter(function (item) { return item.url && item.image; });
   }
 
@@ -63,7 +63,7 @@
 
   function createLink(item, index, onImageDone) {
     var anchor = document.createElement('a');
-    anchor.className = 'social-image';
+    anchor.className = 'social-image tx-social-row';
     anchor.href = item.url;
     anchor.target = '_blank';
     anchor.rel = 'noopener noreferrer';
@@ -71,7 +71,7 @@
 
     var image = document.createElement('img');
     image.src = item.image;
-    image.alt = 'Social link';
+    image.alt = '';
     image.decoding = 'async';
     // These buttons are above the fold on the lobby. Lazy-loading caused them to
     // pop in after the page was already visible, so prioritize the confirmed BO images.
@@ -86,7 +86,19 @@
     }
     image.addEventListener('load', function () { finish(true); }, { once: true });
     image.addEventListener('error', function () { finish(false); }, { once: true });
-    anchor.appendChild(image);
+    var icon = document.createElement('span');
+    icon.className = 'tx-social-icon';
+    icon.appendChild(image);
+    var title = document.createElement('span');
+    title.className = 'tx-social-title';
+    title.textContent = item.label || ('JOIN ' + socialLabel(item.url).toUpperCase());
+    var arrow = document.createElement('span');
+    arrow.className = 'tx-social-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '›';
+    anchor.appendChild(icon);
+    anchor.appendChild(title);
+    anchor.appendChild(arrow);
     return anchor;
   }
 
@@ -218,6 +230,7 @@
   else start();
 
   document.addEventListener('naga:layout-section-applied', function (event) {
+    if (event && event.detail && event.detail.sectionKey === 'home-referral-panel') apply();
     if (event && event.detail && event.detail.sectionKey === 'frontend-sidebar') applyMobile();
   });
   document.addEventListener('naga:layout-section-restored', function (event) {
