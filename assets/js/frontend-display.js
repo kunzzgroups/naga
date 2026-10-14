@@ -151,15 +151,10 @@
         el.setAttribute('aria-hidden','true');
         return;
       }
-      /* The home preview owns its reveal. Do not expose an empty/placeholder
-         Layout Section before campaign data has been injected. */
+      // The BO toggle owns visibility; the campaign endpoint only supplies data.
+      // An inactive campaign must not hide the BO-configured home preview.
       if(isHomePreview){
-        if(!el.dataset.topupRewardReady){
-          el.hidden = true;
-          el.style.display = 'none';
-          el.setAttribute('aria-hidden','true');
-        }
-        return;
+        el.dataset.topupRewardReady = '1';
       }
       el.hidden = false;
       el.style.removeProperty('display');
