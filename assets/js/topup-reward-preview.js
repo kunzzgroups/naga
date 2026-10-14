@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  let running=false, done=false, lastState=null;
+  let running=false, done=false, requestEpoch=0;
   const base=()=>String((window.NAGA_CONFIG&&window.NAGA_CONFIG.api&&window.NAGA_CONFIG.api.baseUrl)||'').replace(/\/+$/,'');
   const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=v=>Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -35,50 +35,61 @@
     const footer=board.querySelector('.tx-deposit-board__footer');
     if(footer)footer.textContent=rows.length?'Live ranking':'No qualifying deposits yet';
   }
+  function clearPreview(box){
+    if(!box)return;
+    // BO Layout HTML can contain a saved/sample ranking from another brand.
+    // Remove it before making this brand's network request or showing the section.
+    renderDepositBoard(box,{},[]);
+    const banner=box.querySelector('[data-tr-preview-image]');
+    if(banner){banner.removeAttribute('src');banner.hidden=true}
+    const title=box.querySelector('[data-tr-preview-title]');
+    if(title)title.textContent='Top-up Reward';
+    const description=box.querySelector('[data-tr-preview-text]');
+    if(description)description.textContent='View ranking & prizes';
+  }
   async function run(){
     if(running||done)return;
     const box=document.querySelector('[data-layout-section="topup-reward-preview"]');
     if(!box)return;
     if(window.NAGA_TOPUP_REWARD_ENABLED===undefined)return;
-    if(window.NAGA_TOPUP_REWARD_ENABLED!==true){markReady(box,false);return}
+    if(window.NAGA_TOPUP_REWARD_ENABLED!==true){clearPreview(box);markReady(box,false);return}
     // BO controls the module visibility; campaign fetch controls only its contents.
     // Reveal the configured layout immediately, including the empty state.
+    clearPreview(box);
     markReady(box,true);
     running=true;
+    const epoch=++requestEpoch, host=location.hostname.toLowerCase();
     try{
       const r=await fetch(base()+'/api/public/topup-reward',{cache:'no-store',headers:{Accept:'application/json','X-Brand-Domain':location.hostname}});
-      if(!r.ok){renderDepositBoard(box,{},[]);markReady(box,true);return}
+      if(epoch!==requestEpoch||host!==location.hostname.toLowerCase())return;
+      if(!r.ok){clearPreview(box);markReady(box,true);return}
       const j=await r.json(),d=j&&j.data||{},c=d.campaign||{},rows=Array.isArray(d.ranking)?d.ranking:[];
-      if(!d.active){renderDepositBoard(box,{},[]);done=true;markReady(box,true);return}
+      if(epoch!==requestEpoch||host!==location.hostname.toLowerCase())return;
+      if(!d.active){clearPreview(box);done=true;markReady(box,true);return}
       const link=box.querySelector('[data-tr-preview-link]');if(link&&!link.getAttribute('href'))link.setAttribute('href','topup-reward.html');
       const title=box.querySelector('[data-tr-preview-title]');if(title)title.textContent=c.title||'Top-up Reward';
       const text=box.querySelector('[data-tr-preview-text]');if(text){const top=rows.slice(0,Math.max(1,Number(c.homepagePreviewLimit||3))).map(x=>`#${x.rank} ${x.prize&&x.prize.title?x.prize.title:''}`).join('  •  ');text.textContent=top||'View ranking & prizes'}
       const banner=box.querySelector('[data-tr-preview-image]');if(banner){if(c.bannerImage){banner.src=c.bannerImage;banner.hidden=false}else banner.hidden=true}
-      lastState={campaign:c,rows:rows};
       renderDepositBoard(box,c,rows);
-      done=true;markReady(box,true);
-    }catch(e){renderDepositBoard(box,{},[]);markReady(box,true)}finally{running=false}
+      if(epoch===requestEpoch){done=true;markReady(box,true);}
+    }catch(e){if(epoch===requestEpoch){clearPreview(box);markReady(box,true)}}finally{running=false}
   }
   document.addEventListener('naga:layout-section-applied',e=>{
     if(!(e.detail&&e.detail.sectionKey==='topup-reward-preview'))return;
     const box=document.querySelector('[data-layout-section="topup-reward-preview"]');
-    // Fresh BO Layout HTML replaces the DOM node contents and therefore removes
-    // the runtime-ready marker. Rehydrate from the last validated campaign in the
-    // same event turn so an enabled preview never disappears while refetching.
-    if(box&&lastState&&window.NAGA_TOPUP_REWARD_ENABLED===true){
-      const c=lastState.campaign||{},rows=lastState.rows||[];
-      const link=box.querySelector('[data-tr-preview-link]');if(link&&!link.getAttribute('href'))link.setAttribute('href','topup-reward.html');
-      const title=box.querySelector('[data-tr-preview-title]');if(title)title.textContent=c.title||'Top-up Reward';
-      const text=box.querySelector('[data-tr-preview-text]');if(text){const top=rows.slice(0,Math.max(1,Number(c.homepagePreviewLimit||3))).map(x=>`#${x.rank} ${x.prize&&x.prize.title?x.prize.title:''}`).join('  •  ');text.textContent=top||'View ranking & prizes'}
-      const banner=box.querySelector('[data-tr-preview-image]');if(banner){if(c.bannerImage){banner.src=c.bannerImage;banner.hidden=false}else banner.hidden=true}
-      renderDepositBoard(box,c,rows);
-      markReady(box,true);
-      done=true;
-      return;
-    }
-    done=false;run();
+    // Never rehydrate an old campaign when BO replaces the section HTML.
+    // BO-provided static/sample rows must be cleared synchronously.
+    ++requestEpoch;
+    clearPreview(box);
+    done=false;
+    if(window.NAGA_TOPUP_REWARD_ENABLED===true)markReady(box,true);
+    else markReady(box,false);
+    if(!running)run();
+    else {running=false;run()}
+
   });
-  document.addEventListener('naga:topup-reward-visibility',e=>{const enabled=!!(e.detail&&e.detail.enabled),box=document.querySelector('[data-layout-section="topup-reward-preview"]');if(!enabled){done=false;markReady(box,false);return}run()});
+  document.addEventListener('naga:topup-reward-visibility',e=>{const enabled=!!(e.detail&&e.detail.enabled),box=document.querySelector('[data-layout-section="topup-reward-preview"]');if(!enabled){++requestEpoch;done=false;clearPreview(box);markReady(box,false);return}done=false;run()});
   document.addEventListener('naga:currency-changed',()=>{done=false;run()});
-  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(run,0),{once:true}):setTimeout(run,0);
+  function init(){const box=document.querySelector('[data-layout-section="topup-reward-preview"]');clearPreview(box);run()}
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
 })();

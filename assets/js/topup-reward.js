@@ -3,7 +3,8 @@
   const root=()=>document.querySelector('.pc-topup-reward')||document.querySelector('[data-layout-section="topup-reward-page"]');
   const q=s=>{const r=root();return r?r.querySelector(s):null};
   function base(){return String((window.NAGA_CONFIG&&NAGA_CONFIG.api&&NAGA_CONFIG.api.baseUrl)||'https://bo.titanx7.com').replace(/\/$/,'')}
-  function headers(){const h={Accept:'application/json','X-Brand-Domain':location.hostname};try{const t=localStorage.getItem('member_token')||localStorage.getItem('token');if(t)h.Authorization='Bearer '+t}catch(e){}return h}
+  function publicHeaders(){return {Accept:'application/json','X-Brand-Domain':location.hostname}}
+  function memberHeaders(){const h=publicHeaders();try{const t=localStorage.getItem('member_token');if(t)h.Authorization='Bearer '+t}catch(e){}return h}
   function money(v){return Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function prize(x){return x&&x.prize?x.prize:null}
@@ -15,11 +16,17 @@
   async function load(){
     if(running||loaded)return; const r0=root(); if(!r0||!r0.innerHTML.trim())return; running=true;
     try{
+      // Clear any pre-rendered rows before loading the current merchant.
+      renderItems(q('[data-tr-podium]'),[],'[data-tr-podium-template]',card);
+      renderItems(q('[data-tr-list]'),[],'[data-tr-row-template]',row);
+      const initialStatus=q('[data-tr-status]');if(initialStatus){initialStatus.hidden=false;initialStatus.textContent='Loading...'}
+      const myRank=q('[data-tr-me]');if(myRank){myRank.hidden=true;myRank.textContent=''}
       if(window.NagaFrontendDisplay)await NagaFrontendDisplay.refresh({force:true});
       if(window.NAGA_TOPUP_REWARD_ENABLED===false){location.replace('index.html');return}
-      const r=await fetch(base()+'/api/public/topup-reward',{cache:'no-store',headers:headers()}); if(r.status===404){location.replace('index.html');return}
-      const j=await r.json(),d=j.data||{},c=d.campaign||{},list=d.ranking||[];
-      const status=q('[data-tr-status]'); if(!d.active){if(status)status.textContent='No active Top-up Reward campaign.';return}
+      const r=await fetch(base()+'/api/public/topup-reward',{cache:'no-store',headers:publicHeaders()}); if(r.status===404){location.replace('index.html');return}
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json(),d=j.data||{},c=d.campaign||{},list=Array.isArray(d.ranking)?d.ranking:[];
+      const status=q('[data-tr-status]'); if(!d.active){if(status)status.textContent='No active Top-up Reward campaign.';loaded=true;return}
       const title=q('[data-tr-title]');if(title)title.textContent=c.title||'Top-up Reward';
       const subtitle=q('[data-tr-subtitle]');if(subtitle)subtitle.textContent=c.subtitle||'';
       const banner=q('[data-tr-banner]');if(banner){if(c.bannerImage){banner.src=c.bannerImage;banner.hidden=false}else banner.hidden=true}
@@ -28,7 +35,7 @@
       const terms=q('[data-tr-terms]');if(terms)terms.textContent=c.terms||'';
       if(status)status.hidden=list.length>0;
       const cd=q('[data-tr-countdown]');if(Number(c.showCountdown)!==0)countdown(c.endAt);else if(cd)cd.hidden=true;
-      try{const mr=await fetch(base()+'/api/member/topup-reward/me',{cache:'no-store',headers:headers()});if(mr.ok){const mj=await mr.json(),me=mj.data&&mj.data.myRank,meEl=q('[data-tr-me]');if(me&&meEl&&Number(c.showMyRank)!==0){meEl.hidden=false;meEl.innerHTML=`<b>Your Rank: #${me.rank}</b> &nbsp; Deposit: ${money(me.amount)}${Number(me.amountNeeded)>0?` &nbsp; • &nbsp; ${money(me.amountNeeded)} more to enter the displayed ranking`:''}`}}}catch(e){}
+      try{const mh=memberHeaders();if(mh.Authorization){const mr=await fetch(base()+'/api/member/topup-reward/me',{cache:'no-store',headers:mh});if(mr.ok){const mj=await mr.json(),me=mj.data&&mj.data.myRank,meEl=q('[data-tr-me]');if(me&&meEl&&Number(c.showMyRank)!==0){meEl.hidden=false;meEl.innerHTML=`<b>Your Rank: #${me.rank}</b> &nbsp; Deposit: ${money(me.amount)}${Number(me.amountNeeded)>0?` &nbsp; • &nbsp; ${money(me.amountNeeded)} more to enter the displayed ranking`:''}`}}}}catch(e){}
       loaded=true;
     }catch(e){const status=q('[data-tr-status]');if(status)status.textContent='Unable to load Top-up Reward.'}finally{running=false}
   }
