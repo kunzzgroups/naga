@@ -21,12 +21,20 @@
       renderItems(q('[data-tr-list]'),[],'[data-tr-row-template]',row);
       const initialStatus=q('[data-tr-status]');if(initialStatus){initialStatus.hidden=false;initialStatus.textContent='Loading...'}
       const myRank=q('[data-tr-me]');if(myRank){myRank.hidden=true;myRank.textContent=''}
-      if(window.NagaFrontendDisplay)await NagaFrontendDisplay.refresh({force:true});
-      if(window.NAGA_TOPUP_REWARD_ENABLED===false){location.replace('index.html');return}
-      const r=await fetch(base()+'/api/public/topup-reward',{cache:'no-store',headers:publicHeaders()}); if(r.status===404){location.replace('index.html');return}
+      // The public campaign request must not wait for Frontend Display refresh:
+      // an unresolved refresh previously left the standalone page on Loading....
+      if(window.NagaFrontendDisplay&&typeof NagaFrontendDisplay.refresh==='function'){
+        try{Promise.resolve(NagaFrontendDisplay.refresh({force:true})).catch(()=>{});}catch(e){}
+      }
+      // Do not redirect before fetching the brand-specific public campaign.
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),12000);
+      let r;
+      try{r=await fetch(base()+'/api/public/topup-reward',{cache:'no-store',headers:publicHeaders(),signal:controller.signal});}
+      finally{clearTimeout(timeout)} if(r.status===404){const status=q('[data-tr-status]');if(status)status.textContent='No active Top-up Reward campaign.';loaded=true;return}
       if(!r.ok)throw new Error('HTTP '+r.status);
       const j=await r.json(),d=j.data||{},c=d.campaign||{},list=Array.isArray(d.ranking)?d.ranking:[];
-      const status=q('[data-tr-status]'); if(!d.active){if(status)status.textContent='No active Top-up Reward campaign.';loaded=true;return}
+      const status=q('[data-tr-status]'); if(!d.active){if(status){status.hidden=false;status.textContent='No active Top-up Reward campaign.'}loaded=true;return}
       const title=q('[data-tr-title]');if(title)title.textContent=c.title||'Top-up Reward';
       const subtitle=q('[data-tr-subtitle]');if(subtitle)subtitle.textContent=c.subtitle||'';
       const banner=q('[data-tr-banner]');if(banner){if(c.bannerImage){banner.src=c.bannerImage;banner.hidden=false}else banner.hidden=true}
@@ -35,9 +43,9 @@
       const terms=q('[data-tr-terms]');if(terms)terms.textContent=c.terms||'';
       if(status)status.hidden=list.length>0;
       const cd=q('[data-tr-countdown]');if(Number(c.showCountdown)!==0)countdown(c.endAt);else if(cd)cd.hidden=true;
-      try{const mh=memberHeaders();if(mh.Authorization){const mr=await fetch(base()+'/api/member/topup-reward/me',{cache:'no-store',headers:mh});if(mr.ok){const mj=await mr.json(),me=mj.data&&mj.data.myRank,meEl=q('[data-tr-me]');if(me&&meEl&&Number(c.showMyRank)!==0){meEl.hidden=false;meEl.innerHTML=`<b>Your Rank: #${me.rank}</b> &nbsp; Deposit: ${money(me.amount)}${Number(me.amountNeeded)>0?` &nbsp; • &nbsp; ${money(me.amountNeeded)} more to enter the displayed ranking`:''}`}}}}catch(e){}
+      
       loaded=true;
-    }catch(e){const status=q('[data-tr-status]');if(status)status.textContent='Unable to load Top-up Reward.'}finally{running=false}
+    }catch(e){const status=q('[data-tr-status]');if(status){status.hidden=false;status.textContent='Unable to load Top-up Reward.'}}finally{running=false}
   }
   document.addEventListener('naga:layout-section-applied',e=>{if(e.detail&&e.detail.sectionKey==='topup-reward-page')load()});
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(load,0),{once:true}):setTimeout(load,0);
