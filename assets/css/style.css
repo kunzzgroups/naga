@@ -15670,3 +15670,37 @@ body.mobile-menu-open {
         min-height: 100vh !important;
     }
 }
+
+/* Consistent mobile drawer typography across viewport sizes.
+   Scope strictly to the sidebar; BO owns layout and width. */
+#mobileSideMenu {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+#mobileSideMenu .mobile-menu-list a,
+#mobileSideMenu .mobile-menu-list button,
+#mobileSideMenu .mobile-menu-group-toggle,
+#mobileSideMenu .mobile-menu-list-logout,
+#mobileSideMenu .mobile-menu-lang,
+#mobileSideMenu .mobile-menu-auth a,
+#mobileSideMenu .mobile-menu-auth button,
+#mobileSideMenu .mobile-menu-member button {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+#mobileSideMenu .mobile-menu-list a span,
+#mobileSideMenu .mobile-menu-list button span,
+#mobileSideMenu .mobile-menu-group-toggle span,
+#mobileSideMenu .mobile-menu-lang span,
+#mobileSideMenu .mobile-menu-auth a span,
+#mobileSideMenu .mobile-menu-auth button span {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+/* Keep decorative icons independent of text sizes. */
+#mobileSideMenu .mobile-menu-list .sidebar-item-icon,
+#mobileSideMenu .mobile-menu-list .sidebar-item-chevron,
+#mobileSideMenu .mobile-menu-list .mobile-menu-icon,
+#mobileSideMenu .mobile-menu-list .mobile-menu-arrow {
+  font-size: revert-layer;
+}
