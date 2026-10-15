@@ -668,6 +668,21 @@
     document.body.classList.remove('mobile-menu-open');
   }
 
+  // Auth pages use the second bottom-nav item as the Game/Home lobby entry.
+  // Handle it before other delegated navigation listeners, including BO-injected nav.
+  function bindAuthGameNavigation(){
+    if(!document.body || !document.body.classList.contains('login-page')) return;
+    document.addEventListener('click', function(e){
+      var target = e.target;
+      var gameLink = target && target.closest && target.closest('.bottom-nav > a:nth-child(2)');
+      if(!gameLink || e.defaultPrevented && !gameLink.isConnected) return;
+      if(e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      window.location.assign('index.html');
+    }, true);
+  }
+
   function bindMenu(){
     document.addEventListener('click', function(e){
       // The main logo always returns to Home. Template switching is handled by
@@ -1009,6 +1024,7 @@
     enhanceHeader();
     initWebsiteTemplateSelector();
     createSideMenu();
+    bindAuthGameNavigation();
     bindMenu();
     window.addEventListener('storage', refreshHeaderAuth);
     document.addEventListener('naga:layout-section-applied', function(e){
