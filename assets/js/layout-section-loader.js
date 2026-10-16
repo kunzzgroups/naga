@@ -6,7 +6,7 @@
   const executedJs = new Set();
   const authoritativeSections = new Map();
   const sectionObservers = new Map();
-  const CACHE_PREFIX = 'naga_layout_section_v4:';
+  const CACHE_PREFIX = 'naga_layout_section_v5:';
 
   function brandHeaders(extra) {
     const headers = new Headers(extra || {});
@@ -100,10 +100,7 @@
   }
 
   function cacheKey(sectionKey) {
-    // Cache isolation is required even when multiple merchant domains share one API.
-    const host = String(location.hostname || '').toLowerCase();
-    const brand = String((window.NAGA_CONFIG && (window.NAGA_CONFIG.brandId || window.NAGA_CONFIG.brandDomain)) || host).toLowerCase();
-    return CACHE_PREFIX + encodeURIComponent(host + ':' + brand) + ':' + sectionKey;
+    return CACHE_PREFIX + encodeURIComponent(String(location.hostname || '').toLowerCase()) + ':' + sectionKey;
   }
 
   function readCachedSection(sectionKey) {
@@ -700,7 +697,14 @@
     }
     html = normalizeAuthImageHtml(html, sectionKey);
     html = normalizeAuthPageHtml(html, sectionKey);
-    if (!target || !html.trim()) return false;
+    if (!target) return false;
+    if (!html.trim()) {
+      // A confirmed empty BO section must remove previously rendered/cached markup.
+      // A failed request is handled separately and retains the last good layout.
+      if (target.innerHTML) target.innerHTML = '';
+      target.removeAttribute('data-layout-custom-applied');
+      return true;
+    }
     if (target.innerHTML !== html) target.innerHTML = html;
     target.setAttribute('data-layout-custom-applied', sectionKey);
     keepSectionAuthoritative(target, sectionKey, html);
@@ -797,6 +801,12 @@
       return data;
     }
     applyCss(sectionKey, data.css, data);
+    // An empty JS response must not leave a script from a previous layout active.
+    if (!String(data.js || '').trim()) {
+      const previousScript = document.querySelector('script[data-layout-section-js="' + sectionKey + '"]');
+      if (previousScript) previousScript.remove();
+      executedJs.delete(sectionKey);
+    }
     let htmlChanged = false;
     (targets || targetsFor(sectionKey)).forEach(function (target) {
       if (applyHtml(target, data.html, sectionKey)) htmlChanged = true;
