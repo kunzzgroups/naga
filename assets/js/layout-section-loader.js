@@ -6,7 +6,7 @@
   const executedJs = new Set();
   const authoritativeSections = new Map();
   const sectionObservers = new Map();
-  const CACHE_PREFIX = 'naga_layout_section_v3:';
+  const CACHE_PREFIX = 'naga_layout_section_v4:';
 
   function brandHeaders(extra) {
     const headers = new Headers(extra || {});
@@ -100,7 +100,10 @@
   }
 
   function cacheKey(sectionKey) {
-    return CACHE_PREFIX + sectionKey;
+    // Cache isolation is required even when multiple merchant domains share one API.
+    const host = String(location.hostname || '').toLowerCase();
+    const brand = String((window.NAGA_CONFIG && (window.NAGA_CONFIG.brandId || window.NAGA_CONFIG.brandDomain)) || host).toLowerCase();
+    return CACHE_PREFIX + encodeURIComponent(host + ':' + brand) + ':' + sectionKey;
   }
 
   function readCachedSection(sectionKey) {
