@@ -221,7 +221,45 @@
     promotionGridResizeTimer = setTimeout(() => { syncPromotionTitleSpacing(document); syncPromotionGridHeights(document); }, 40);
   }
 
+  let claimedPromotionIds = new Set();
+  let claimLookupKnown = false;
+  let claimLookupIdentity = '';
+
+  function claimPromotionId(c){
+    return c && (c.promotionId ?? c.promotion_id ?? c.bonusPromotionId ?? c.bonus_promotion_id ?? c.promotion?.id);
+  }
+
+  async function refreshClaimedPromotions(){
+    const t=token();
+    const identity=promotionIdentity()+':'+t;
+    if(identity!==claimLookupIdentity){
+      claimLookupIdentity=identity;
+      claimedPromotionIds=new Set();
+      claimLookupKnown=false;
+    }
+    if(!t || !api().playerPromotionClaims) return;
+    try{
+      const response=await fetch(api().playerPromotionClaims,{
+        cache:'no-store',headers:{Authorization:'Bearer '+t,'Cache-Control':'no-cache'}
+      });
+      const json=await response.json();
+      if(!response.ok || json.status==='error') return;
+      const data=json.data;
+      const claims=Array.isArray(data)?data:(Array.isArray(data?.content)?data.content:(Array.isArray(data?.claims)?data.claims:[]));
+      const ids=new Set();
+      claims.forEach(c=>{
+        const id=claimPromotionId(c);
+        const status=String(c.status||'').toUpperCase();
+        if(id!=null && id!=='' && !['REJECTED','CANCELLED','CANCELED','FAILED'].includes(status)) ids.add(String(id));
+      });
+      if(identity!==claimLookupIdentity) return;
+      claimedPromotionIds=ids;
+      claimLookupKnown=true;
+    }catch(err){console.warn('Promotion claim history unavailable',err);}
+  }
+
   function promotionUnavailable(p){
+    if(token() && claimedPromotionIds.has(String(p.id))) return true;
     const negative = ['eligible', 'claimable', 'canClaim', 'canClaimPromotion', 'playerEligible', 'isEligible', 'isClaimable'];
     if(negative.some(key => p[key] === false || p[key] === 0 || p[key] === 'false')) return true;
     const status = String(p.claimStatus || p.eligibilityStatus || p.playerClaimStatus || '').toUpperCase();
@@ -294,6 +332,8 @@
       const extra = (d.requiredTurnover && Number(d.requiredTurnover) > 0) ? (' | ' + tr('promotion_required_turnover','Required Turnover:') + ' ' + money(d.requiredTurnover)) : ((d.requiredRollover && Number(d.requiredRollover) > 0) ? (' | ' + tr('promotion_required_rollover','Required Rollover:') + ' ' + money(d.requiredRollover)) : '');
       toast(tr('promotion_claim_success','Claim success. Bonus:') + ' ' + money(d.bonusAmount) + extra);
       closeDetail();
+      claimedPromotionIds.add(String(id));
+      load(true,currentLang());
       document.dispatchEvent(new CustomEvent('naga:promotion-access-changed'));
       if(window.MemberAuth && window.MemberAuth.refreshWalletBalance) window.MemberAuth.refreshWalletBalance();
     }catch(err){
@@ -354,6 +394,7 @@
     const separator=api().playerPromotionList.includes('?')?'&':'?';
     const lang=String(requestedLang||currentLang()||'en');
     const query=new URLSearchParams({lang:lang,_:String(Date.now())});
+    await refreshClaimedPromotions();
     const r = await fetch(api().playerPromotionList+separator+query.toString(), {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
     const j = await r.json();
     if(!r.ok || j.status==='error') throw new Error(j.message||('Promotion API '+r.status));
@@ -391,6 +432,7 @@
   }
 
   function restoreConfirmedPromotionRows(boxes,lang){
+    if(token() && !claimLookupKnown) return false;
     const cached=readPromotionCache(lang);
     if(!cached) return false;
     renderPromotionRows(cached.rows, boxes);
@@ -464,6 +506,7 @@
   const overlay = document.getElementById('bonusDetailOverlay');
   if(overlay) overlay.addEventListener('click', e => { if(e.target === overlay) closeDetail(); });
 
+  document.addEventListener('naga:promotion-access-changed',()=>load(true,currentLang()));
   document.addEventListener('naga:home-bonus-display', function(event){ if(event.detail && event.detail.enabled) load(true,currentLang()); });
   document.addEventListener('i18n:changed', function(event){
     // Keep the current BO promotion DOM on screen while the new language is fetched.
