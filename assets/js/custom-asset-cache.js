@@ -5,7 +5,7 @@
   //   GET /api/public/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = '1.0.35';
+  var CUSTOM_ASSET_VERSION = '1.0.36';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
@@ -368,19 +368,18 @@
     var mobileConfigured = isMobileViewport() && !!resolveImageValue(versionData.mobileBackground || versionData.mobileBackgroundUrl || '');
     var translated = mobileConfigured ? '' : resolveImageValue(getTranslatedValue(data, 'pageBackgroundUrl'));
     var bgUrl = addCacheBuster(translated || fallback);
+    var runId = lastRunId;
 
-    // Return a promise so the global page reveal can wait for the final BO background
-    // (or its fallback decision) instead of exposing a background swap after first paint.
+    // Apply the selected brand background as soon as its URL is known. Previously
+    // the CSS was inserted only after the Image probe finished loading; when the
+    // image took longer than the 550 ms failsafe, the page was revealed first and
+    // the background visibly popped in later.
     return new Promise(function(resolve){
       var settled=false;
-      function finish(){ if(settled) return; settled=true; resolve(); }
-      var probe = new Image();
-      try{ probe.fetchPriority = 'high'; }catch(e){}
-      probe.onload = function(){
-        document.querySelectorAll('style[data-custom-asset-cache]').forEach(function(el){ el.remove(); });
-        var style = document.createElement('style');
-        style.setAttribute('data-custom-asset-cache', CUSTOM_ASSET_VERSION);
-        style.textContent = [
+      var style = document.createElement('style');
+      style.setAttribute('data-custom-asset-cache', CUSTOM_ASSET_VERSION);
+      style.setAttribute('data-custom-asset-pending', String(runId));
+      style.textContent = [
         'body,',
         'body.bonus-page,',
         'body.deposit-page,',
@@ -400,20 +399,36 @@
         '  background-size: cover !important;',
         '  background-attachment: fixed !important;',
         '}'
-        ].join('\n');
-        document.head.appendChild(style);
+      ].join('\n');
+      document.head.appendChild(style);
+
+      function finish(){ if(settled) return; settled=true; resolve(); }
+      var probe = new Image();
+      try{ probe.fetchPriority = 'high'; }catch(e){}
+      probe.onload = function(){
+        // A language change or refresh may have started a newer asset pass.
+        // Never let an older request replace the current brand's background.
+        if(runId !== lastRunId){
+          style.remove();
+          finish();
+          return;
+        }
+        document.querySelectorAll('style[data-custom-asset-cache]').forEach(function(el){
+          if(el !== style) el.remove();
+        });
+        style.removeAttribute('data-custom-asset-pending');
         finish();
       };
       probe.onerror = function(){
-        console.warn('[custom-assets] Background image could not be loaded:', bgUrl);
+        style.remove();
+        if(runId === lastRunId) console.warn('[custom-assets] Background image could not be loaded:', bgUrl);
         finish();
       };
       probe.src = bgUrl;
-      // Performance safety: never hold first paint indefinitely for one remote image.
+      // Never hold first paint indefinitely for a slow or unavailable image.
       setTimeout(finish, 550);
     });
   }
-
   function waitForCustomImages(){
     var nodes=Array.prototype.slice.call(document.querySelectorAll(
       'img[data-default-custom-src], input[type="image"][data-default-custom-src], img[src*="assets/custom/images/"], input[type="image"][src*="assets/custom/images/"]'
