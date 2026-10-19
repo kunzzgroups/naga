@@ -5,7 +5,7 @@
   //   GET /api/public/translation?refType=main_layout&refId=1
   // BO saves these rows from Site Customize -> Language Translation:
   //   ref_type = main_layout, ref_id = 1, lang_code = zh, field_key = logoUrl/homeUrl/etc.
-  var CUSTOM_ASSET_VERSION = '1.0.36';
+  var CUSTOM_ASSET_VERSION = '1.0.37';
   var CUSTOM_IMAGE_PATH = 'assets/custom/images/';
   var REF_TYPE = 'main_layout';
   var REF_ID = '1';
@@ -13,6 +13,7 @@
   var versionJsonCache = null;
   var resolvedBrandId = null;
   var lastRunId = 0;
+  var backgroundRunId = 0;
   var CACHE_PREFIX = 'naga_bo_custom_assets_v2:' + String(location.hostname || 'default').toLowerCase() + ':';
 
   function brandHeaders(extra){
@@ -369,6 +370,7 @@
     var translated = mobileConfigured ? '' : resolveImageValue(getTranslatedValue(data, 'pageBackgroundUrl'));
     var bgUrl = addCacheBuster(translated || fallback);
     var runId = lastRunId;
+    var backgroundId = ++backgroundRunId;
 
     // Apply the selected brand background as soon as its URL is known. Previously
     // the CSS was inserted only after the Image probe finished loading; when the
@@ -408,7 +410,7 @@
       probe.onload = function(){
         // A language change or refresh may have started a newer asset pass.
         // Never let an older request replace the current brand's background.
-        if(runId !== lastRunId){
+        if(runId !== lastRunId || backgroundId !== backgroundRunId){
           style.remove();
           finish();
           return;
@@ -421,7 +423,7 @@
       };
       probe.onerror = function(){
         style.remove();
-        if(runId === lastRunId) console.warn('[custom-assets] Background image could not be loaded:', bgUrl);
+        if(runId === lastRunId && backgroundId === backgroundRunId) console.warn('[custom-assets] Background image could not be loaded:', bgUrl);
         finish();
       };
       probe.src = bgUrl;
@@ -507,7 +509,16 @@
       applyReady(runId,cachedTranslation||{},cachedVersion,'cache');
     }
 
-    Promise.all([loadTranslationData(lang,true), loadVersionJson(true)]).then(function(result){
+    // Start resolving the brand background as soon as the layout response arrives.
+    // Translation loading can be slower on a first visit (especially in private
+    // browsing), so it must not delay the initial brand-specific background request.
+    var versionPromise = loadVersionJson(true);
+    versionPromise.then(function(versionData){
+      if(runId === lastRunId){
+        applyBackground({}, versionData || {});
+      }
+    });
+    Promise.all([loadTranslationData(lang,true), versionPromise]).then(function(result){
       applyReady(runId,result[0]||{},result[1]||{},'fresh');
     });
   }
