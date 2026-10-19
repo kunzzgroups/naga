@@ -139,6 +139,7 @@
 
     if(title) title.textContent = p.name || tr('promotion_default_section_title','Promotion Bonus');
     const html = safeDetailHtml(p.detailText) || defaultDetail(p);
+    const unavailable = promotionUnavailable(p);
     const needsBase = p.claimCondition === 'DEPOSIT' || p.claimCondition === 'FIRST_DEPOSIT' || p.claimCondition === 'DAILY_FIRST_DEPOSIT' || p.bonusType === 'PERCENTAGE';
 
     content.innerHTML = `
@@ -146,7 +147,7 @@
       <div class="promo-modal-claim-line"></div>
       ${needsBase ? '<input class="promo-modal-base-input" id="promoModalBaseAmount" type="number" step="0.01" placeholder="' + esc(tr('promotion_deposit_amount','Deposit amount')) + '">' : ''}
       <div class="promo-detail-actions">
-        <button class="promo-modal-claim-btn" id="promoModalClaimBtn" type="button" data-id="${esc(p.id)}">${esc(tr('promotion_claim_now','CLAIM NOW'))}</button>
+        <button class="promo-modal-claim-btn" id="promoModalClaimBtn" type="button" data-id="${esc(p.id)}" ${unavailable ? 'disabled aria-disabled="true"' : ''}>${esc(unavailable ? tr('promotion_unavailable','UNAVAILABLE') : tr('promotion_claim_now','CLAIM NOW'))}</button>
         <button class="bonus-close-btn" id="promoModalCloseBtn" type="button">${esc(tr('promotion_close','Close'))}</button>
       </div>`;
 
@@ -220,14 +221,32 @@
     promotionGridResizeTimer = setTimeout(() => { syncPromotionTitleSpacing(document); syncPromotionGridHeights(document); }, 40);
   }
 
+  function promotionUnavailable(p){
+    const negative = ['eligible', 'claimable', 'canClaim', 'canClaimPromotion', 'playerEligible', 'isEligible', 'isClaimable'];
+    if(negative.some(key => p[key] === false || p[key] === 0 || p[key] === 'false')) return true;
+    const status = String(p.claimStatus || p.eligibilityStatus || p.playerClaimStatus || '').toUpperCase();
+    if(['INELIGIBLE', 'NOT_ELIGIBLE', 'DISABLED', 'UNAVAILABLE', 'CLAIMED', 'LIMIT_REACHED'].includes(status)) return true;
+    return p.enabled === false || p.active === false || p.status === 'DISABLED';
+  }
+
+  function ensurePromotionAvailabilityStyle(){
+    if(document.getElementById('naga-promotion-availability-style')) return;
+    const style=document.createElement('style');
+    style.id='naga-promotion-availability-style';
+    style.textContent='.promo-card.promo-unavailable img{filter:grayscale(1);opacity:.48}.promo-card.promo-unavailable{cursor:not-allowed}.promo-modal-claim-btn:disabled{opacity:.5;cursor:not-allowed}';
+    document.head.appendChild(style);
+  }
+
   function cardHtml(p){
     const cls = ['bonus-card','promo-image-card','promo-card'];
+    const unavailable = promotionUnavailable(p);
+    if(unavailable) cls.push('promo-unavailable');
     if(Number(p.desktopSpan) > 1) cls.push('d-span-' + Number(p.desktopSpan));
     if(Number(p.mobileSpan) > 1) cls.push('m-span-' + Number(p.mobileSpan));
     const img = p.bonusImageUrl || 'assets/images/bonus/bonus.png';
     const href = p.linkUrl || '#';
-    const linkAttr = p.linkUrl ? ' data-external="1"' : '';
-    return `<a class="${cls.join(' ')}" href="${esc(href)}" data-id="${esc(p.id)}" data-title="${esc(p.name || tr('promotion_default_title','Promotion'))}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || tr('promotion_default_title','Promotion'))}" loading="eager" decoding="async"></a>`;
+    const linkAttr = p.linkUrl && !unavailable ? ' data-external="1"' : '';
+    return `<a class="${cls.join(' ')}" href="${esc(unavailable ? '#' : href)}" aria-disabled="${unavailable}" data-id="${esc(p.id)}" data-title="${esc(p.name || tr('promotion_default_title','Promotion'))}"${linkAttr}><img src="${esc(img)}" alt="${esc(p.name || tr('promotion_default_title','Promotion'))}" loading="eager" decoding="async"></a>`;
   }
 
   function groupRows(rows){
@@ -254,6 +273,8 @@
   }
 
   async function claimPromotion(id, btn){
+    const selected=(window.__promotionRows || []).find(x=>String(x.id)===String(id));
+    if(!selected || promotionUnavailable(selected)) return;
     if(!token()){
       location.href = 'login.html';
       return;
@@ -294,6 +315,7 @@
   }
 
   function renderPromotionRows(rows, boxes){
+    ensurePromotionAvailabilityStyle();
     rows=Array.isArray(rows)?rows:[];
     window.__promotionRows=rows;
     hideBundledPromotionFallback(boxes);
@@ -430,6 +452,7 @@
 
     const card = e.target.closest('.promo-card[data-id]');
     if(card){
+      if(card.classList.contains('promo-unavailable')){ e.preventDefault(); return; }
       if(card.dataset.external === '1') return;
       e.preventDefault();
       const p = (window.__promotionRows || []).find(x => String(x.id) === String(card.dataset.id));
