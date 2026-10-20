@@ -70,7 +70,7 @@
   function renderBatch(key){
     const state = lazyState[key]; if(!state || !state.body || state.loading || state.visible >= state.records.length) { updateLazyStatus(key); return; }
     state.loading = true; state.statusEl && state.statusEl.classList.add('is-loading');
-    setTimeout(()=>{ const nextRecords = state.records.slice(state.visible, state.visible + PAGE_SIZE); const fragment = document.createDocumentFragment(); nextRecords.forEach(item => fragment.appendChild(key === 'transactions' ? createTransactionRow(item) : createBetRow(item))); state.body.appendChild(fragment); state.visible += nextRecords.length; state.loading = false; state.statusEl && state.statusEl.classList.remove('is-loading'); updateLazyStatus(key); if(window.I18N && window.I18N.apply) window.I18N.apply(); }, 80);
+    setTimeout(()=>{ const nextRecords = state.records.slice(state.visible, state.visible + PAGE_SIZE); const fragment = document.createDocumentFragment(); nextRecords.forEach(item => fragment.appendChild(key === 'transactions' ? createTransactionRow(item) : createBetRow(item))); state.body.appendChild(fragment); state.visible += nextRecords.length; state.loading = false; state.statusEl && state.statusEl.classList.remove('is-loading'); updateLazyStatus(key); }, 80);
   }
   function activeKey(){ return betPanel && betPanel.classList.contains('active') ? 'bet' : 'transactions'; }
   function loadMoreWhenNearBottom(){ const key = activeKey(); if(document.documentElement.scrollHeight - (window.innerHeight + window.scrollY) <= SCROLL_OFFSET) renderBatch(key); }
