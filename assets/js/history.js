@@ -25,7 +25,8 @@
   function money(v){ return 'MYR ' + num(v).toFixed(2); }
   function formatDate(v){ if(!v) return '-'; const d = new Date(String(v).replace(' ', 'T')); if(isNaN(d)) return esc(v); return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
   function txClass(type){ type=String(type||'').toUpperCase(); if(type.includes('DEPOSIT')||type==='TRANSFER_IN'||type==='BONUS'||type==='REFERRAL_REWARD') return 'deposit'; if(type.includes('WITHDRAW')||type==='TRANSFER_OUT') return 'withdraw'; return ''; }
-  function txName(type){ type=String(type||'TRANSACTION').toUpperCase(); if(type==='REFERRAL_REWARD') return 'REFERRAL REWARD'; return type.replace(/_/g,' '); }
+  function txName(type){ type=String(type||'TRANSACTION').toUpperCase(); const key='history_type_'+type.toLowerCase(); const translated=tr(key); return translated!==key ? translated : type.replace(/_/g,' '); }
+  function statusLabel(status){ const key='history_status_'+status; const translated=tr(key); return translated!==key ? translated : status.toUpperCase(); }
   function statusName(s){ s=String(s||'SUCCESS').toUpperCase(); if(s==='SUCCESS'||s==='APPROVED'||s==='COMPLETED') return 'completed'; if(s==='REJECTED'||s==='FAILED') return 'failed'; if(s==='PENDING') return 'pending'; return s.toLowerCase(); }
 
   async function fetchJson(url){
@@ -40,7 +41,7 @@
     const state = lazyState[key]; if(!state || !state.statusEl) return;
     const finished = state.visible >= state.records.length;
     state.statusEl.dataset.i18n = finished ? 'all_records_loaded' : 'loading_more_records';
-    state.statusEl.textContent = state.records.length ? tr(state.statusEl.dataset.i18n) : (key === 'bet' ? 'No bet records found.' : 'No transaction records found.');
+    state.statusEl.textContent = state.records.length ? tr(state.statusEl.dataset.i18n) : tr(key === 'bet' ? 'history_no_bets' : 'history_no_transactions');
     state.statusEl.classList.toggle('is-finished', finished);
   }
 
@@ -54,7 +55,7 @@
       <div class="txn-id">#${esc(item.referenceNo || item.id || '-')}</div>
       <div class="txn-amount"><span>${tr('amount')}</span> : <strong>${money(Math.abs(num(item.amount)))}</strong></div>
       <div class="txn-date">${formatDate(item.createdAt)}</div>
-    </td><td data-label="${tr('status')}"><span class="status-badge ${status}"><i></i> <span>${esc(status.toUpperCase())}</span></span></td>`;
+    </td><td data-label="${tr('status')}"><span class="status-badge ${status}"><i></i> <span>${esc(statusLabel(status))}</span></span></td>`;
     return row;
   }
   function createBetRow(item){
@@ -74,7 +75,7 @@
   function activeKey(){ return betPanel && betPanel.classList.contains('active') ? 'bet' : 'transactions'; }
   function loadMoreWhenNearBottom(){ const key = activeKey(); if(document.documentElement.scrollHeight - (window.innerHeight + window.scrollY) <= SCROLL_OFFSET) renderBatch(key); }
   async function loadAll(){
-    transactionsBody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>'; betBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+    transactionsBody.innerHTML = '<tr><td colspan="2">'+esc(tr('history_loading'))+'</td></tr>'; betBody.innerHTML = '<tr><td colspan="4">'+esc(tr('history_loading'))+'</td></tr>';
     const [tx, bet] = await Promise.all([fetchJson(TX_URL), fetchJson(BET_URL)]);
     // History page is for member-facing transactions only. Provider wallet
     // TRANSFER_IN / TRANSFER_OUT rows are internal game-wallet movements and
@@ -89,5 +90,5 @@
   }
   historyTabs.forEach(tab => tab.addEventListener('click', () => { historyTabs.forEach(item => item.classList.remove('active')); tab.classList.add('active'); const key=tab.dataset.tab; transactionPanel.classList.toggle('active', key === 'transactions'); betPanel.classList.toggle('active', key === 'bet'); renderBatch(key === 'bet' ? 'bet' : 'transactions'); }));
   document.addEventListener('DOMContentLoaded', () => { if(!requireLogin()) return; loadAll().catch(e=>{ transactionsBody.innerHTML='<tr><td colspan="2">'+esc(e.message)+'</td></tr>'; betBody.innerHTML='<tr><td colspan="4">'+esc(e.message)+'</td></tr>'; }); window.addEventListener('scroll', loadMoreWhenNearBottom, {passive:true}); });
-  document.addEventListener('i18n:changed', () => Object.keys(lazyState).forEach(updateLazyStatus));
+  document.addEventListener('i18n:changed', () => { Object.keys(lazyState).forEach(key => { const state=lazyState[key]; if(state && state.body){ state.body.innerHTML=''; state.visible=0; renderBatch(key); } updateLazyStatus(key); }); });
 })();
