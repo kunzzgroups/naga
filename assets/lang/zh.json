@@ -437,5 +437,16 @@
   "history_status_cancelled": "已取消",
   "history_no_bets": "暂无投注记录",
   "history_no_transactions": "暂无交易记录",
-  "history_loading": "加载中..."
+  "history_loading": "加载中...",
+  "history_type_admin_deposit": "管理员存款",
+  "history_type_admin_withdraw": "管理员提款",
+  "history_type_admin_withdrawal": "管理员提款",
+  "history_type_manual_deposit": "人工存款",
+  "history_type_manual_withdraw": "人工提款",
+  "history_type_rebate": "返水",
+  "history_type_cashback": "返现",
+  "history_type_refund": "退款",
+  "history_type_topup": "充值",
+  "history_type_top_up": "充值",
+  "history_type_commission": "佣金"
 }

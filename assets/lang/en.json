@@ -436,5 +436,16 @@
   "history_status_cancelled": "CANCELLED",
   "history_no_bets": "No bet records found.",
   "history_no_transactions": "No transaction records found.",
-  "history_loading": "Loading..."
+  "history_loading": "Loading...",
+  "history_type_admin_deposit": "ADMIN DEPOSIT",
+  "history_type_admin_withdraw": "ADMIN WITHDRAW",
+  "history_type_admin_withdrawal": "ADMIN WITHDRAWAL",
+  "history_type_manual_deposit": "MANUAL DEPOSIT",
+  "history_type_manual_withdraw": "MANUAL WITHDRAW",
+  "history_type_rebate": "REBATE",
+  "history_type_cashback": "CASHBACK",
+  "history_type_refund": "REFUND",
+  "history_type_topup": "TOP UP",
+  "history_type_top_up": "TOP UP",
+  "history_type_commission": "COMMISSION"
 }
