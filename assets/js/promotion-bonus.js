@@ -403,28 +403,9 @@
     if(requestSequence !== promotionRequestSequence || String(currentLang()) !== lang) return;
     let rows = Array.isArray(j.data) ? j.data : [];
 
-    // Language switching must be transactional. Some environments briefly return an
-    // empty promotion list while the brand/language context is settling. Never wipe
-    // already-rendered BO promotions because of that transient response; retry once
-    // and keep the previous valid render as the fallback.
-    const hasExistingRender = boxes.some(box => box.querySelector('.promo-dynamic-section,.promo-card'));
-    if(!rows.length && hasExistingRender){
-      await new Promise(resolve => setTimeout(resolve, 180));
-      if(requestSequence !== promotionRequestSequence || String(currentLang()) !== lang) return;
-      const retryUrl = api().playerPromotionList+separator+new URLSearchParams({lang:lang,_:String(Date.now())}).toString();
-      const retryResponse = await fetch(retryUrl, {cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
-      const retryJson = await retryResponse.json();
-      if(retryResponse.ok && retryJson.status !== 'error' && Array.isArray(retryJson.data)) rows = retryJson.data;
-    }
-
+    // The server is authoritative, including an empty list after BO deletion.
+    // Never preserve stale cards from a previous language or deleted campaign.
     if(requestSequence !== promotionRequestSequence || String(currentLang()) !== lang) return;
-    if(!rows.length && hasExistingRender){
-      // Keep the previous language visible rather than flashing a blank page. The
-      // next refresh/revalidation can replace it once valid translated rows exist.
-      signalPromotionReady();
-      return;
-    }
-
     writePromotionCache(rows,lang);
     renderPromotionRows(rows, boxes);
     await waitForPromotionImages(document, 360);
@@ -455,15 +436,14 @@
 
     const lang=String(requestedLang||currentLang()||'en');
     hideBundledPromotionFallback(boxes);
-    const restored=promotionInitialCacheRestored || restoreConfirmedPromotionRows(boxes,lang);
+    const restored=false;
     promotionInitialCacheRestored=false;
     const now=Date.now();
     if(!force && promotionLoadPromise && now-promotionLastStartedAt<1800) return promotionLoadPromise;
     promotionLastStartedAt=now;
     const requestSequence=++promotionRequestSequence;
 
-    // Do not clear the existing BO cards while switching language. Keeping the last
-    // valid render prevents the Bonus page from becoming empty during the request.
+    // Do not reuse locally cached promotions: deletions must take effect on refresh.
     promotionLoadPromise=refreshPromotionRows(boxes,lang,requestSequence).catch(e=>{
       if(requestSequence !== promotionRequestSequence) return;
       console.warn('Promotion load failed', e);
@@ -485,7 +465,7 @@
   const initialBoxes=promotionBoxes();
   if(initialBoxes.length){
     hideBundledPromotionFallback(initialBoxes);
-    promotionInitialCacheRestored=restoreConfirmedPromotionRows(initialBoxes,currentLang());
+    promotionInitialCacheRestored=false;
   }
 
   document.addEventListener('click', e => {
